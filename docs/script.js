@@ -297,18 +297,6 @@ function submitScore(finalScore) {
             refreshLeaderboard();
         });
 }
-
-    const name = getActivePlayerName();
-    playerName = name;
-    savePlayerName(playerName);
-    const entry = {
-        name: playerName,
-        score: finalScore,
-        savedAt: Date.now()
-    };
-    
-
-
 let highScore = loadHighScore();
 if (bestScoreValue) {
     bestScoreValue.textContent = highScore.toLocaleString('en-US');
