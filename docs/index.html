@@ -8,9 +8,6 @@
 </head>
 <body>
     <header class="app-header">
-        <div class="header-left">
-            <a class="home-link" href="../index.html">Goアプリに戻る</a>
-        </div>
         <div class="header-title">
             <h1>いごぽん</h1>
             <button id="headerStartBtn" type="button" class="header-start-btn">GO!</button>
@@ -60,6 +57,17 @@
                     <li>白の捕獲数: <span id="whiteCaptureValue">0</span></li>
                     <li>配置したピース: <span id="piecesValue">0</span></li>
                 </ul>
+            </section>
+            <section class="player-panel">
+                <h2>プレイヤー</h2>
+                <label for="playerNameInput" class="player-name-label">名前</label>
+                <input type="text" id="playerNameInput" maxlength="20" placeholder="プレイヤー名" autocomplete="name">
+            </section>
+            <section class="leaderboard-panel" aria-live="polite">
+                <h2>本日のハイスコア</h2>
+                <p id="leaderboardDate" class="leaderboard-date"></p>
+                <p id="leaderboardEmpty" class="leaderboard-empty">まだスコアがありません。</p>
+                <ol id="dailyLeaderboard" class="leaderboard-list"></ol>
             </section>
             <section class="control-panel">
                 <button id="startBtn" type="button">スタート</button>

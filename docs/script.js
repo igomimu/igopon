@@ -38,6 +38,10 @@ const mobileSoftDropBtn = document.getElementById('mobileSoftDropBtn');
 const mobileHardDropBtn = document.getElementById('mobileHardDropBtn');
 const mobilePauseBtn = document.getElementById('mobilePauseBtn');
 const headerStartBtn = document.getElementById('headerStartBtn');
+const playerNameInput = document.getElementById('playerNameInput');
+const dailyLeaderboardList = document.getElementById('dailyLeaderboard');
+const leaderboardEmpty = document.getElementById('leaderboardEmpty');
+const leaderboardDateLabel = document.getElementById('leaderboardDate');
 
 const PAUSE_ICON = '\u23F8';
 const RESUME_ICON = '\u25B6';
@@ -66,6 +70,8 @@ const captureHighlights = new Map();
 const captureLineEffects = new Map();
 let captureGroupSequence = 0;
 let captureResolutionInProgress = false;
+const POINTER_CLICK_SUPPRESS_MS = 320;
+let lastPointerDownTime = 0;
 const CAPTURE_LINE_COLORS = {
     1: { stroke: 'rgba(58, 137, 255, 0.88)', shadow: 'rgba(152, 206, 255, 0.95)' },
     2: { stroke: 'rgba(255, 176, 66, 0.92)', shadow: 'rgba(255, 220, 160, 0.95)' }
@@ -75,6 +81,10 @@ const CAPTURE_LINE_COLORS = {
 const SWIPE_THRESHOLD = CELL_SIZE;
 const effects = [];
 const HIGH_SCORE_KEY = 'goDropHighScore';
+const PLAYER_NAME_KEY = 'goDropPlayerName';
+const DAILY_SCORES_KEY = 'goDropDailyScores';
+const MAX_LEADERBOARD_ENTRIES = 5;
+const MAX_STORED_ENTRIES_PER_DAY = 20;
 
 function configureCanvasResolution(canvasElement, context, targetWidth, targetHeight) {
     const ratio = window.devicePixelRatio || 1;
@@ -115,11 +125,170 @@ function saveHighScore(value) {
         // ignore storage failures
     }
 }
+function sanitizePlayerName(value) {
+    if (!value) {
+        return '';
+    }
+    return value
+        .replace(/[\r\n\t]/g, ' ')
+        .replace(/\s{2,}/g, ' ')
+        .replace(/[<>]/g, '')
+        .trim()
+        .slice(0, 20);
+}
+
+function loadPlayerName() {
+    try {
+        const stored = localStorage.getItem(PLAYER_NAME_KEY);
+        return sanitizePlayerName(stored);
+    } catch (error) {
+        return '';
+    }
+}
+
+function savePlayerName(name) {
+    try {
+        localStorage.setItem(PLAYER_NAME_KEY, sanitizePlayerName(name));
+    } catch (error) {
+        // ignore storage issues
+    }
+}
+
+function getTodayKey() {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
+function formatLeaderboardDate(key) {
+    if (!key) {
+        return '';
+    }
+    const [year, month, day] = key.split('-');
+    const monthNum = parseInt(month, 10) || 0;
+    const dayNum = parseInt(day, 10) || 0;
+    return `${year}年${monthNum}月${dayNum}日`;
+}
+
+function loadDailyScores() {
+    try {
+        const stored = localStorage.getItem(DAILY_SCORES_KEY);
+        const parsed = stored ? JSON.parse(stored) : {};
+        return typeof parsed === 'object' && parsed !== null ? parsed : {};
+    } catch (error) {
+        return {};
+    }
+}
+
+function saveDailyScores(data) {
+    try {
+        localStorage.setItem(DAILY_SCORES_KEY, JSON.stringify(data));
+    } catch (error) {
+        // ignore storage failures
+    }
+}
+
+function getActivePlayerName() {
+    const current = playerNameInput ? sanitizePlayerName(playerNameInput.value) : playerName;
+    const resolved = current || playerName || 'プレイヤー';
+    return resolved;
+}
+
+function refreshLeaderboard() {
+    if (leaderboardDateLabel) {
+        leaderboardDateLabel.textContent = formatLeaderboardDate(getTodayKey());
+    }
+    const todayKey = getTodayKey();
+    const entries = dailyScores[todayKey] || [];
+    renderLeaderboard(entries);
+}
+
+function renderLeaderboard(entries) {
+    if (!dailyLeaderboardList) {
+        return;
+    }
+    dailyLeaderboardList.innerHTML = '';
+    if (!entries || entries.length === 0) {
+        if (leaderboardEmpty) {
+            leaderboardEmpty.classList.remove('hidden');
+        }
+        return;
+    }
+    if (leaderboardEmpty) {
+        leaderboardEmpty.classList.add('hidden');
+    }
+    entries.slice(0, MAX_LEADERBOARD_ENTRIES).forEach((entry, index) => {
+        const item = document.createElement('li');
+        const rank = document.createElement('span');
+        rank.className = 'rank';
+        rank.textContent = String(index + 1);
+        const name = document.createElement('span');
+        name.className = 'name';
+        name.textContent = entry.name || 'プレイヤー';
+        const score = document.createElement('span');
+        score.className = 'score';
+        const scoreValue = Number.isFinite(entry.score) ? entry.score : 0;
+        score.textContent = scoreValue.toLocaleString('ja-JP');
+        item.append(rank, name, score);
+        dailyLeaderboardList.appendChild(item);
+    });
+}
+
+function recordDailyScore(finalScore) {
+    const todayKey = getTodayKey();
+    if (!Number.isFinite(finalScore) || finalScore <= 0) {
+        refreshLeaderboard();
+        return;
+    }
+    const name = getActivePlayerName();
+    playerName = name;
+    savePlayerName(playerName);
+    const entry = {
+        name: playerName,
+        score: finalScore,
+        savedAt: Date.now()
+    };
+    const existing = Array.isArray(dailyScores[todayKey]) ? dailyScores[todayKey].slice() : [];
+    existing.push(entry);
+    existing.sort((a, b) => {
+        if (b.score !== a.score) {
+            return b.score - a.score;
+        }
+        return a.savedAt - b.savedAt;
+    });
+    dailyScores[todayKey] = existing.slice(0, MAX_STORED_ENTRIES_PER_DAY);
+    saveDailyScores(dailyScores);
+    refreshLeaderboard();
+}
+
+
 
 let highScore = loadHighScore();
 if (bestScoreValue) {
     bestScoreValue.textContent = highScore.toLocaleString('en-US');
 }
+
+let playerName = loadPlayerName() || 'プレイヤー';
+if (playerNameInput) {
+    const applyAndPersist = (persist) => {
+        playerName = sanitizePlayerName(playerNameInput.value) || 'プレイヤー';
+        playerNameInput.value = playerName;
+        if (persist) {
+            savePlayerName(playerName);
+        }
+    };
+    playerNameInput.value = playerName;
+    playerNameInput.addEventListener('input', () => {
+        playerName = sanitizePlayerName(playerNameInput.value) || playerName;
+    });
+    playerNameInput.addEventListener('change', () => applyAndPersist(true));
+    playerNameInput.addEventListener('blur', () => applyAndPersist(true));
+}
+let dailyScores = loadDailyScores();
+refreshLeaderboard();
+
 
 configureCanvasResolution(canvas, ctx, BASE_BOARD_WIDTH, BASE_BOARD_HEIGHT);
 configureCanvasResolution(nextCanvas, nextCtx, BASE_PREVIEW_WIDTH, BASE_PREVIEW_HEIGHT);
@@ -369,6 +538,7 @@ function endGame(reason) {
     if (bestScoreValue) {
         bestScoreValue.textContent = highScore.toLocaleString('en-US');
     }
+    recordDailyScore(score);
     captureHighlights.clear();
     captureLineEffects.clear();
     overlay.classList.remove('hidden');
@@ -1083,6 +1253,7 @@ function bindHoldButton(button, action, options = {}) {
             if (button.disabled) {
                 return;
             }
+            lastPointerDownTime = performance.now();
             if (typeof button.setPointerCapture === 'function') {
                 try {
                     button.setPointerCapture(event.pointerId);
@@ -1106,6 +1277,7 @@ function bindHoldButton(button, action, options = {}) {
             if (button.disabled) {
                 return;
             }
+            lastPointerDownTime = performance.now();
             startRunner(event);
         }, { passive: false });
         button.addEventListener('touchend', () => {
@@ -1118,6 +1290,7 @@ function bindHoldButton(button, action, options = {}) {
             if (button.disabled) {
                 return;
             }
+            lastPointerDownTime = performance.now();
             startRunner(event);
         });
         ['mouseup', 'mouseleave', 'blur'].forEach(type => {
@@ -1128,7 +1301,9 @@ function bindHoldButton(button, action, options = {}) {
     }
 
     button.addEventListener('click', event => {
-        if (suppressClick) {
+        const now = performance.now();
+        const recentlyPointer = now - lastPointerDownTime <= POINTER_CLICK_SUPPRESS_MS;
+        if (suppressClick || recentlyPointer) {
             suppressClick = false;
             event.preventDefault();
             return;
