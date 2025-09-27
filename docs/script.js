@@ -82,9 +82,9 @@ const SWIPE_THRESHOLD = CELL_SIZE;
 const effects = [];
 const HIGH_SCORE_KEY = 'goDropHighScore';
 const PLAYER_NAME_KEY = 'goDropPlayerName';
-const DAILY_SCORES_KEY = 'goDropDailyScores';
-const MAX_LEADERBOARD_ENTRIES = 5;
-const MAX_STORED_ENTRIES_PER_DAY = 20;
+const LEADERBOARD_ENDPOINT = 'https://script.google.com/macros/s/AKfycbwgWbujSnffnvNr3HBgbrDi8aI-aEDwcxwIYHsW7UDaDDHZqyeP5fTuUa9EXzmBmaQIDA/exec';
+const LEADERBOARD_LIMIT = 5;
+const LEADERBOARD_TIMEOUT_MS = 6000;
 
 function configureCanvasResolution(canvasElement, context, targetWidth, targetHeight) {
     const ratio = window.devicePixelRatio || 1;
@@ -172,23 +172,6 @@ function formatLeaderboardDate(key) {
     return `${year}年${monthNum}月${dayNum}日`;
 }
 
-function loadDailyScores() {
-    try {
-        const stored = localStorage.getItem(DAILY_SCORES_KEY);
-        const parsed = stored ? JSON.parse(stored) : {};
-        return typeof parsed === 'object' && parsed !== null ? parsed : {};
-    } catch (error) {
-        return {};
-    }
-}
-
-function saveDailyScores(data) {
-    try {
-        localStorage.setItem(DAILY_SCORES_KEY, JSON.stringify(data));
-    } catch (error) {
-        // ignore storage failures
-    }
-}
 
 function getActivePlayerName() {
     const current = playerNameInput ? sanitizePlayerName(playerNameInput.value) : playerName;
@@ -196,13 +179,48 @@ function getActivePlayerName() {
     return resolved;
 }
 
-function refreshLeaderboard() {
-    if (leaderboardDateLabel) {
-        leaderboardDateLabel.textContent = formatLeaderboardDate(getTodayKey());
-    }
+async function refreshLeaderboard() {
     const todayKey = getTodayKey();
-    const entries = dailyScores[todayKey] || [];
-    renderLeaderboard(entries);
+    if (leaderboardDateLabel) {
+        leaderboardDateLabel.textContent = formatLeaderboardDate(todayKey);
+    }
+
+    if (!dailyLeaderboardList) {
+        return;
+    }
+
+    if (leaderboardEmpty) {
+        leaderboardEmpty.textContent = '読み込み中…';
+        leaderboardEmpty.classList.remove('hidden');
+    }
+
+    try {
+        const useAbort = typeof AbortController !== 'undefined';
+        const controller = useAbort ? new AbortController() : null;
+        const timeoutId = useAbort ? setTimeout(() => controller.abort(), LEADERBOARD_TIMEOUT_MS) : null;
+        const response = await fetch(`${LEADERBOARD_ENDPOINT}?date=${encodeURIComponent(todayKey)}&limit=${LEADERBOARD_LIMIT}`, {
+            method: 'GET',
+            mode: 'cors',
+            cache: 'no-store',
+            signal: controller ? controller.signal : undefined
+        });
+        if (timeoutId !== null) {
+            clearTimeout(timeoutId);
+        }
+        if (!response.ok) {
+            throw new Error(`Leaderboard request failed: ${response.status}`);
+        }
+        const payload = await response.json();
+        const entries = Array.isArray(payload.entries) ? payload.entries : [];
+        renderLeaderboard(entries);
+    } catch (error) {
+        console.error('Failed to load leaderboard', error);
+        renderLeaderboard([]);
+        if (leaderboardEmpty) {
+            leaderboardEmpty.textContent = 'ランキングを読み込めませんでした。';
+            leaderboardEmpty.classList.remove('hidden');
+        }
+    }
 }
 
 function renderLeaderboard(entries) {
@@ -212,6 +230,7 @@ function renderLeaderboard(entries) {
     dailyLeaderboardList.innerHTML = '';
     if (!entries || entries.length === 0) {
         if (leaderboardEmpty) {
+            leaderboardEmpty.textContent = 'まだスコアがありません。';
             leaderboardEmpty.classList.remove('hidden');
         }
         return;
@@ -219,29 +238,66 @@ function renderLeaderboard(entries) {
     if (leaderboardEmpty) {
         leaderboardEmpty.classList.add('hidden');
     }
-    entries.slice(0, MAX_LEADERBOARD_ENTRIES).forEach((entry, index) => {
+    entries.slice(0, LEADERBOARD_LIMIT).forEach((entry, index) => {
         const item = document.createElement('li');
         const rank = document.createElement('span');
         rank.className = 'rank';
         rank.textContent = String(index + 1);
         const name = document.createElement('span');
         name.className = 'name';
-        name.textContent = entry.name || 'プレイヤー';
+        const safeName = sanitizePlayerName(entry.name) || 'プレイヤー';
+        name.textContent = safeName;
         const score = document.createElement('span');
         score.className = 'score';
-        const scoreValue = Number.isFinite(entry.score) ? entry.score : 0;
+        const scoreValue = Number.isFinite(entry.score) ? Number(entry.score) : 0;
         score.textContent = scoreValue.toLocaleString('ja-JP');
         item.append(rank, name, score);
         dailyLeaderboardList.appendChild(item);
     });
 }
 
-function recordDailyScore(finalScore) {
-    const todayKey = getTodayKey();
+function submitScore(finalScore) {
     if (!Number.isFinite(finalScore) || finalScore <= 0) {
         refreshLeaderboard();
         return;
     }
+
+    const payload = {
+        name: getActivePlayerName(),
+        score: Math.floor(finalScore),
+        origin: location.hostname
+    };
+
+    playerName = payload.name;
+    savePlayerName(playerName);
+    if (playerNameInput) {
+        playerNameInput.value = playerName;
+    }
+
+    const useAbort = typeof AbortController !== 'undefined';
+    const controller = useAbort ? new AbortController() : null;
+    const timeoutId = useAbort ? setTimeout(() => controller.abort(), LEADERBOARD_TIMEOUT_MS) : null;
+
+    fetch(LEADERBOARD_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        mode: 'cors',
+        cache: 'no-store',
+        body: JSON.stringify(payload),
+        signal: controller ? controller.signal : undefined
+    })
+        .catch(error => {
+            console.error('Failed to submit score', error);
+            setStatusMessage('スコア送信に失敗しました。通信状況を確認してください。');
+        })
+        .finally(() => {
+            if (timeoutId !== null) {
+                clearTimeout(timeoutId);
+            }
+            refreshLeaderboard();
+        });
+}
+
     const name = getActivePlayerName();
     playerName = name;
     savePlayerName(playerName);
@@ -250,19 +306,7 @@ function recordDailyScore(finalScore) {
         score: finalScore,
         savedAt: Date.now()
     };
-    const existing = Array.isArray(dailyScores[todayKey]) ? dailyScores[todayKey].slice() : [];
-    existing.push(entry);
-    existing.sort((a, b) => {
-        if (b.score !== a.score) {
-            return b.score - a.score;
-        }
-        return a.savedAt - b.savedAt;
-    });
-    dailyScores[todayKey] = existing.slice(0, MAX_STORED_ENTRIES_PER_DAY);
-    saveDailyScores(dailyScores);
-    refreshLeaderboard();
-}
-
+    
 
 
 let highScore = loadHighScore();
@@ -286,7 +330,6 @@ if (playerNameInput) {
     playerNameInput.addEventListener('change', () => applyAndPersist(true));
     playerNameInput.addEventListener('blur', () => applyAndPersist(true));
 }
-let dailyScores = loadDailyScores();
 refreshLeaderboard();
 
 
@@ -538,7 +581,7 @@ function endGame(reason) {
     if (bestScoreValue) {
         bestScoreValue.textContent = highScore.toLocaleString('en-US');
     }
-    recordDailyScore(score);
+    submitScore(score);
     captureHighlights.clear();
     captureLineEffects.clear();
     overlay.classList.remove('hidden');
