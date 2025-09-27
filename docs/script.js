@@ -59,9 +59,18 @@ const CAPTURE_EFFECT_CONFIG = {
     }
 };
 
-const CAPTURE_HIGHLIGHT_DURATION = 200;
+const CAPTURE_COLOR_ANIM_DURATION = 400;
+const CAPTURE_LINE_ANIM_DURATION = 500;
+const CAPTURE_HIGHLIGHT_DURATION = CAPTURE_LINE_ANIM_DURATION;
 const captureHighlights = new Map();
+const captureLineEffects = new Map();
+let captureGroupSequence = 0;
 let captureResolutionInProgress = false;
+const CAPTURE_LINE_COLORS = {
+    1: { stroke: 'rgba(58, 137, 255, 0.88)', shadow: 'rgba(152, 206, 255, 0.95)' },
+    2: { stroke: 'rgba(255, 176, 66, 0.92)', shadow: 'rgba(255, 220, 160, 0.95)' }
+};
+
 
 const SWIPE_THRESHOLD = CELL_SIZE;
 const effects = [];
@@ -311,6 +320,7 @@ function startGame() {
     clearBoard();
     effects.length = 0;
     captureHighlights.clear();
+    captureLineEffects.clear();
     captureResolutionInProgress = false;
     score = 0;
     level = 1;
@@ -360,6 +370,7 @@ function endGame(reason) {
         bestScoreValue.textContent = highScore.toLocaleString('en-US');
     }
     captureHighlights.clear();
+    captureLineEffects.clear();
     overlay.classList.remove('hidden');
     startBtn.textContent = 'スタート';
     if (headerStartBtn) {
@@ -611,18 +622,107 @@ function collectCapturingStones(capturedStones, capturingColor) {
 }
 
 function stageCaptureHighlight(groups) {
+    const startedAt = performance.now();
     groups.forEach(group => {
+        const groupId = ++captureGroupSequence;
+        group.groupId = groupId;
+        group.startedAt = startedAt;
         group.captured.forEach(cell => {
-            captureHighlights.set(`${cell.row},${cell.col}`, { type: 'captured' });
+            captureHighlights.set(`${cell.row},${cell.col}`, {
+                type: 'captured',
+                startTime: startedAt,
+                duration: CAPTURE_HIGHLIGHT_DURATION,
+                groupId
+            });
         });
         group.capturing.forEach(cell => {
-            captureHighlights.set(`${cell.row},${cell.col}`, { type: 'capturing' });
+            captureHighlights.set(`${cell.row},${cell.col}`, {
+                type: 'capturing',
+                startTime: startedAt,
+                duration: CAPTURE_HIGHLIGHT_DURATION,
+                groupId,
+                capturingColor: group.capturingColor
+            });
         });
+        stageCaptureLineEffect(group);
+    });
+}
+
+function stageCaptureLineEffect(group) {
+    if (!group || !Array.isArray(group.capturing) || group.capturing.length < 2) {
+        return;
+    }
+
+    const points = [];
+    const seen = new Set();
+    group.capturing.forEach(cell => {
+        const { x, y } = boardToCanvasPosition(cell.row, cell.col);
+        const key = `${x.toFixed(2)},${y.toFixed(2)}`;
+        if (seen.has(key)) {
+            return;
+        }
+        seen.add(key);
+        points.push({ x, y });
+    });
+
+    if (points.length < 2) {
+        return;
+    }
+
+    const centroid = points.reduce((acc, point) => {
+        acc.x += point.x;
+        acc.y += point.y;
+        return acc;
+    }, { x: 0, y: 0 });
+    centroid.x /= points.length;
+    centroid.y /= points.length;
+
+    const sorted = points.slice().sort((a, b) => {
+        const angleA = Math.atan2(a.y - centroid.y, a.x - centroid.x);
+        const angleB = Math.atan2(b.y - centroid.y, b.x - centroid.x);
+        return angleA - angleB;
+    });
+
+    if (sorted.length < 2) {
+        return;
+    }
+
+    const segments = [];
+    let totalLength = 0;
+    for (let index = 0; index < sorted.length; index += 1) {
+        const from = sorted[index];
+        const to = sorted[(index + 1) % sorted.length];
+        const length = Math.hypot(to.x - from.x, to.y - from.y);
+        if (length === 0) {
+            continue;
+        }
+        segments.push({ from, to, length });
+        totalLength += length;
+    }
+
+    if (segments.length === 0 || totalLength === 0) {
+        return;
+    }
+
+    const colorConfig = CAPTURE_LINE_COLORS[group.capturingColor] || CAPTURE_LINE_COLORS[1];
+
+    captureLineEffects.set(group.groupId, {
+        groupId: group.groupId,
+        startTime: group.startedAt,
+        duration: CAPTURE_LINE_ANIM_DURATION,
+        segments,
+        totalLength,
+        strokeStyle: colorConfig.stroke,
+        shadowColor: colorConfig.shadow,
+        lineWidth: CELL_SIZE * 0.18
     });
 }
 
 function clearCaptureHighlights(groups) {
     groups.forEach(group => {
+        if (group.groupId) {
+            captureLineEffects.delete(group.groupId);
+        }
         group.captured.forEach(cell => {
             captureHighlights.delete(`${cell.row},${cell.col}`);
         });
@@ -1124,6 +1224,7 @@ function draw() {
         drawGhost(currentPiece);
         drawPiece(currentPiece);
     }
+    drawCaptureLineEffects();
     drawEffects();
 }
 
@@ -1133,6 +1234,65 @@ function drawBoardBackground() {
     gradient.addColorStop(1, 'rgba(214, 176, 128, 0.92)');
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, BOARD_PIXEL_WIDTH, BOARD_PIXEL_HEIGHT);
+}
+
+function drawCaptureLineEffects() {
+    if (captureLineEffects.size === 0) {
+        return;
+    }
+
+    const now = performance.now();
+    const finished = [];
+
+    captureLineEffects.forEach((effect, groupId) => {
+        const elapsed = now - effect.startTime;
+        const progress = Math.min(elapsed / effect.duration, 1);
+        if (progress <= 0) {
+            return;
+        }
+
+        const easedProgress = progress < 1 ? progress * progress * (3 - 2 * progress) : 1;
+        const totalToDraw = effect.totalLength * easedProgress;
+
+        ctx.save();
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.strokeStyle = effect.strokeStyle;
+        ctx.lineWidth = effect.lineWidth * (0.85 + 0.35 * (1 - progress));
+        ctx.shadowColor = effect.shadowColor;
+        ctx.shadowBlur = effect.lineWidth * 1.4;
+        ctx.globalAlpha = 0.9;
+
+        ctx.beginPath();
+        let remaining = totalToDraw;
+        let started = false;
+        for (const segment of effect.segments) {
+            if (!started) {
+                ctx.moveTo(segment.from.x, segment.from.y);
+                started = true;
+            }
+            if (remaining >= segment.length) {
+                ctx.lineTo(segment.to.x, segment.to.y);
+                remaining -= segment.length;
+            } else {
+                const t = segment.length === 0 ? 0 : remaining / segment.length;
+                const partialX = segment.from.x + (segment.to.x - segment.from.x) * t;
+                const partialY = segment.from.y + (segment.to.y - segment.from.y) * t;
+                ctx.lineTo(partialX, partialY);
+                break;
+            }
+        }
+        ctx.stroke();
+        ctx.restore();
+
+        if (progress >= 1) {
+            finished.push(groupId);
+        }
+    });
+
+    finished.forEach(groupId => {
+        captureLineEffects.delete(groupId);
+    });
 }
 
 function drawGridLines() {
@@ -1201,37 +1361,57 @@ function drawStoneOnBoard(row, col, color, alpha) {
     const cy = GRID_MARGIN + row * CELL_SIZE;
     const highlight = captureHighlights.get(`${row},${col}`);
     if (highlight) {
-        drawHighlightedStone(ctx, cx, cy, CELL_SIZE * 0.42, highlight.type, color);
+        drawHighlightedStone(ctx, cx, cy, CELL_SIZE * 0.42, color, highlight);
         return;
     }
     drawStone(ctx, cx, cy, CELL_SIZE * 0.42, color, alpha);
 }
 
-function drawHighlightedStone(context, cx, cy, radius, type, baseColor) {
+function drawHighlightedStone(context, cx, cy, radius, baseColor, highlight) {
+    const now = performance.now();
+    const elapsed = now - (highlight.startTime || 0);
+    const colorProgress = Math.min(elapsed / CAPTURE_COLOR_ANIM_DURATION, 1);
+    const glowProgress = Math.min(elapsed / CAPTURE_LINE_ANIM_DURATION, 1);
+
+    drawStone(context, cx, cy, radius, baseColor, 1);
+
     context.save();
     const gradient = context.createRadialGradient(
-        cx - radius * 0.3,
-        cy - radius * 0.3,
-        radius * 0.25,
+        cx - radius * 0.35,
+        cy - radius * 0.35,
+        radius * 0.15,
         cx,
         cy,
         radius
     );
-    if (type === 'captured') {
-        gradient.addColorStop(0, '#ffdca1');
-        gradient.addColorStop(1, '#ff6b4a');
+    if (highlight.type === 'captured') {
+        gradient.addColorStop(0, '#ffe8c2');
+        gradient.addColorStop(1, '#ff824d');
     } else {
-        gradient.addColorStop(0, '#9df2ff');
-        gradient.addColorStop(1, '#2a9dff');
+        gradient.addColorStop(0, '#c9f0ff');
+        gradient.addColorStop(1, '#3ec5ff');
     }
+    const alpha = highlight.type === 'captured' ? colorProgress : Math.max(glowProgress * 0.9, 0.3);
+    context.globalCompositeOperation = 'lighter';
+    context.globalAlpha = alpha;
     context.fillStyle = gradient;
+    context.shadowColor = highlight.type === 'captured' ? 'rgba(255, 150, 60, 0.8)' : 'rgba(90, 200, 255, 0.75)';
+    context.shadowBlur = radius * (1.2 + glowProgress * 0.6);
     context.beginPath();
     context.arc(cx, cy, radius, 0, Math.PI * 2);
     context.fill();
-    context.strokeStyle = type === 'captured' ? 'rgba(255, 120, 40, 0.85)' : 'rgba(60, 150, 255, 0.85)';
-    context.lineWidth = radius * 0.18;
-    context.stroke();
     context.restore();
+
+    if (highlight.type === 'captured' && colorProgress < 1) {
+        context.save();
+        context.globalCompositeOperation = 'source-atop';
+        context.globalAlpha = colorProgress * 0.5;
+        context.fillStyle = 'rgba(255, 180, 120, 0.8)';
+        context.beginPath();
+        context.arc(cx, cy, radius, 0, Math.PI * 2);
+        context.fill();
+        context.restore();
+    }
 }
 
 function drawStone(context, cx, cy, radius, color, alpha = 1) {
