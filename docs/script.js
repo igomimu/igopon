@@ -1290,7 +1290,11 @@ function bindHoldButton(button, action, options = {}) {
             if (button.disabled) {
                 return;
             }
-            lastPointerDownTime = performance.now();
+            const now = performance.now();
+            if (now - lastPointerDownTime <= POINTER_CLICK_SUPPRESS_MS) {
+                return;
+            }
+            lastPointerDownTime = now;
             startRunner(event);
         });
         ['mouseup', 'mouseleave', 'blur'].forEach(type => {
