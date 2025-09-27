@@ -47,6 +47,22 @@
                 <h2>次のグループ</h2>
                 <canvas id="nextPiece" width="150" height="150" aria-label="次のピースプレビュー"></canvas>
             </section>
+            <section class="player-panel">
+                <h2>プレイヤー</h2>
+                <label for="playerNameInput" class="player-name-label">名前</label>
+                <input type="text" id="playerNameInput" maxlength="20" placeholder="プレイヤー名" autocomplete="name">
+            </section>
+            <section class="leaderboard-panel" aria-live="polite">
+                <h2>本日のハイスコア</h2>
+                <p id="leaderboardDate" class="leaderboard-date"></p>
+                <p id="leaderboardEmpty" class="leaderboard-empty">まだスコアがありません。</p>
+                <ol id="dailyLeaderboard" class="leaderboard-list"></ol>
+            </section>
+                <h2>ステータス</h2>
+                <ul class="stat-list">
+                    <li>スコア: <span id="scoreValue">0</span></li>
+                    <li>レベル: <span id="levelValue">1</span></li>
+                    <li>チェイン: <span id="chainValue">0</span></li>
             <section class="stats-panel">
                 <h2>ステータス</h2>
                 <ul class="stat-list">
@@ -58,16 +74,10 @@
                     <li>配置したピース: <span id="piecesValue">0</span></li>
                 </ul>
             </section>
-            <section class="player-panel">
-                <h2>プレイヤー</h2>
-                <label for="playerNameInput" class="player-name-label">名前</label>
-                <input type="text" id="playerNameInput" maxlength="20" placeholder="プレイヤー名" autocomplete="name">
-            </section>
-            <section class="leaderboard-panel" aria-live="polite">
-                <h2>本日のハイスコア</h2>
-                <p id="leaderboardDate" class="leaderboard-date"></p>
-                <p id="leaderboardEmpty" class="leaderboard-empty">まだスコアがありません。</p>
-                <ol id="dailyLeaderboard" class="leaderboard-list"></ol>
+                    <li>黒の捕獲数: <span id="blackCaptureValue">0</span></li>
+                    <li>白の捕獲数: <span id="whiteCaptureValue">0</span></li>
+                    <li>配置したピース: <span id="piecesValue">0</span></li>
+                </ul>
             </section>
             <section class="control-panel">
                 <button id="startBtn" type="button">スタート</button>

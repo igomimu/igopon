@@ -412,3 +412,25 @@ button:not(:disabled):hover {
 .hidden {
     display: none !important;
 }
+
+.player-panel, .leaderboard-panel {
+    border: 1px solid rgba(74, 56, 28, 0.3);
+    box-shadow: 0 16px 28px rgba(46, 36, 20, 0.18);
+    background: linear-gradient(160deg, rgba(248, 242, 215, 0.98), rgba(232, 216, 177, 0.92));
+}
+.player-panel h2, .leaderboard-panel h2 {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1.2rem;
+    color: #2b2615;
+}
+.player-panel h2::before {
+    content: '\1f464';
+}
+.leaderboard-panel h2::before {
+    content: '\1f3c6';
+}
+.sidebar section + section {
+    margin-top: 0.8rem;
+}
