@@ -99,7 +99,8 @@ body {
 
 .board-panel {
     position: relative;
-    align-self: center;
+    align-self: flex-start;
+    margin-top: 0;
     background: linear-gradient(135deg, rgba(248, 242, 215, 0.95), rgba(235, 223, 191, 0.9));
     border-radius: 18px;
     border: 1px solid rgba(104, 82, 45, 0.3);
