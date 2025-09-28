@@ -1725,6 +1725,12 @@ function handleKeyDown(event) {
         return;
     }
 
+    const target = event.target;
+    const tagName = target && target.tagName ? target.tagName.toUpperCase() : '';
+    if (tagName === 'INPUT' || tagName === 'TEXTAREA') {
+        return;
+    }
+
     if (!gameActive || paused || !currentPiece) {
         return;
     }
@@ -1778,10 +1784,19 @@ document.addEventListener('keydown', handleKeyDown);
 if (headerStartBtn) {
     const triggerStart = () => {
         startGame();
+        headerStartBtn.blur();
+        if (startBtn) {
+            startBtn.blur();
+        }
     };
     headerStartBtn.addEventListener('click', event => {
         event.preventDefault();
         triggerStart();
+    });
+    headerStartBtn.addEventListener('keydown', event => {
+        if (event.code === 'Space' || event.code === 'Enter') {
+            event.preventDefault();
+        }
     });
     if (SUPPORTS_POINTER) {
         headerStartBtn.addEventListener('pointerdown', event => {
@@ -1797,14 +1812,30 @@ if (headerStartBtn) {
         }, { passive: false });
     }
 }
-startBtn.addEventListener('click', () => {
+startBtn.addEventListener('click', event => {
+    event.preventDefault();
     startGame();
+    startBtn.blur();
+    if (headerStartBtn) {
+        headerStartBtn.blur();
+    }
+});
+startBtn.addEventListener('keydown', event => {
+    if (event.code === 'Space' || event.code === 'Enter') {
+        event.preventDefault();
+    }
 });
 pauseBtn.addEventListener('click', () => {
     togglePause();
 });
-restartBtn.addEventListener('click', () => {
+restartBtn.addEventListener('click', event => {
+    event.preventDefault();
     startGame();
+    restartBtn.blur();
+    startBtn.blur();
+    if (headerStartBtn) {
+        headerStartBtn.blur();
+    }
 });
 document.addEventListener('visibilitychange', () => {
     if (document.hidden && gameActive && !paused) {
