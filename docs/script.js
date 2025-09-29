@@ -82,7 +82,7 @@ const SWIPE_THRESHOLD = CELL_SIZE;
 const effects = [];
 const HIGH_SCORE_KEY = 'goDropHighScore';
 const PLAYER_NAME_KEY = 'goDropPlayerName';
-const LEADERBOARD_ENDPOINT = 'https://script.google.com/macros/s/AKfycbwgWbujSnffnvNr3HBgbrDi8aI-aEDwcxwIYHsW7UDaDDHZqyeP5fTuUa9EXzmBmaQIDA/exec';
+const API_BASE = 'https://script.google.com/macros/s/AKfycbwcZpx3SLF1z8jTOL6lHeayA4eWzIDGAjzc_fXIffIGyAOliZuiMxVrfV3682ACfT5g/exec';
 const LEADERBOARD_LIMIT = 5;
 const LEADERBOARD_TIMEOUT_MS = 6000;
 
@@ -198,7 +198,7 @@ async function refreshLeaderboard() {
         const useAbort = typeof AbortController !== 'undefined';
         const controller = useAbort ? new AbortController() : null;
         const timeoutId = useAbort ? setTimeout(() => controller.abort(), LEADERBOARD_TIMEOUT_MS) : null;
-        const response = await fetch(`${LEADERBOARD_ENDPOINT}?date=${encodeURIComponent(todayKey)}&limit=${LEADERBOARD_LIMIT}`, {
+        const response = await fetch(`${API_BASE}?date=${encodeURIComponent(todayKey)}&limit=${LEADERBOARD_LIMIT}`, {
             method: 'GET',
             mode: 'cors',
             cache: 'no-store',
@@ -278,9 +278,8 @@ function submitScore(finalScore) {
     const controller = useAbort ? new AbortController() : null;
     const timeoutId = useAbort ? setTimeout(() => controller.abort(), LEADERBOARD_TIMEOUT_MS) : null;
 
-    fetch(LEADERBOARD_ENDPOINT, {
+    fetch(API_BASE, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         mode: 'cors',
         cache: 'no-store',
         body: JSON.stringify(payload),
