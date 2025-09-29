@@ -126,10 +126,11 @@ function saveHighScore(value) {
     }
 }
 function sanitizePlayerName(value) {
-    if (!value) {
+    if (value === null || value === undefined) {
         return '';
     }
-    return value
+    const text = String(value);
+    return text
         .replace(/[\r\n\t]/g, ' ')
         .replace(/\s{2,}/g, ' ')
         .replace(/[<>]/g, '')
@@ -245,7 +246,8 @@ function renderLeaderboard(entries) {
         rank.textContent = String(index + 1);
         const name = document.createElement('span');
         name.className = 'name';
-        const safeName = sanitizePlayerName(entry.name) || 'プレイヤー';
+        const rawName = entry.name ?? entry.playerName ?? entry.player ?? entry.displayName ?? entry.nickname ?? '';
+        const safeName = sanitizePlayerName(rawName) || 'プレイヤー';
         name.textContent = safeName;
         const score = document.createElement('span');
         score.className = 'score';
@@ -262,14 +264,16 @@ function submitScore(finalScore) {
         return;
     }
 
+    const activeName = getActivePlayerName();
     const payload = {
-        name: getActivePlayerName(),
+        name: activeName,
+        playerName: activeName,
         score: Math.floor(finalScore),
         origin: location.hostname
     };
 
-    playerName = payload.name;
-    savePlayerName(playerName);
+    playerName = activeName;
+    savePlayerName(activeName);
     if (playerNameInput) {
         playerNameInput.value = playerName;
     }
@@ -1868,4 +1872,6 @@ requestAnimationFrame(gameLoop);
 
 updateStats();
 updatePreview();
+
+
 
