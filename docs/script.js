@@ -9,6 +9,30 @@ const DIRECTIONS = [
     [0, -1]
 ];
 
+const CELL_EMPTY = 0;
+const CELL_BLACK = 1;
+const CELL_WHITE = 2;
+const CELL_BLOCK_BLACK = 3;
+const CELL_BLOCK_WHITE = 4;
+const CELL_EYE_BLACK = 5;
+const CELL_EYE_WHITE = 6;
+
+const MIN_PIECES_BEFORE_EYE_FRAME = 10;
+const EYE_FRAME_DROP_CHANCE = 0.18;
+const EYE_FRAME_COOLDOWN_PIECES = 3;
+
+const EYE_FRAME_CENTER_OFFSET = { row: 0, col: 0 };
+const EYE_FRAME_RING_OFFSETS = [
+    { row: -1, col: -1 },
+    { row: 0, col: -1 },
+    { row: 1, col: -1 },
+    { row: -1, col: 0 },
+    { row: 1, col: 0 },
+    { row: -1, col: 1 },
+    { row: 0, col: 1 },
+    { row: 1, col: 1 }
+];
+
 const canvas = document.getElementById('board');
 const ctx = canvas.getContext('2d');
 const nextCanvas = document.getElementById('nextPiece');
@@ -99,7 +123,17 @@ function configureCanvasResolution(canvasElement, context, targetWidth, targetHe
     context.setTransform(ratio, 0, 0, ratio, 0, 0);
 }
 
-const board = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
+const board = Array.from({ length: ROWS }, () => Array(COLS).fill(CELL_EMPTY));
+const lockedCells = Array.from({ length: ROWS }, () => Array(COLS).fill(false));
+
+function shuffleArray(array) {
+    for (let index = array.length - 1; index > 0; index -= 1) {
+        const swapIndex = Math.floor(Math.random() * (index + 1));
+        const temp = array[index];
+        array[index] = array[swapIndex];
+        array[swapIndex] = temp;
+    }
+}
 
 const BASE_BOARD_WIDTH = canvas.width;
 const BASE_BOARD_HEIGHT = canvas.height;
@@ -416,6 +450,8 @@ let score = 0;
 let level = 1;
 let chain = 0;
 let piecesPlaced = 0;
+let eyeFrameCooldown = 0;
+let eyeFrameFirstDropPending = true;
 let captures = { black: 0, white: 0 };
 let dropInterval = BASE_DROP_INTERVAL;
 let dropAccumulator = 0;
@@ -511,10 +547,15 @@ function randomTemplate() {
     return PIECE_TEMPLATES[index];
 }
 
+function isLockedCell(row, col) {
+    return lockedCells[row][col];
+}
+
 function clearBoard() {
     for (let row = 0; row < ROWS; row += 1) {
         for (let col = 0; col < COLS; col += 1) {
-            board[row][col] = 0;
+            board[row][col] = CELL_EMPTY;
+            lockedCells[row][col] = false;
         }
     }
 }
@@ -529,6 +570,8 @@ function startGame() {
     level = 1;
     chain = 0;
     piecesPlaced = 0;
+    eyeFrameCooldown = 0;
+    eyeFrameFirstDropPending = true;
     captures = { black: 0, white: 0 };
     dropInterval = BASE_DROP_INTERVAL;
     dropAccumulator = 0;
@@ -622,7 +665,7 @@ function isValidPosition(piece, offsetRow, offsetCol) {
         if (targetRow < 0) {
             return true;
         }
-        return board[targetRow][targetCol] === 0;
+        return board[targetRow][targetCol] === CELL_EMPTY;
     });
 }
 
@@ -705,8 +748,15 @@ function lockPiece() {
             setStatusMessage(`レベル${level}。落下間隔 ${(dropInterval / 1000).toFixed(2)}秒。`);
         }
 
+        maybeSpawnEyeFrameStamp();
+
         updateStats();
         captureResolutionInProgress = false;
+
+        if (!gameActive) {
+            refreshMobileControls();
+            return;
+        }
 
         if (!spawnNewPiece()) {
             refreshMobileControls();
@@ -741,7 +791,7 @@ function settleBoardWithHighlights(onComplete) {
             clearCaptureHighlights(result.groups);
             result.groups.forEach(group => {
                 group.captured.forEach(cell => {
-                    board[cell.row][cell.col] = 0;
+                    board[cell.row][cell.col] = CELL_EMPTY;
                 });
             });
             applyGravity();
@@ -750,6 +800,19 @@ function settleBoardWithHighlights(onComplete) {
     }
 
     processLoop();
+}
+
+function isEyeCell(value) {
+    return value === CELL_EYE_BLACK || value === CELL_EYE_WHITE;
+}
+
+function eyeMatchesColor(eyeValue, stoneColor) {
+    return (eyeValue === CELL_EYE_BLACK && stoneColor === CELL_BLACK) ||
+        (eyeValue === CELL_EYE_WHITE && stoneColor === CELL_WHITE);
+}
+
+function isObstacleCell(value) {
+    return isEyeCell(value);
 }
 
 function resolveCapturesOnce() {
@@ -762,17 +825,20 @@ function resolveCapturesOnce() {
     for (let row = 0; row < ROWS; row += 1) {
         for (let col = 0; col < COLS; col += 1) {
             const stone = board[row][col];
-            if (stone === 0) {
+            if (stone === CELL_EMPTY || isObstacleCell(stone)) {
                 continue;
             }
-            const key = `${row},${col}`;
+            const key = row + ',' + col;
             if (visited.has(key)) {
                 continue;
             }
 
-            const { stones, liberties } = evaluateGroup(row, col, stone, visited);
-            if (liberties === 0) {
-                const capturingColor = stone === 1 ? 2 : 1;
+            const result = evaluateGroup(row, col, stone, visited);
+            const stones = result.stones;
+            const liberties = result.liberties;
+            const hasEyeSupport = result.hasEyeSupport;
+            if (liberties === 0 && !hasEyeSupport) {
+                const capturingColor = stone === CELL_BLACK ? CELL_WHITE : CELL_BLACK;
                 const capturedGroup = stones.map(cell => ({ ...cell }));
                 groups.push({
                     captured: capturedGroup,
@@ -784,7 +850,7 @@ function resolveCapturesOnce() {
                     removedStones.push({ ...capturedCell, color: stone });
                 });
                 removed += capturedGroup.length;
-                if (stone === 1) {
+                if (stone === CELL_BLACK) {
                     captureTotals.white += capturedGroup.length;
                 } else {
                     captureTotals.black += capturedGroup.length;
@@ -1087,13 +1153,18 @@ function evaluateGroup(row, col, color, visited) {
     const queue = [[row, col]];
     const stones = [];
     const libertySet = new Set();
-    visited.add(`${row},${col}`);
+    let hasEyeSupport = false;
+    visited.add(row + ',' + col);
 
     while (queue.length > 0) {
-        const [currentRow, currentCol] = queue.shift();
+        const current = queue.shift();
+        const currentRow = current[0];
+        const currentCol = current[1];
         stones.push({ row: currentRow, col: currentCol });
 
-        DIRECTIONS.forEach(([dRow, dCol]) => {
+        DIRECTIONS.forEach(direction => {
+            const dRow = direction[0];
+            const dCol = direction[1];
             const nextRow = currentRow + dRow;
             const nextCol = currentCol + dCol;
 
@@ -1102,10 +1173,14 @@ function evaluateGroup(row, col, color, visited) {
             }
 
             const space = board[nextRow][nextCol];
-            if (space === 0) {
-                libertySet.add(`${nextRow},${nextCol}`);
+            if (space === CELL_EMPTY) {
+                libertySet.add(nextRow + ',' + nextCol);
+            } else if (isEyeCell(space)) {
+                if (eyeMatchesColor(space, color)) {
+                    hasEyeSupport = true;
+                }
             } else if (space === color) {
-                const key = `${nextRow},${nextCol}`;
+                const key = nextRow + ',' + nextCol;
                 if (!visited.has(key)) {
                     visited.add(key);
                     queue.push([nextRow, nextCol]);
@@ -1116,21 +1191,181 @@ function evaluateGroup(row, col, color, visited) {
 
     return {
         stones,
-        liberties: libertySet.size
+        liberties: libertySet.size,
+        hasEyeSupport
     };
 }
 
 function applyGravity() {
     for (let col = 0; col < COLS; col += 1) {
-        let writeRow = ROWS - 1;
+        const newColumn = new Array(ROWS).fill(CELL_EMPTY);
+        const newLocked = new Array(ROWS).fill(false);
+
         for (let row = ROWS - 1; row >= 0; row -= 1) {
-            if (board[row][col] !== 0) {
-                const value = board[row][col];
-                board[row][col] = 0;
-                board[writeRow][col] = value;
-                writeRow -= 1;
+            if (lockedCells[row][col]) {
+                newColumn[row] = board[row][col];
+                newLocked[row] = true;
             }
         }
+
+        let writeRow = ROWS - 1;
+        for (let row = ROWS - 1; row >= 0; row -= 1) {
+            if (lockedCells[row][col] || board[row][col] === CELL_EMPTY) {
+                continue;
+            }
+            while (writeRow >= 0 && newLocked[writeRow]) {
+                writeRow -= 1;
+            }
+            if (writeRow < 0) {
+                break;
+            }
+            newColumn[writeRow] = board[row][col];
+            newLocked[writeRow] = false;
+            writeRow -= 1;
+        }
+
+        for (let row = 0; row < ROWS; row += 1) {
+            board[row][col] = newColumn[row];
+            lockedCells[row][col] = newLocked[row];
+        }
+    }
+}
+
+function maybeSpawnEyeFrameStamp() {
+    if (!gameActive) {
+        return false;
+    }
+    if (piecesPlaced < MIN_PIECES_BEFORE_EYE_FRAME) {
+        return false;
+    }
+    if (eyeFrameFirstDropPending) {
+        const success = spawnEyeFrameStamp(true);
+        eyeFrameFirstDropPending = false;
+        if (!success) {
+            endGame('眼フレームを配置できませんでした');
+            return false;
+        }
+        eyeFrameCooldown = EYE_FRAME_COOLDOWN_PIECES;
+        return true;
+    }
+    if (eyeFrameCooldown > 0) {
+        eyeFrameCooldown -= 1;
+        return false;
+    }
+    if (Math.random() > EYE_FRAME_DROP_CHANCE) {
+        return false;
+    }
+    if (spawnEyeFrameStamp(false)) {
+        eyeFrameCooldown = EYE_FRAME_COOLDOWN_PIECES;
+        return true;
+    }
+    endGame('眼フレームを配置できませんでした');
+    return false;
+}
+
+function spawnEyeFrameStamp(forceCenter) {
+    const stoneColor = Math.random() < 0.5 ? CELL_BLACK : CELL_WHITE;
+    const candidateColumns = [];
+    for (let col = 1; col < COLS - 1; col += 1) {
+        candidateColumns.push(col);
+    }
+    if (forceCenter) {
+        const center = Math.floor(COLS / 2);
+        shuffleArray(candidateColumns);
+        const index = candidateColumns.indexOf(center);
+        if (index !== -1) {
+            candidateColumns.splice(index, 1);
+            candidateColumns.unshift(center);
+        }
+    } else {
+        shuffleArray(candidateColumns);
+    }
+
+    for (let index = 0; index < candidateColumns.length; index += 1) {
+        const column = candidateColumns[index];
+        const dropRow = computeEyeFrameDropRow(column);
+        if (dropRow === null) {
+            continue;
+        }
+        placeEyeFrame(dropRow, column, stoneColor);
+        handleEyeFrameAfterDrop();
+        return true;
+    }
+    return false;
+}
+
+function computeEyeFrameDropRow(centerCol) {
+    let centerRow = 1;
+    if (!canPlaceEyeFrame(centerRow, centerCol)) {
+        return null;
+    }
+    while (canPlaceEyeFrame(centerRow + 1, centerCol)) {
+        centerRow += 1;
+    }
+    return centerRow;
+}
+
+function canPlaceEyeFrame(centerRow, centerCol) {
+    if (centerCol <= 0 || centerCol >= COLS - 1) {
+        return false;
+    }
+    if (centerRow <= 0 || centerRow >= ROWS - 1) {
+        return false;
+    }
+    const offsets = [EYE_FRAME_CENTER_OFFSET].concat(EYE_FRAME_RING_OFFSETS);
+    for (let i = 0; i < offsets.length; i += 1) {
+        const offset = offsets[i];
+        const targetRow = centerRow + offset.row;
+        const targetCol = centerCol + offset.col;
+        if (targetRow < 0 || targetRow >= ROWS || targetCol < 0 || targetCol >= COLS) {
+            return false;
+        }
+        if (board[targetRow][targetCol] !== CELL_EMPTY || lockedCells[targetRow][targetCol]) {
+            return false;
+        }
+    }
+    return true;
+}
+
+function placeEyeFrame(centerRow, centerCol, stoneColor) {
+    const eyeValue = stoneColor === CELL_BLACK ? CELL_EYE_BLACK : CELL_EYE_WHITE;
+    board[centerRow][centerCol] = eyeValue;
+    lockedCells[centerRow][centerCol] = true;
+    for (let i = 0; i < EYE_FRAME_RING_OFFSETS.length; i += 1) {
+        const offset = EYE_FRAME_RING_OFFSETS[i];
+        const targetRow = centerRow + offset.row;
+        const targetCol = centerCol + offset.col;
+        board[targetRow][targetCol] = stoneColor;
+        lockedCells[targetRow][targetCol] = true;
+    }
+}
+
+function handleEyeFrameAfterDrop() {
+    chain = 0;
+    setStatusMessage('色付き眼フレームが落ちてきた！');
+    resolveEyeFrameConflicts();
+}
+
+function resolveEyeFrameConflicts() {
+    let changed = false;
+    while (true) {
+        const result = resolveCapturesOnce();
+        if (result.groups.length === 0) {
+            break;
+        }
+        changed = true;
+        result.groups.forEach(group => {
+            group.captured.forEach(cell => {
+                if (!lockedCells[cell.row][cell.col]) {
+                    board[cell.row][cell.col] = CELL_EMPTY;
+                }
+            });
+        });
+        applyGravity();
+    }
+    if (changed) {
+        captureHighlights.clear();
+        captureLineEffects.clear();
     }
 }
 
@@ -1569,15 +1804,26 @@ function drawGhost(piece) {
     });
 }
 
-function drawStoneOnBoard(row, col, color, alpha) {
+function drawStoneOnBoard(row, col, value, alpha) {
     const cx = GRID_MARGIN + col * CELL_SIZE;
     const cy = GRID_MARGIN + row * CELL_SIZE;
-    const highlight = captureHighlights.get(`${row},${col}`);
-    if (highlight) {
-        drawHighlightedStone(ctx, cx, cy, CELL_SIZE * 0.42, color, highlight);
+
+    if (value === CELL_BLOCK_BLACK || value === CELL_BLOCK_WHITE) {
+        const baseColor = value === CELL_BLOCK_BLACK ? CELL_BLACK : CELL_WHITE;
+        drawStone(ctx, cx, cy, CELL_SIZE * 0.42, baseColor, alpha);
         return;
     }
-    drawStone(ctx, cx, cy, CELL_SIZE * 0.42, color, alpha);
+    if (value === CELL_EYE_BLACK || value === CELL_EYE_WHITE) {
+        drawEyeStone(ctx, cx, cy, CELL_SIZE * 0.42, value, alpha);
+        return;
+    }
+
+    const highlight = captureHighlights.get(`${row},${col}`);
+    if (highlight) {
+        drawHighlightedStone(ctx, cx, cy, CELL_SIZE * 0.42, value, highlight);
+        return;
+    }
+    drawStone(ctx, cx, cy, CELL_SIZE * 0.42, value, alpha);
 }
 
 function drawHighlightedStone(context, cx, cy, radius, baseColor, highlight) {
@@ -1655,6 +1901,55 @@ function drawStone(context, cx, cy, radius, color, alpha = 1) {
     context.strokeStyle = 'rgba(0, 0, 0, 0.22)';
     context.lineWidth = radius * 0.12;
     context.stroke();
+    context.restore();
+}
+*/
+
+/* function drawObstacleBlock(context, cx, cy, value, alpha) {
+    const blockSize = CELL_SIZE * 0.72;
+    const left = cx - blockSize / 2;
+    const top = cy - blockSize / 2;
+    const fill = value === CELL_BLOCK_BLACK ? '#353b4a' : '#d8cba7';
+    const border = value === CELL_BLOCK_BLACK ? 'rgba(18, 20, 30, 0.85)' : 'rgba(132, 120, 90, 0.9)';
+    const inner = value === CELL_BLOCK_BLACK ? 'rgba(255, 255, 255, 0.16)' : 'rgba(255, 255, 255, 0.32)';
+    context.save();
+    context.globalAlpha = alpha;
+    context.fillStyle = fill;
+    context.fillRect(left, top, blockSize, blockSize);
+    context.strokeStyle = border;
+    context.lineWidth = CELL_SIZE * 0.08;
+    context.strokeRect(left, top, blockSize, blockSize);
+    const innerSize = blockSize * 0.56;
+    const innerLeft = cx - innerSize / 2;
+    const innerTop = cy - innerSize / 2;
+    context.strokeStyle = inner;
+    context.lineWidth = CELL_SIZE * 0.05;
+    context.strokeRect(innerLeft, innerTop, innerSize, innerSize);
+    context.restore();
+}
+
+function drawEyeStone(context, cx, cy, radius, eyeValue, alpha) {
+    const baseColor = eyeValue === CELL_EYE_BLACK ? CELL_BLACK : CELL_WHITE;
+    drawStone(context, cx, cy, radius, baseColor, alpha);
+    context.save();
+    context.globalAlpha = alpha;
+    const irisRadius = radius * 0.48;
+    context.fillStyle = eyeValue === CELL_EYE_BLACK ? 'rgba(58, 150, 222, 0.85)' : 'rgba(238, 204, 90, 0.88)';
+    context.beginPath();
+    context.arc(cx, cy, irisRadius, 0, Math.PI * 2);
+    context.fill();
+    context.strokeStyle = 'rgba(255, 255, 255, 0.75)';
+    context.lineWidth = radius * 0.16;
+    context.beginPath();
+    context.moveTo(cx - irisRadius * 0.55, cy);
+    context.lineTo(cx + irisRadius * 0.55, cy);
+    context.moveTo(cx, cy - irisRadius * 0.55);
+    context.lineTo(cx, cy + irisRadius * 0.55);
+    context.stroke();
+    context.fillStyle = 'rgba(255, 255, 255, 0.68)';
+    context.beginPath();
+    context.arc(cx, cy, irisRadius * 0.35, 0, Math.PI * 2);
+    context.fill();
     context.restore();
 }
 
