@@ -791,7 +791,9 @@ function settleBoardWithHighlights(onComplete) {
             clearCaptureHighlights(result.groups);
             result.groups.forEach(group => {
                 group.captured.forEach(cell => {
-                    board[cell.row][cell.col] = CELL_EMPTY;
+                    if (!lockedCells[cell.row][cell.col]) {
+                        board[cell.row][cell.col] = CELL_EMPTY;
+                    }
                 });
             });
             applyGravity();
