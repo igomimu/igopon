@@ -53,8 +53,8 @@ function createEyeFramePiecePrototype(stoneColor) {
             row: 1,
             col: 1,
             color: stoneColor,
-            boardValue: eyeBoardValue,
-            drawValue: eyeBoardValue,
+            boardValue: CELL_EMPTY,
+            drawValue: null,
             lockOnPlace: true
         }
     ];
@@ -1659,6 +1659,9 @@ function updatePreview() {
         const cx = offsetX + cell.col * cellSize + cellSize / 2;
         const cy = offsetY + cell.row * cellSize + cellSize / 2;
         const value = cell.drawValue !== undefined ? cell.drawValue : (cell.boardValue !== undefined ? cell.boardValue : cell.color);
+        if (value === null || value === undefined || value === CELL_EMPTY) {
+            return;
+        }
         if (value === CELL_EYE_BLACK || value === CELL_EYE_WHITE) {
             drawEyeStone(nextCtx, cx, cy, cellSize * 0.42, value, 1);
         } else if (value === CELL_BLOCK_BLACK || value === CELL_BLOCK_WHITE) {
@@ -1795,6 +1798,9 @@ function drawPiece(piece) {
             return;
         }
         const value = cell.drawValue !== undefined ? cell.drawValue : (cell.boardValue !== undefined ? cell.boardValue : cell.color);
+        if (value === null || value === undefined || value === CELL_EMPTY) {
+            return;
+        }
         drawStoneOnBoard(row, col, value, 1);
     });
 }
@@ -1808,11 +1814,17 @@ function drawGhost(piece) {
             return;
         }
         const ghostValue = cell.drawValue !== undefined ? cell.drawValue : (cell.boardValue !== undefined ? cell.boardValue : cell.color);
+        if (ghostValue === null || ghostValue === undefined || ghostValue === CELL_EMPTY) {
+            return;
+        }
         drawStoneOnBoard(row, col, ghostValue, 0.25);
     });
 }
 
 function drawStoneOnBoard(row, col, value, alpha) {
+    if (value === null || value === undefined || value === CELL_EMPTY) {
+        return;
+    }
     const cx = GRID_MARGIN + col * CELL_SIZE;
     const cy = GRID_MARGIN + row * CELL_SIZE;
 
