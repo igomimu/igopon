@@ -20,6 +20,7 @@ const CELL_EYE_WHITE = 6;
 const MIN_PIECES_BEFORE_EYE_FRAME = 14;
 const EYE_FRAME_DROP_CHANCE = 0.12;
 const EYE_FRAME_COOLDOWN_PIECES = 6;
+const EYE_FRAME_CLEAR_THRESHOLD = 20;
 
 const EYE_FRAME_CENTER_OFFSET = { row: 0, col: 0 };
 const EYE_FRAME_RING_OFFSETS = [
@@ -33,7 +34,8 @@ const EYE_FRAME_RING_OFFSETS = [
     { row: 1, col: 1 }
 ];
 
-const specialPieceQueue = [];
+let specialPieceQueue = [];
+let activeEyeFrames = [];
 
 function clonePiece(piece) {
     if (!piece) {
@@ -55,7 +57,8 @@ function createEyeFramePiecePrototype(stoneColor) {
             color: stoneColor,
             boardValue: CELL_EMPTY,
             drawValue: null,
-            lockOnPlace: true
+            lockOnPlace: true,
+            isEyeCenter: true
         }
     ];
     EYE_FRAME_RING_OFFSETS.forEach(offset => {
@@ -665,6 +668,7 @@ function startGame() {
     paused = false;
     currentPiece = null;
     specialPieceQueue.length = 0;
+    activeEyeFrames.length = 0;
     nextPiece = pullNextPiecePrototype();
     overlay.classList.add('hidden');
     pauseBtn.disabled = false;
@@ -787,6 +791,7 @@ function hardDrop() {
     lockPiece();
 }
 
+
 function lockPiece() {
     if (!currentPiece || captureResolutionInProgress) {
         return;
@@ -794,6 +799,9 @@ function lockPiece() {
 
     const placedPiece = currentPiece;
     let overflow = false;
+    const placedEyeFrame = placedPiece.isEyeFrame === true;
+    let eyeFrameCenterGlobal = null;
+
     placedPiece.cells.forEach(cell => {
         const row = placedPiece.position.row + cell.row;
         const col = placedPiece.position.col + cell.col;
@@ -804,6 +812,9 @@ function lockPiece() {
         const boardValue = cell.boardValue !== undefined ? cell.boardValue : cell.color;
         board[row][col] = boardValue;
         lockedCells[row][col] = cell.lockOnPlace === true;
+        if (placedEyeFrame && cell.isEyeCenter) {
+            eyeFrameCenterGlobal = { row, col };
+        }
     });
 
     if (overflow) {
@@ -811,7 +822,14 @@ function lockPiece() {
         return;
     }
 
-    const placedEyeFrame = placedPiece.isEyeFrame === true;
+    if (placedEyeFrame && eyeFrameCenterGlobal) {
+        activeEyeFrames.push({
+            centerRow: eyeFrameCenterGlobal.row,
+            centerCol: eyeFrameCenterGlobal.col,
+            capturesLeft: EYE_FRAME_CLEAR_THRESHOLD
+        });
+    }
+
     currentPiece = null;
     applyGravity();
 
@@ -826,7 +844,7 @@ function lockPiece() {
             captures.black += captureTotals.black;
             captures.white += captureTotals.white;
             spawnCaptureEffects(removedStones);
-            setStatusMessage(`${totalRemoved}個を捕獲。チェインx${chain}。`);
+            setStatusMessage(`${totalRemoved}個捕獲。チェインx${chain}！`);
         } else {
             chain = 0;
             setStatusMessage('石を配置。捕獲なし。');
@@ -841,10 +859,32 @@ function lockPiece() {
 
         maybeScheduleEyeFramePiece();
 
+        let clearedEyeFrame = false;
+        if (totalRemoved > 0 && activeEyeFrames.length > 0) {
+            const framesToRemove = [];
+            activeEyeFrames.forEach(frame => {
+                frame.capturesLeft -= totalRemoved;
+                if (frame.capturesLeft <= 0) {
+                    framesToRemove.push(frame);
+                }
+            });
+            if (framesToRemove.length > 0) {
+                framesToRemove.forEach(frame => {
+                    clearEyeFrameAt(frame.centerRow, frame.centerCol);
+                });
+                activeEyeFrames = activeEyeFrames.filter(frame => frame.capturesLeft > 0);
+                applyGravity();
+                resolveEyeFrameConflicts();
+                clearedEyeFrame = true;
+            }
+        }
+
         updateStats();
         if (placedEyeFrame) {
             chain = 0;
             setStatusMessage('色付き眼フレームを設置しました。');
+        } else if (clearedEyeFrame) {
+            setStatusMessage('眼フレームが崩壊しました。');
         }
         captureResolutionInProgress = false;
 
@@ -1343,6 +1383,20 @@ function maybeScheduleEyeFramePiece() {
             return false;
         }
     }
+
+
+function clearEyeFrameAt(centerRow, centerCol) {
+    const offsets = [{ row: 0, col: 0 }].concat(EYE_FRAME_RING_OFFSETS);
+    offsets.forEach(offset => {
+        const targetRow = centerRow + offset.row;
+        const targetCol = centerCol + offset.col;
+        if (targetRow < 0 || targetRow >= ROWS || targetCol < 0 || targetCol >= COLS) {
+            return;
+        }
+        board[targetRow][targetCol] = CELL_EMPTY;
+        lockedCells[targetRow][targetCol] = false;
+    });
+}
 
     if (eyeFrameFirstDropPending) {
         const color = Math.random() < 0.5 ? CELL_BLACK : CELL_WHITE;
@@ -2010,7 +2064,8 @@ function rotatePiece(piece, direction) {
             color: cell.color,
             boardValue: cell.boardValue,
             lockOnPlace: cell.lockOnPlace,
-            drawValue: cell.drawValue
+            drawValue: cell.drawValue,
+            isEyeCenter: cell.isEyeCenter
         };
         if (direction === 1) {
             return {
