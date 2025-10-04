@@ -312,6 +312,13 @@ button:not(:disabled):hover {
 @media (max-width: 900px) {
     .layout {
         padding-bottom: 5rem;
+        align-items: center;
+    }
+
+    .board-panel {
+        align-self: center;
+        margin-left: auto;
+        margin-right: auto;
     }
 
     .mobile-controls {
