@@ -1915,9 +1915,8 @@ function drawStone(context, cx, cy, radius, color, alpha = 1) {
     context.stroke();
     context.restore();
 }
-*/
 
-/* function drawObstacleBlock(context, cx, cy, value, alpha) {
+function drawObstacleBlock(context, cx, cy, value, alpha) {
     const blockSize = CELL_SIZE * 0.72;
     const left = cx - blockSize / 2;
     const top = cy - blockSize / 2;
