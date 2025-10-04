@@ -869,12 +869,18 @@ function lockPiece() {
                 }
             });
             if (framesToRemove.length > 0) {
-                framesToRemove.forEach(frame => {
-                    clearEyeFrameAt(frame.centerRow, frame.centerCol);
-                });
+                const framesSnapshot = framesToRemove.map(frame => ({
+                    centerRow: frame.centerRow,
+                    centerCol: frame.centerCol
+                }));
                 activeEyeFrames = activeEyeFrames.filter(frame => frame.capturesLeft > 0);
-                applyGravity();
-                resolveEyeFrameConflicts();
+                setTimeout(() => {
+                    framesSnapshot.forEach(frame => {
+                        clearEyeFrameAt(frame.centerRow, frame.centerCol);
+                    });
+                    applyGravity();
+                    resolveEyeFrameConflicts();
+                }, 0);
                 clearedEyeFrame = true;
             }
         }
