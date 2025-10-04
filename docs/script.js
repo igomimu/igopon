@@ -160,6 +160,16 @@ function saveHighScore(value) {
     }
 }
 function sanitizePlayerName(value) {
+function firstDefined(...values) {
+    for (let index = 0; index < values.length; index += 1) {
+        const value = values[index];
+        if (value !== null && value !== undefined) {
+            return value;
+        }
+    }
+    return undefined;
+}
+
     if (value === null || value === undefined) {
         return '';
     }
@@ -280,7 +290,7 @@ function renderLeaderboard(entries) {
         rank.textContent = String(index + 1);
         const name = document.createElement('span');
         name.className = 'name';
-        const rawName = entry.name ?? entry.playerName ?? entry.player ?? entry.displayName ?? entry.nickname ?? '';
+        const rawName = firstDefined(entry.name, entry.playerName, entry.player, entry.displayName, entry.nickname, '');
         const safeName = sanitizePlayerName(rawName) || 'プレイヤー';
         name.textContent = safeName;
         const score = document.createElement('span');
@@ -1466,7 +1476,7 @@ function bindHoldButton(button, action, options = {}) {
         return;
     }
     const repeat = options.repeat !== false;
-    const repeatDelay = options.repeatDelay ?? 140;
+    const repeatDelay = options.repeatDelay != null ? options.repeatDelay : 140;
     let intervalId = null;
     let capturedPointerId = null;
     let suppressClick = false;
