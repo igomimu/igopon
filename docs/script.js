@@ -1368,6 +1368,20 @@ function applyGravity() {
     }
 }
 
+
+function clearEyeFrameAt(centerRow, centerCol) {
+    const offsets = [{ row: 0, col: 0 }].concat(EYE_FRAME_RING_OFFSETS);
+    offsets.forEach(offset => {
+        const targetRow = centerRow + offset.row;
+        const targetCol = centerCol + offset.col;
+        if (targetRow < 0 || targetRow >= ROWS || targetCol < 0 || targetCol >= COLS) {
+            return;
+        }
+        board[targetRow][targetCol] = CELL_EMPTY;
+        lockedCells[targetRow][targetCol] = false;
+    });
+}
+
 function maybeScheduleEyeFramePiece() {
     if (!gameActive) {
         return false;
@@ -1383,20 +1397,6 @@ function maybeScheduleEyeFramePiece() {
             return false;
         }
     }
-
-
-function clearEyeFrameAt(centerRow, centerCol) {
-    const offsets = [{ row: 0, col: 0 }].concat(EYE_FRAME_RING_OFFSETS);
-    offsets.forEach(offset => {
-        const targetRow = centerRow + offset.row;
-        const targetCol = centerCol + offset.col;
-        if (targetRow < 0 || targetRow >= ROWS || targetCol < 0 || targetCol >= COLS) {
-            return;
-        }
-        board[targetRow][targetCol] = CELL_EMPTY;
-        lockedCells[targetRow][targetCol] = false;
-    });
-}
 
     if (eyeFrameFirstDropPending) {
         const color = Math.random() < 0.5 ? CELL_BLACK : CELL_WHITE;
