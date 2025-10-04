@@ -17,9 +17,9 @@ const CELL_BLOCK_WHITE = 4;
 const CELL_EYE_BLACK = 5;
 const CELL_EYE_WHITE = 6;
 
-const MIN_PIECES_BEFORE_EYE_FRAME = 10;
-const EYE_FRAME_DROP_CHANCE = 0.18;
-const EYE_FRAME_COOLDOWN_PIECES = 3;
+const MIN_PIECES_BEFORE_EYE_FRAME = 14;
+const EYE_FRAME_DROP_CHANCE = 0.12;
+const EYE_FRAME_COOLDOWN_PIECES = 6;
 
 const EYE_FRAME_CENTER_OFFSET = { row: 0, col: 0 };
 const EYE_FRAME_RING_OFFSETS = [
@@ -32,6 +32,81 @@ const EYE_FRAME_RING_OFFSETS = [
     { row: 0, col: 1 },
     { row: 1, col: 1 }
 ];
+
+const specialPieceQueue = [];
+
+function clonePiece(piece) {
+    if (!piece) {
+        return null;
+    }
+    return {
+        ...piece,
+        cells: piece.cells.map(cell => ({ ...cell })),
+        position: piece.position ? { ...piece.position } : { row: 0, col: 0 }
+    };
+}
+
+function createEyeFramePiecePrototype(stoneColor) {
+    const eyeBoardValue = stoneColor === CELL_BLACK ? CELL_EYE_BLACK : CELL_EYE_WHITE;
+    const cells = [
+        {
+            row: 1,
+            col: 1,
+            color: stoneColor,
+            boardValue: eyeBoardValue,
+            drawValue: eyeBoardValue,
+            lockOnPlace: true
+        }
+    ];
+    EYE_FRAME_RING_OFFSETS.forEach(offset => {
+        cells.push({
+            row: 1 + offset.row,
+            col: 1 + offset.col,
+            color: stoneColor,
+            boardValue: stoneColor,
+            lockOnPlace: true
+        });
+    });
+    return {
+        name: 'EyeFrame',
+        cells,
+        width: 3,
+        height: 3,
+        rotation: 0,
+        position: {
+            row: -2,
+            col: Math.floor((COLS - 3) / 2)
+        },
+        isEyeFrame: true,
+        stoneColor
+    };
+}
+
+function pullNextPiecePrototype() {
+    if (specialPieceQueue.length > 0) {
+        return clonePiece(specialPieceQueue.shift());
+    }
+    return instantiatePiece(randomTemplate());
+}
+
+function enqueueEyeFramePiece(stoneColor, prioritizeNext = false) {
+    const prototype = createEyeFramePiecePrototype(stoneColor);
+    if (!currentPiece && !prioritizeNext) {
+        specialPieceQueue.unshift(prototype);
+        return;
+    }
+    if (prioritizeNext || !nextPiece) {
+        if (nextPiece) {
+            specialPieceQueue.unshift(clonePiece(nextPiece));
+        }
+        nextPiece = prototype;
+        updatePreview();
+    } else if (!nextPiece.isEyeFrame) {
+        specialPieceQueue.unshift(prototype);
+    } else {
+        specialPieceQueue.push(prototype);
+    }
+}
 
 const canvas = document.getElementById('board');
 const ctx = canvas.getContext('2d');
@@ -589,7 +664,8 @@ function startGame() {
     gameActive = true;
     paused = false;
     currentPiece = null;
-    nextPiece = instantiatePiece(randomTemplate());
+    specialPieceQueue.length = 0;
+    nextPiece = pullNextPiecePrototype();
     overlay.classList.add('hidden');
     pauseBtn.disabled = false;
     pauseBtn.textContent = 'ポーズ';
@@ -639,17 +715,19 @@ function endGame(reason) {
 
 function spawnNewPiece() {
     if (!nextPiece) {
-        nextPiece = instantiatePiece(randomTemplate());
+        nextPiece = pullNextPiecePrototype();
     }
 
-    currentPiece = nextPiece;
-    currentPiece.position = {
+    const spawned = clonePiece(nextPiece);
+    spawned.position = {
         row: -2,
-        col: Math.floor((COLS - currentPiece.width) / 2)
+        col: Math.floor((COLS - spawned.width) / 2)
     };
+    spawned.rotation = 0;
+    currentPiece = spawned;
     dropAccumulator = 0;
 
-    nextPiece = instantiatePiece(randomTemplate());
+    nextPiece = pullNextPiecePrototype();
     updatePreview();
 
     if (!isValidPosition(currentPiece, 0, 0)) {
@@ -723,7 +801,9 @@ function lockPiece() {
             overflow = true;
             return;
         }
-        board[row][col] = cell.color;
+        const boardValue = cell.boardValue !== undefined ? cell.boardValue : cell.color;
+        board[row][col] = boardValue;
+        lockedCells[row][col] = cell.lockOnPlace === true;
     });
 
     if (overflow) {
@@ -731,6 +811,7 @@ function lockPiece() {
         return;
     }
 
+    const placedEyeFrame = placedPiece.isEyeFrame === true;
     currentPiece = null;
     applyGravity();
 
@@ -758,9 +839,13 @@ function lockPiece() {
             setStatusMessage(`レベル${level}。落下間隔 ${(dropInterval / 1000).toFixed(2)}秒。`);
         }
 
-        maybeSpawnEyeFrameStamp();
+        maybeScheduleEyeFramePiece();
 
         updateStats();
+        if (placedEyeFrame) {
+            chain = 0;
+            setStatusMessage('色付き眼フレームを設置しました。');
+        }
         captureResolutionInProgress = false;
 
         if (!gameActive) {
@@ -1243,142 +1328,43 @@ function applyGravity() {
     }
 }
 
-function maybeSpawnEyeFrameStamp() {
+function maybeScheduleEyeFramePiece() {
     if (!gameActive) {
         return false;
     }
     if (piecesPlaced < MIN_PIECES_BEFORE_EYE_FRAME) {
         return false;
     }
-    if (eyeFrameFirstDropPending) {
-        const success = spawnEyeFrameStamp(true);
-        eyeFrameFirstDropPending = false;
-        if (!success) {
-            endGame('眼フレームを配置できませんでした');
+    if (nextPiece && nextPiece.isEyeFrame) {
+        return false;
+    }
+    for (let index = 0; index < specialPieceQueue.length; index += 1) {
+        if (specialPieceQueue[index].isEyeFrame) {
             return false;
         }
+    }
+
+    if (eyeFrameFirstDropPending) {
+        const color = Math.random() < 0.5 ? CELL_BLACK : CELL_WHITE;
+        enqueueEyeFramePiece(color, true);
+        eyeFrameFirstDropPending = false;
         eyeFrameCooldown = EYE_FRAME_COOLDOWN_PIECES;
         return true;
     }
+
     if (eyeFrameCooldown > 0) {
         eyeFrameCooldown -= 1;
         return false;
     }
+
     if (Math.random() > EYE_FRAME_DROP_CHANCE) {
         return false;
     }
-    if (spawnEyeFrameStamp(false)) {
-        eyeFrameCooldown = EYE_FRAME_COOLDOWN_PIECES;
-        return true;
-    }
-    endGame('眼フレームを配置できませんでした');
-    return false;
-}
 
-function spawnEyeFrameStamp(forceCenter) {
-    const stoneColor = Math.random() < 0.5 ? CELL_BLACK : CELL_WHITE;
-    const candidateColumns = [];
-    for (let col = 1; col < COLS - 1; col += 1) {
-        candidateColumns.push(col);
-    }
-    if (forceCenter) {
-        const center = Math.floor(COLS / 2);
-        shuffleArray(candidateColumns);
-        const index = candidateColumns.indexOf(center);
-        if (index !== -1) {
-            candidateColumns.splice(index, 1);
-            candidateColumns.unshift(center);
-        }
-    } else {
-        shuffleArray(candidateColumns);
-    }
-
-    for (let index = 0; index < candidateColumns.length; index += 1) {
-        const column = candidateColumns[index];
-        const dropRow = computeEyeFrameDropRow(column);
-        if (dropRow === null) {
-            continue;
-        }
-        placeEyeFrame(dropRow, column, stoneColor);
-        handleEyeFrameAfterDrop();
-        return true;
-    }
-    return false;
-}
-
-function computeEyeFrameDropRow(centerCol) {
-    let centerRow = 1;
-    if (!canPlaceEyeFrame(centerRow, centerCol)) {
-        return null;
-    }
-    while (canPlaceEyeFrame(centerRow + 1, centerCol)) {
-        centerRow += 1;
-    }
-    return centerRow;
-}
-
-function canPlaceEyeFrame(centerRow, centerCol) {
-    if (centerCol <= 0 || centerCol >= COLS - 1) {
-        return false;
-    }
-    if (centerRow <= 0 || centerRow >= ROWS - 1) {
-        return false;
-    }
-    const offsets = [EYE_FRAME_CENTER_OFFSET].concat(EYE_FRAME_RING_OFFSETS);
-    for (let i = 0; i < offsets.length; i += 1) {
-        const offset = offsets[i];
-        const targetRow = centerRow + offset.row;
-        const targetCol = centerCol + offset.col;
-        if (targetRow < 0 || targetRow >= ROWS || targetCol < 0 || targetCol >= COLS) {
-            return false;
-        }
-        if (board[targetRow][targetCol] !== CELL_EMPTY || lockedCells[targetRow][targetCol]) {
-            return false;
-        }
-    }
+    const color = Math.random() < 0.5 ? CELL_BLACK : CELL_WHITE;
+    enqueueEyeFramePiece(color, false);
+    eyeFrameCooldown = EYE_FRAME_COOLDOWN_PIECES;
     return true;
-}
-
-function placeEyeFrame(centerRow, centerCol, stoneColor) {
-    const eyeValue = stoneColor === CELL_BLACK ? CELL_EYE_BLACK : CELL_EYE_WHITE;
-    board[centerRow][centerCol] = eyeValue;
-    lockedCells[centerRow][centerCol] = true;
-    for (let i = 0; i < EYE_FRAME_RING_OFFSETS.length; i += 1) {
-        const offset = EYE_FRAME_RING_OFFSETS[i];
-        const targetRow = centerRow + offset.row;
-        const targetCol = centerCol + offset.col;
-        board[targetRow][targetCol] = stoneColor;
-        lockedCells[targetRow][targetCol] = true;
-    }
-}
-
-function handleEyeFrameAfterDrop() {
-    chain = 0;
-    setStatusMessage('色付き眼フレームが落ちてきた！');
-    resolveEyeFrameConflicts();
-}
-
-function resolveEyeFrameConflicts() {
-    let changed = false;
-    while (true) {
-        const result = resolveCapturesOnce();
-        if (result.groups.length === 0) {
-            break;
-        }
-        changed = true;
-        result.groups.forEach(group => {
-            group.captured.forEach(cell => {
-                if (!lockedCells[cell.row][cell.col]) {
-                    board[cell.row][cell.col] = CELL_EMPTY;
-                }
-            });
-        });
-        applyGravity();
-    }
-    if (changed) {
-        captureHighlights.clear();
-        captureLineEffects.clear();
-    }
 }
 
 function updateStats() {
@@ -1672,7 +1658,15 @@ function updatePreview() {
     nextPiece.cells.forEach(cell => {
         const cx = offsetX + cell.col * cellSize + cellSize / 2;
         const cy = offsetY + cell.row * cellSize + cellSize / 2;
-        drawStone(nextCtx, cx, cy, cellSize * 0.42, cell.color);
+        const value = cell.drawValue !== undefined ? cell.drawValue : (cell.boardValue !== undefined ? cell.boardValue : cell.color);
+        if (value === CELL_EYE_BLACK || value === CELL_EYE_WHITE) {
+            drawEyeStone(nextCtx, cx, cy, cellSize * 0.42, value, 1);
+        } else if (value === CELL_BLOCK_BLACK || value === CELL_BLOCK_WHITE) {
+            const baseColor = value === CELL_BLOCK_BLACK ? CELL_BLACK : CELL_WHITE;
+            drawStone(nextCtx, cx, cy, cellSize * 0.42, baseColor, 1);
+        } else {
+            drawStone(nextCtx, cx, cy, cellSize * 0.42, value, 1);
+        }
     });
 }
 
@@ -1800,7 +1794,8 @@ function drawPiece(piece) {
         if (row < 0) {
             return;
         }
-        drawStoneOnBoard(row, col, cell.color, 1);
+        const value = cell.drawValue !== undefined ? cell.drawValue : (cell.boardValue !== undefined ? cell.boardValue : cell.color);
+        drawStoneOnBoard(row, col, value, 1);
     });
 }
 
@@ -1812,7 +1807,8 @@ function drawGhost(piece) {
         if (row < 0) {
             return;
         }
-        drawStoneOnBoard(row, col, cell.color, 0.25);
+        const ghostValue = cell.drawValue !== undefined ? cell.drawValue : (cell.boardValue !== undefined ? cell.boardValue : cell.color);
+        drawStoneOnBoard(row, col, ghostValue, 0.25);
     });
 }
 
@@ -1998,17 +1994,23 @@ function rotateCurrentPiece(direction) {
 
 function rotatePiece(piece, direction) {
     const rotatedCells = piece.cells.map(cell => {
+        const shared = {
+            color: cell.color,
+            boardValue: cell.boardValue,
+            lockOnPlace: cell.lockOnPlace,
+            drawValue: cell.drawValue
+        };
         if (direction === 1) {
             return {
                 row: cell.col,
                 col: piece.height - 1 - cell.row,
-                color: cell.color
+                ...shared
             };
         }
         return {
             row: piece.width - 1 - cell.col,
             col: cell.row,
-            color: cell.color
+            ...shared
         };
     });
 
