@@ -237,29 +237,19 @@ function saveHighScore(value) {
         // ignore storage failures
     }
 }
-function sanitizePlayerName(value) {
-function firstDefined(...values) {
-    for (let index = 0; index < values.length; index += 1) {
-        const value = values[index];
-        if (value !== null && value !== undefined) {
-            return value;
-        }
-    }
-    return undefined;
-}
-
-    if (value === null || value === undefined) {
-        return '';
-    }
-    const text = String(value);
-    return text
-        .replace(/[\r\n\t]/g, ' ')
-        .replace(/\s{2,}/g, ' ')
-        .replace(/[<>]/g, '')
-        .trim()
-        .slice(0, 20);
-}
-
+function sanitizePlayerName(value) {
+    if (value === null || value === undefined) {
+        return '';
+    }
+    const text = String(value);
+    return text
+        .replace(/[\r\n\t]/g, ' ')
+        .replace(/\s{2,}/g, ' ')
+        .replace(/[<>]/g, '')
+        .trim()
+        .slice(0, 20);
+}
+
 function loadPlayerName() {
     try {
         const stored = localStorage.getItem(PLAYER_NAME_KEY);
@@ -368,7 +358,7 @@ function renderLeaderboard(entries) {
         rank.textContent = String(index + 1);
         const name = document.createElement('span');
         name.className = 'name';
-        const rawName = firstDefined(entry.name, entry.playerName, entry.player, entry.displayName, entry.nickname, '');
+        const rawName = entry.name ?? entry.playerName ?? entry.player ?? entry.displayName ?? entry.nickname ?? '';
         const safeName = sanitizePlayerName(rawName) || 'プレイヤー';
         name.textContent = safeName;
         const score = document.createElement('span');
