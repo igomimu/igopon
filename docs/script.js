@@ -237,19 +237,32 @@ function saveHighScore(value) {
         // ignore storage failures
     }
 }
-function sanitizePlayerName(value) {
-    if (value === null || value === undefined) {
-        return '';
-    }
-    const text = String(value);
-    return text
-        .replace(/[\r\n\t]/g, ' ')
-        .replace(/\s{2,}/g, ' ')
-        .replace(/[<>]/g, '')
-        .trim()
-        .slice(0, 20);
-}
-
+function sanitizePlayerName(value) {
+
+    if (value === null || value === undefined) {
+
+        return '';
+
+    }
+
+    const text = String(value);
+
+    return text
+
+        .replace(/[\r\n\t]/g, ' ')
+
+        .replace(/\s{2,}/g, ' ')
+
+        .replace(/[<>]/g, '')
+
+        .trim()
+
+        .slice(0, 20);
+
+}
+
+
+
 function loadPlayerName() {
     try {
         const stored = localStorage.getItem(PLAYER_NAME_KEY);
@@ -1206,6 +1219,37 @@ function spawnCaptureEffects(removedStones) {
         });
     });
 }
+function spawnEyePulseEffect(centerRow, centerCol, eyeValue) {
+    const position = boardToCanvasPosition(centerRow, centerCol);
+    const isBlack = eyeValue === CELL_EYE_BLACK;
+    const glowColor = isBlack ? 'rgba(120, 200, 255, 0.9)' : 'rgba(255, 215, 140, 0.9)';
+    const particleColor = isBlack ? 'rgba(150, 220, 255, 0.9)' : 'rgba(255, 235, 180, 0.9)';
+    const particles = Array.from({ length: 12 }, () => ({
+        baseAngle: Math.random() * Math.PI * 2,
+        radialSpeed: CELL_SIZE * (0.35 + Math.random() * 0.6),
+        spin: (Math.random() * 0.6 + 0.3) * (Math.random() < 0.5 ? -1 : 1),
+        size: CELL_SIZE * (0.12 + Math.random() * 0.05),
+        baseAlpha: 0.5 + Math.random() * 0.4
+    }));
+
+    effects.push({
+        type: 'eyePulse',
+        x: position.x,
+        y: position.y,
+        radius: CELL_SIZE * 0.42,
+        life: 0,
+        maxLife: 500,
+        eyeValue,
+        glowColor,
+        particleColor,
+        rotationBase: Math.random() * Math.PI * 2,
+        particles
+    });
+}
+
+
+
+
 
 function updateEffects(delta) {
     if (effects.length === 0) {
@@ -1277,6 +1321,116 @@ function drawEffects() {
             ctx.beginPath();
             ctx.arc(effect.x, effect.y, radius, 0, Math.PI * 2);
             ctx.fill();
+        } else if (effect.type === 'eyePulse') {
+
+            const totalProgress = Math.min(effect.life / effect.maxLife, 1);
+
+            const earlyProgress = Math.min(effect.life / 200, 1);
+
+            const lateProgress = effect.life > 200 ? Math.min((effect.life - 200) / 300, 1) : 0;
+
+
+
+            const easeOut = 1 - Math.pow(1 - earlyProgress, 3);
+
+            const pulseScale = 1 + 0.18 * easeOut;
+
+            const coreAlpha = effect.life < 200 ? 1 : Math.max(1 - lateProgress * 1.3, 0);
+
+
+
+            ctx.save();
+
+            drawEyeStone(ctx, effect.x, effect.y, effect.radius * pulseScale, effect.eyeValue, coreAlpha);
+
+
+
+            if (effect.life < 200) {
+
+                ctx.globalCompositeOperation = 'screen';
+
+                ctx.globalAlpha = (1 - earlyProgress) * 0.65;
+
+                const arcRadius = effect.radius * (1.1 + easeOut * 0.4);
+
+                const arcStart = effect.rotationBase + easeOut * Math.PI * 2;
+
+                ctx.lineWidth = effect.radius * 0.18;
+
+                ctx.strokeStyle = effect.glowColor;
+
+                ctx.beginPath();
+
+                ctx.arc(effect.x, effect.y, arcRadius, arcStart, arcStart + Math.PI * 0.85);
+
+                ctx.stroke();
+
+            } else {
+
+                ctx.globalCompositeOperation = 'lighter';
+
+                ctx.globalAlpha = Math.max(0.35 * (1 - lateProgress), 0);
+
+                const haloRadius = effect.radius * (1.2 + lateProgress * 0.6);
+
+                ctx.fillStyle = effect.glowColor;
+
+                ctx.beginPath();
+
+                ctx.arc(effect.x, effect.y, haloRadius, 0, Math.PI * 2);
+
+                ctx.fill();
+
+            }
+
+            ctx.restore();
+
+
+
+            if (effect.life > 200) {
+
+                effect.particles.forEach(part => {
+
+                    const t = Math.min((effect.life - 200) / 300, 1);
+
+                    const distance = effect.radius * 0.35 + part.radialSpeed * t;
+
+                    const angle = part.baseAngle + part.spin * t * Math.PI * 2;
+
+                    const px = effect.x + Math.cos(angle) * distance;
+
+                    const py = effect.y + Math.sin(angle) * distance;
+
+                    const particleAlpha = Math.max(part.baseAlpha * (1 - t * 1.1), 0);
+
+                    if (particleAlpha <= 0) {
+
+                        return;
+
+                    }
+
+                    const size = part.size * Math.max(1 - t * 0.9, 0.2);
+
+                    ctx.save();
+
+                    ctx.globalCompositeOperation = 'lighter';
+
+                    ctx.globalAlpha = particleAlpha;
+
+                    ctx.fillStyle = effect.particleColor;
+
+                    ctx.beginPath();
+
+                    ctx.arc(px, py, size, 0, Math.PI * 2);
+
+                    ctx.fill();
+
+                    ctx.restore();
+
+                });
+
+            }
+
         }
     });
     ctx.restore();
@@ -1366,17 +1520,68 @@ function applyGravity() {
 
 
 function clearEyeFrameAt(centerRow, centerCol) {
+
+
+
+    const centerValue = board[centerRow] ? board[centerRow][centerCol] : CELL_EMPTY;
+
+
+
+    if (centerValue === CELL_EYE_BLACK || centerValue === CELL_EYE_WHITE) {
+
+
+
+        spawnEyePulseEffect(centerRow, centerCol, centerValue);
+
+
+
+    }
+
+
+
     const offsets = [{ row: 0, col: 0 }].concat(EYE_FRAME_RING_OFFSETS);
+
+
+
     offsets.forEach(offset => {
+
+
+
         const targetRow = centerRow + offset.row;
+
+
+
         const targetCol = centerCol + offset.col;
+
+
+
         if (targetRow < 0 || targetRow >= ROWS || targetCol < 0 || targetCol >= COLS) {
+
+
+
             return;
+
+
+
         }
+
+
+
         board[targetRow][targetCol] = CELL_EMPTY;
+
+
+
         lockedCells[targetRow][targetCol] = false;
+
+
+
     });
+
+
+
 }
+
+
 
 function maybeScheduleEyeFramePiece() {
     if (!gameActive) {
