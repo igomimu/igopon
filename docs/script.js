@@ -1219,33 +1219,114 @@ function spawnCaptureEffects(removedStones) {
         });
     });
 }
-function spawnEyePulseEffect(centerRow, centerCol, eyeValue) {
-    const position = boardToCanvasPosition(centerRow, centerCol);
-    const isBlack = eyeValue === CELL_EYE_BLACK;
-    const glowColor = isBlack ? 'rgba(120, 200, 255, 0.9)' : 'rgba(255, 215, 140, 0.9)';
-    const particleColor = isBlack ? 'rgba(150, 220, 255, 0.9)' : 'rgba(255, 235, 180, 0.9)';
-    const particles = Array.from({ length: 12 }, () => ({
-        baseAngle: Math.random() * Math.PI * 2,
-        radialSpeed: CELL_SIZE * (0.35 + Math.random() * 0.6),
-        spin: (Math.random() * 0.6 + 0.3) * (Math.random() < 0.5 ? -1 : 1),
-        size: CELL_SIZE * (0.12 + Math.random() * 0.05),
-        baseAlpha: 0.5 + Math.random() * 0.4
-    }));
-
-    effects.push({
-        type: 'eyePulse',
-        x: position.x,
-        y: position.y,
-        radius: CELL_SIZE * 0.42,
-        life: 0,
-        maxLife: 500,
-        eyeValue,
-        glowColor,
-        particleColor,
-        rotationBase: Math.random() * Math.PI * 2,
-        particles
-    });
-}
+function spawnEyePulseEffect(centerRow, centerCol, stoneColor) {
+
+
+
+    const position = boardToCanvasPosition(centerRow, centerCol);
+
+
+
+    const isBlack = stoneColor === CELL_BLACK;
+
+
+
+    const eyeValue = isBlack ? CELL_EYE_BLACK : CELL_EYE_WHITE;
+
+
+
+    const glowColor = isBlack ? 'rgba(120, 200, 255, 0.9)' : 'rgba(255, 215, 140, 0.9)';
+
+
+
+    const particleColor = isBlack ? 'rgba(150, 220, 255, 0.9)' : 'rgba(255, 235, 180, 0.9)';
+
+
+
+    const particles = Array.from({ length: 12 }, () => ({
+
+
+
+        baseAngle: Math.random() * Math.PI * 2,
+
+
+
+        radialSpeed: CELL_SIZE * (0.35 + Math.random() * 0.6),
+
+
+
+        spin: (Math.random() * 0.6 + 0.3) * (Math.random() < 0.5 ? -1 : 1),
+
+
+
+        size: CELL_SIZE * (0.12 + Math.random() * 0.05),
+
+
+
+        baseAlpha: 0.5 + Math.random() * 0.4
+
+
+
+    }));
+
+
+
+    effects.push({
+
+
+
+        type: 'eyePulse',
+
+
+
+        x: position.x,
+
+
+
+        y: position.y,
+
+
+
+        radius: CELL_SIZE * 0.42,
+
+
+
+        life: 0,
+
+
+
+        maxLife: 500,
+
+
+
+        eyeValue,
+
+
+
+        glowColor,
+
+
+
+        particleColor,
+
+
+
+        rotationBase: Math.random() * Math.PI * 2,
+
+
+
+        particles
+
+
+
+    });
+
+
+
+}
+
+
+
 
 
 
@@ -1519,67 +1600,78 @@ function applyGravity() {
 }
 
 
-function clearEyeFrameAt(centerRow, centerCol) {
+function clearEyeFrameAt(centerRow, centerCol) {
+
+    let stoneColor = null;
+
+    const centerValue = board[centerRow] ? board[centerRow][centerCol] : CELL_EMPTY;
+
+    if (centerValue === CELL_EYE_BLACK) {
+
+        stoneColor = CELL_BLACK;
+
+    } else if (centerValue === CELL_EYE_WHITE) {
+
+        stoneColor = CELL_WHITE;
+
+    } else {
+
+        for (let index = 0; index < EYE_FRAME_RING_OFFSETS.length; index += 1) {
+
+            const offset = EYE_FRAME_RING_OFFSETS[index];
+
+            const row = centerRow + offset.row;
+
+            const col = centerCol + offset.col;
+
+            if (row < 0 || row >= ROWS || col < 0 || col >= COLS) {
+
+                continue;
+
+            }
+
+            const value = board[row][col];
+
+            if (value === CELL_BLACK || value === CELL_WHITE) {
+
+                stoneColor = value;
+
+                break;
+
+            }
+
+        }
+
+    }
+
+    if (stoneColor === CELL_BLACK || stoneColor === CELL_WHITE) {
+
+        spawnEyePulseEffect(centerRow, centerCol, stoneColor);
+
+    }
+
+    const offsets = [{ row: 0, col: 0 }].concat(EYE_FRAME_RING_OFFSETS);
+
+    offsets.forEach(offset => {
+
+        const targetRow = centerRow + offset.row;
+
+        const targetCol = centerCol + offset.col;
+
+        if (targetRow < 0 || targetRow >= ROWS || targetCol < 0 || targetCol >= COLS) {
+
+            return;
+
+        }
+
+        board[targetRow][targetCol] = CELL_EMPTY;
+
+        lockedCells[targetRow][targetCol] = false;
+
+    });
+
+}
 
-
-
-    const centerValue = board[centerRow] ? board[centerRow][centerCol] : CELL_EMPTY;
-
-
-
-    if (centerValue === CELL_EYE_BLACK || centerValue === CELL_EYE_WHITE) {
-
-
-
-        spawnEyePulseEffect(centerRow, centerCol, centerValue);
-
-
-
-    }
-
-
-
-    const offsets = [{ row: 0, col: 0 }].concat(EYE_FRAME_RING_OFFSETS);
-
-
-
-    offsets.forEach(offset => {
-
-
-
-        const targetRow = centerRow + offset.row;
-
-
-
-        const targetCol = centerCol + offset.col;
-
-
-
-        if (targetRow < 0 || targetRow >= ROWS || targetCol < 0 || targetCol >= COLS) {
-
-
-
-            return;
-
-
-
-        }
-
-
-
-        board[targetRow][targetCol] = CELL_EMPTY;
-
-
-
-        lockedCells[targetRow][targetCol] = false;
-
-
-
-    });
-
-
-
-}
 
 
 
