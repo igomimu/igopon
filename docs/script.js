@@ -882,7 +882,7 @@ function lockPiece() {
                         clearEyeFrameAt(frame.centerRow, frame.centerCol);
                     });
                     applyGravity();
-                    // resolveEyeFrameConflicts();
+                    resolveEyeFrameConflicts();
                 }, 0);
                 clearedEyeFrame = true;
             }
@@ -1295,7 +1295,7 @@ function spawnEyePulseEffect(centerRow, centerCol, stoneColor) {
 
 
 
-        maxLife: 1500,
+        maxLife: 500,
 
 
 
@@ -1600,77 +1600,77 @@ function applyGravity() {
 }
 
 
-function clearEyeFrameAt(centerRow, centerCol) {
-
-    let stoneColor = null;
-
-    const centerValue = board[centerRow] ? board[centerRow][centerCol] : CELL_EMPTY;
-
-    if (centerValue === CELL_EYE_BLACK) {
-
-        stoneColor = CELL_BLACK;
-
-    } else if (centerValue === CELL_EYE_WHITE) {
-
-        stoneColor = CELL_WHITE;
-
-    } else {
-
-        for (let index = 0; index < EYE_FRAME_RING_OFFSETS.length; index += 1) {
-
-            const offset = EYE_FRAME_RING_OFFSETS[index];
-
-            const row = centerRow + offset.row;
-
-            const col = centerCol + offset.col;
-
-            if (row < 0 || row >= ROWS || col < 0 || col >= COLS) {
-
-                continue;
-
-            }
-
-            const value = board[row][col];
-
-            if (value === CELL_BLACK || value === CELL_WHITE) {
-
-                stoneColor = value;
-
-                break;
-
-            }
-
-        }
-
-    }
-
-    if (stoneColor === CELL_BLACK || stoneColor === CELL_WHITE) {
-
-        spawnEyePulseEffect(centerRow, centerCol, stoneColor);
-
-    }
-
-    const offsets = [{ row: 0, col: 0 }].concat(EYE_FRAME_RING_OFFSETS);
-
-    offsets.forEach(offset => {
-
-        const targetRow = centerRow + offset.row;
-
-        const targetCol = centerCol + offset.col;
-
-        if (targetRow < 0 || targetRow >= ROWS || targetCol < 0 || targetCol >= COLS) {
-
-            return;
-
-        }
-
-        board[targetRow][targetCol] = CELL_EMPTY;
-
-        lockedCells[targetRow][targetCol] = false;
-
-    });
-
-}
+function clearEyeFrameAt(centerRow, centerCol) {
+
+    let stoneColor = null;
+
+    const centerValue = board[centerRow] ? board[centerRow][centerCol] : CELL_EMPTY;
+
+    if (centerValue === CELL_EYE_BLACK) {
+
+        stoneColor = CELL_BLACK;
+
+    } else if (centerValue === CELL_EYE_WHITE) {
+
+        stoneColor = CELL_WHITE;
+
+    } else {
+
+        for (let index = 0; index < EYE_FRAME_RING_OFFSETS.length; index += 1) {
+
+            const offset = EYE_FRAME_RING_OFFSETS[index];
+
+            const row = centerRow + offset.row;
+
+            const col = centerCol + offset.col;
+
+            if (row < 0 || row >= ROWS || col < 0 || col >= COLS) {
+
+                continue;
+
+            }
+
+            const value = board[row][col];
+
+            if (value === CELL_BLACK || value === CELL_WHITE) {
+
+                stoneColor = value;
+
+                break;
+
+            }
+
+        }
+
+    }
+
+    if (stoneColor === CELL_BLACK || stoneColor === CELL_WHITE) {
+
+        spawnEyePulseEffect(centerRow, centerCol, stoneColor);
+
+    }
+
+    const offsets = [{ row: 0, col: 0 }].concat(EYE_FRAME_RING_OFFSETS);
+
+    offsets.forEach(offset => {
+
+        const targetRow = centerRow + offset.row;
+
+        const targetCol = centerCol + offset.col;
+
+        if (targetRow < 0 || targetRow >= ROWS || targetCol < 0 || targetCol >= COLS) {
+
+            return;
+
+        }
+
+        board[targetRow][targetCol] = CELL_EMPTY;
+
+        lockedCells[targetRow][targetCol] = false;
+
+    });
+
+}
 
 
 
