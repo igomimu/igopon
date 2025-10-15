@@ -144,6 +144,9 @@ const playerNameInput = document.getElementById('playerNameInput');
 const dailyLeaderboardList = document.getElementById('dailyLeaderboard');
 const leaderboardEmpty = document.getElementById('leaderboardEmpty');
 const leaderboardDateLabel = document.getElementById('leaderboardDate');
+const bgmToggleBtn = document.getElementById('bgmToggleBtn');
+const bgmStatusLabel = document.getElementById('bgmStatus');
+const bgmAudio = document.getElementById('bgmAudio');
 
 const PAUSE_ICON = '\u23F8';
 const RESUME_ICON = '\u25B6';
@@ -179,6 +182,13 @@ const CAPTURE_LINE_COLORS = {
     2: { stroke: 'rgba(255, 176, 66, 0.92)', shadow: 'rgba(255, 220, 160, 0.95)' }
 };
 
+const SCORE_POPUP_DURATION = 1100;
+const SCORE_POPUP_RISE_DISTANCE = CELL_SIZE * 1.9;
+const SCORE_POPUP_FADE_START = 0.65;
+const SCORE_POPUP_FILL = 'rgba(255, 248, 224, 0.96)';
+const SCORE_POPUP_STROKE = 'rgba(56, 42, 24, 0.68)';
+const SCORE_POPUP_SHADOW = 'rgba(0, 0, 0, 0.3)';
+
 
 const SWIPE_THRESHOLD = CELL_SIZE;
 const effects = [];
@@ -187,6 +197,131 @@ const PLAYER_NAME_KEY = 'goDropPlayerName';
 const API_BASE = 'https://script.google.com/macros/s/AKfycbwcZpx3SLF1z8jTOL6lHeayA4eWzIDGAjzc_fXIffIGyAOliZuiMxVrfV3682ACfT5g/exec';
 const LEADERBOARD_LIMIT = 5;
 const LEADERBOARD_TIMEOUT_MS = 6000;
+const BGM_PREF_KEY = 'igoponBgmEnabled';
+const BGM_ACTIVE_VOLUME = 0.6;
+const BGM_PAUSE_VOLUME = 0.25;
+
+let bgmPreference = true;
+let bgmUnlocked = false;
+
+try {
+    const storedPreference = localStorage.getItem(BGM_PREF_KEY);
+    if (storedPreference === '0' || storedPreference === 'false') {
+        bgmPreference = false;
+    }
+} catch (error) {
+    bgmPreference = true;
+}
+
+function updateBgmStatusText() {
+    if (!bgmStatusLabel) {
+        return;
+    }
+    if (!bgmAudio) {
+        bgmStatusLabel.textContent = '音源が見つかりません。';
+        return;
+    }
+    if (!bgmPreference) {
+        bgmStatusLabel.textContent = 'BGMはオフになっています。';
+        return;
+    }
+    if (bgmAudio.paused) {
+        bgmStatusLabel.textContent = bgmUnlocked
+            ? 'スタートするとBGMが再開します。'
+            : '操作後にBGMを有効化できます。';
+        return;
+    }
+    const quiet = paused || document.hidden;
+    bgmStatusLabel.textContent = quiet ? 'BGM再生中 (静音モード)' : 'BGM再生中';
+}
+
+function updateBgmToggleUI() {
+    if (!bgmToggleBtn) {
+        return;
+    }
+    bgmToggleBtn.setAttribute('aria-pressed', bgmPreference ? 'true' : 'false');
+    bgmToggleBtn.textContent = bgmPreference ? 'BGM オン' : 'BGM オフ';
+    updateBgmStatusText();
+}
+
+function syncBgmVolume() {
+    if (!bgmAudio || bgmAudio.paused) {
+        return;
+    }
+    const quiet = paused || document.hidden;
+    bgmAudio.volume = quiet ? BGM_PAUSE_VOLUME : BGM_ACTIVE_VOLUME;
+    updateBgmStatusText();
+}
+
+function attemptPlayBgm() {
+    if (!bgmAudio || !bgmPreference) {
+        return;
+    }
+    bgmAudio.volume = paused || document.hidden ? BGM_PAUSE_VOLUME : BGM_ACTIVE_VOLUME;
+    const playPromise = bgmAudio.play();
+    if (playPromise && typeof playPromise.then === 'function') {
+        playPromise.then(() => {
+            bgmUnlocked = true;
+            updateBgmStatusText();
+        }).catch(() => {
+            updateBgmStatusText();
+        });
+    } else {
+        bgmUnlocked = true;
+        updateBgmStatusText();
+    }
+}
+
+function stopBgmPlayback(resetPosition = false) {
+    if (!bgmAudio) {
+        return;
+    }
+    if (!bgmAudio.paused) {
+        bgmAudio.pause();
+    }
+    if (resetPosition) {
+        bgmAudio.currentTime = 0;
+    }
+    updateBgmStatusText();
+}
+
+function setBgmPreference(enabled) {
+    bgmPreference = enabled;
+    try {
+        localStorage.setItem(BGM_PREF_KEY, enabled ? '1' : '0');
+    } catch (error) {
+        // ignore persistence errors
+    }
+    if (!enabled) {
+        stopBgmPlayback(true);
+    } else {
+        attemptPlayBgm();
+    }
+    updateBgmToggleUI();
+}
+
+function startBgmIfEnabled() {
+    if (!bgmPreference) {
+        updateBgmStatusText();
+        return;
+    }
+    attemptPlayBgm();
+}
+
+function initializeAudioControls() {
+    if (bgmAudio) {
+        bgmAudio.volume = BGM_ACTIVE_VOLUME;
+        bgmAudio.addEventListener('playing', updateBgmStatusText);
+        bgmAudio.addEventListener('pause', updateBgmStatusText);
+    }
+    if (bgmToggleBtn) {
+        bgmToggleBtn.addEventListener('click', event => {
+            event.preventDefault();
+            setBgmPreference(!bgmPreference);
+        });
+    }
+    updateBgmToggleUI();
+}
 
 function configureCanvasResolution(canvasElement, context, targetWidth, targetHeight) {
     const ratio = window.devicePixelRatio || 1;
@@ -683,8 +818,13 @@ function startGame() {
     setStatusMessage('新しい対局開始。囲んで捕獲しよう。');
     updateStats();
     updatePreview();
+    startBgmIfEnabled();
     spawnNewPiece();
     refreshMobileControls();
+    syncBgmVolume();
+    updateBgmStatusText();
+    syncBgmVolume();
+    updateBgmStatusText();
 }
 
 function endGame(reason) {
@@ -718,6 +858,8 @@ function endGame(reason) {
     }
     setStatusMessage('ゲーム終了。');
     refreshMobileControls();
+    syncBgmVolume();
+    updateBgmStatusText();
 }
 
 function spawnNewPiece() {
@@ -843,10 +985,12 @@ function lockPiece() {
         if (totalRemoved > 0) {
             chain += 1;
             const chainMultiplier = 1 + (chain - 1) * 0.5;
-            score += Math.floor(totalRemoved * 60 * chainMultiplier);
+            const pointsEarned = Math.floor(totalRemoved * 60 * chainMultiplier);
+            score += pointsEarned;
             captures.black += captureTotals.black;
             captures.white += captureTotals.white;
             spawnCaptureEffects(removedStones);
+            spawnScorePopup(pointsEarned, removedStones);
             setStatusMessage(`${totalRemoved}個捕獲。チェインx${chain}！`);
         } else {
             chain = 0;
@@ -1219,6 +1363,44 @@ function spawnCaptureEffects(removedStones) {
         });
     });
 }
+
+function spawnScorePopup(points, removedStones) {
+    if (!points || points <= 0) {
+        return;
+    }
+    if (!removedStones || removedStones.length === 0) {
+        return;
+    }
+
+    let sumX = 0;
+    let minY = Infinity;
+    removedStones.forEach(stone => {
+        const { x, y } = boardToCanvasPosition(stone.row, stone.col);
+        sumX += x;
+        if (y < minY) {
+            minY = y;
+        }
+    });
+
+    const centerX = sumX / removedStones.length;
+    const safeTop = GRID_MARGIN - CELL_SIZE * 0.4;
+    const startY = Math.max(safeTop, minY - CELL_SIZE * 0.9);
+    const text = `+${points.toLocaleString('en-US')}`;
+
+    effects.push({
+        type: 'scorePopup',
+        x: centerX,
+        startY,
+        rise: SCORE_POPUP_RISE_DISTANCE,
+        life: 0,
+        maxLife: SCORE_POPUP_DURATION,
+        text,
+        fill: SCORE_POPUP_FILL,
+        stroke: SCORE_POPUP_STROKE,
+        shadow: SCORE_POPUP_SHADOW
+    });
+}
+
 function spawnEyePulseEffect(centerRow, centerCol, stoneColor) {
 
 
@@ -1402,6 +1584,31 @@ function drawEffects() {
             ctx.beginPath();
             ctx.arc(effect.x, effect.y, radius, 0, Math.PI * 2);
             ctx.fill();
+        } else if (effect.type === 'scorePopup') {
+            const eased = 1 - Math.pow(1 - progress, 2);
+            const rise = effect.rise != null ? effect.rise : SCORE_POPUP_RISE_DISTANCE;
+            const currentY = effect.startY - rise * eased;
+            let alpha = 1;
+            if (progress > SCORE_POPUP_FADE_START) {
+                const fadeProgress = (progress - SCORE_POPUP_FADE_START) / (1 - SCORE_POPUP_FADE_START);
+                alpha = Math.max(0, 1 - fadeProgress);
+            }
+            const fontSize = Math.max(22, Math.round(CELL_SIZE * 0.86) + 4);
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.globalAlpha = alpha;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.font = `700 ${fontSize}px "Segoe UI", "Hiragino Sans", sans-serif`;
+            ctx.lineJoin = 'round';
+            ctx.lineWidth = Math.max(fontSize * 0.12, 2.4);
+            ctx.strokeStyle = effect.stroke || SCORE_POPUP_STROKE;
+            ctx.fillStyle = effect.fill || SCORE_POPUP_FILL;
+            ctx.shadowColor = effect.shadow || SCORE_POPUP_SHADOW;
+            ctx.shadowBlur = 8;
+            ctx.strokeText(effect.text, effect.x, currentY);
+            ctx.fillText(effect.text, effect.x, currentY);
+            ctx.shadowBlur = 0;
+            ctx.shadowColor = 'transparent';
         } else if (effect.type === 'eyePulse') {
 
             const totalProgress = Math.min(effect.life / effect.maxLife, 1);
@@ -2512,6 +2719,11 @@ document.addEventListener('visibilitychange', () => {
     if (document.hidden && gameActive && !paused) {
         togglePause(true);
     }
+    if (!document.hidden) {
+        startBgmIfEnabled();
+    }
+    syncBgmVolume();
+    updateBgmStatusText();
 });
 
 function gameLoop(timestamp) {
@@ -2534,6 +2746,7 @@ function gameLoop(timestamp) {
     requestAnimationFrame(gameLoop);
 }
 
+initializeAudioControls();
 initializeMobileControls();
 refreshMobileControls();
 requestAnimationFrame(gameLoop);

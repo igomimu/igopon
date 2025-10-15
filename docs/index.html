@@ -72,6 +72,12 @@
             <section class="control-panel">
                 <button id="startBtn" type="button">スタート</button>
                 <button id="pauseBtn" type="button" disabled>ポーズ</button>
+                <div class="audio-controls">
+                    <button id="bgmToggleBtn" type="button" class="toggle-button" aria-pressed="false">
+                        BGM オフ
+                    </button>
+                    <p id="bgmStatus" class="bgm-status">操作後にBGMを有効化できます。</p>
+                </div>
                 <div id="statusMessage" class="status-message" aria-live="polite"></div>
             </section>
             <section class="help-panel">
@@ -88,10 +94,11 @@
             </section>
         </aside>
     </main>
+    <audio id="bgmAudio" class="sr-only" src="assets/igopon-bgm.wav" preload="auto" loop></audio>
     <footer class="app-footer">
         <p>ブラウザで遊べるテトリス×囲碁のプロトタイプです。</p>
     </footer>
-    <script src="script.js?v=20251016045424"></script>
+    <script src="script.js?v=20251016060108"></script>
 </body>
 </html>
 
