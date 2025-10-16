@@ -393,7 +393,7 @@ function getHighestOccupiedRow(includeCurrentPiece = true) {
 }
 
 function isDangerZoneTriggered() {
-    const highestRow = getHighestOccupiedRow(true);
+    const highestRow = getHighestOccupiedRow(false);
     if (highestRow === null) {
         return false;
     }
