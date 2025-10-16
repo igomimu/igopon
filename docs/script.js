@@ -365,39 +365,35 @@ function switchBgmRole(role, options = {}) {
     loadFixedBgm(role, options);
 }
 
-const DANGER_ZONE_TRIGGER_RATIO = 0.6;
-const DANGER_ZONE_ROW_THRESHOLD = Math.max(0, ROWS - Math.ceil(ROWS * DANGER_ZONE_TRIGGER_RATIO));
+const DANGER_FILL_RATIO = 0.7;
+const DANGER_FILL_THRESHOLD = Math.ceil(ROWS * COLS * DANGER_FILL_RATIO);
 
-function getHighestOccupiedRow(includeCurrentPiece = true) {
-    let highestRow = null;
+function countOccupiedCells(includeCurrentPiece = true) {
+    let occupied = 0;
     for (let row = 0; row < ROWS; row += 1) {
         for (let col = 0; col < COLS; col += 1) {
             if (board[row][col] !== CELL_EMPTY) {
-                highestRow = highestRow === null ? row : Math.min(highestRow, row);
-                break;
+                occupied += 1;
             }
-        }
-        if (highestRow === 0) {
-            break;
         }
     }
     if (includeCurrentPiece && currentPiece) {
         currentPiece.cells.forEach(cell => {
             const row = currentPiece.position.row + cell.row;
-            if (row >= 0 && row < ROWS) {
-                highestRow = highestRow === null ? row : Math.min(highestRow, row);
+            const col = currentPiece.position.col + cell.col;
+            if (row >= 0 && row < ROWS && col >= 0 && col < COLS) {
+                if (board[row][col] === CELL_EMPTY) {
+                    occupied += 1;
+                }
             }
         });
     }
-    return highestRow;
+    return occupied;
 }
 
 function isDangerZoneTriggered() {
-    const highestRow = getHighestOccupiedRow(false);
-    if (highestRow === null) {
-        return false;
-    }
-    return highestRow <= DANGER_ZONE_ROW_THRESHOLD;
+    const occupiedCells = countOccupiedCells(true);
+    return occupiedCells >= DANGER_FILL_THRESHOLD;
 }
 
 function updateGameBgmForDanger() {
