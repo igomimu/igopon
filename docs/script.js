@@ -384,9 +384,7 @@ function getHighestOccupiedRow(includeCurrentPiece = true) {
     if (includeCurrentPiece && currentPiece) {
         currentPiece.cells.forEach(cell => {
             const row = currentPiece.position.row + cell.row;
-            if (row < 0) {
-                highestRow = highestRow === null ? -1 : Math.min(highestRow, -1);
-            } else if (row < ROWS) {
+            if (row >= 0 && row < ROWS) {
                 highestRow = highestRow === null ? row : Math.min(highestRow, row);
             }
         });
