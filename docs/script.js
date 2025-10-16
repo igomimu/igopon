@@ -206,13 +206,11 @@ const BGM_ROLES = {
 };
 const BGM_PRESETS = {
     [BGM_ROLES.LOBBY]: {
-        // TODO: Replace with the final lobby BGM asset path.
-        src: 'assets/igopon-bgm.wav',
+        src: 'assets/igopon-lobby.mp3',
         label: 'ロビーBGM'
     },
     [BGM_ROLES.GAME]: {
-        // TODO: Replace with the final in-game BGM asset path.
-        src: 'assets/igopon-bgm.wav',
+        src: 'assets/igopon-game.mp3',
         label: 'ゲームBGM'
     }
 };
