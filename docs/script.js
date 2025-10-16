@@ -202,7 +202,8 @@ const BGM_ACTIVE_VOLUME = 0.6;
 const BGM_PAUSE_VOLUME = 0.25;
 const BGM_ROLES = {
     LOBBY: 'lobby',
-    GAME: 'game'
+    GAME: 'game',
+    DANGER: 'game-danger'
 };
 const BGM_PRESETS = {
     [BGM_ROLES.LOBBY]: {
@@ -212,6 +213,10 @@ const BGM_PRESETS = {
     [BGM_ROLES.GAME]: {
         src: 'assets/igopon-game.mp3',
         label: 'ゲームBGM'
+    },
+    [BGM_ROLES.DANGER]: {
+        src: 'assets/igopon-game2.mp3',
+        label: 'ゲームBGM（危険）'
     }
 };
 
@@ -358,6 +363,56 @@ function switchBgmRole(role, options = {}) {
     }
     activeBgmRole = role;
     loadFixedBgm(role, options);
+}
+
+const DANGER_ZONE_TRIGGER_RATIO = 0.6;
+const DANGER_ZONE_ROW_THRESHOLD = Math.max(0, ROWS - Math.ceil(ROWS * DANGER_ZONE_TRIGGER_RATIO));
+
+function getHighestOccupiedRow(includeCurrentPiece = true) {
+    let highestRow = null;
+    for (let row = 0; row < ROWS; row += 1) {
+        for (let col = 0; col < COLS; col += 1) {
+            if (board[row][col] !== CELL_EMPTY) {
+                highestRow = highestRow === null ? row : Math.min(highestRow, row);
+                break;
+            }
+        }
+        if (highestRow === 0) {
+            break;
+        }
+    }
+    if (includeCurrentPiece && currentPiece) {
+        currentPiece.cells.forEach(cell => {
+            const row = currentPiece.position.row + cell.row;
+            if (row < 0) {
+                highestRow = highestRow === null ? -1 : Math.min(highestRow, -1);
+            } else if (row < ROWS) {
+                highestRow = highestRow === null ? row : Math.min(highestRow, row);
+            }
+        });
+    }
+    return highestRow;
+}
+
+function isDangerZoneTriggered() {
+    const highestRow = getHighestOccupiedRow(true);
+    if (highestRow === null) {
+        return false;
+    }
+    return highestRow <= DANGER_ZONE_ROW_THRESHOLD;
+}
+
+function updateGameBgmForDanger() {
+    if (!gameActive) {
+        return;
+    }
+    const dangerActive = isDangerZoneTriggered();
+    const targetRole = dangerActive ? BGM_ROLES.DANGER : BGM_ROLES.GAME;
+    if (activeBgmRole !== targetRole) {
+        switchBgmRole(targetRole, { autoplay: true });
+    } else {
+        updateBgmStatusText();
+    }
 }
 
 function setBgmPreference(enabled) {
@@ -897,7 +952,13 @@ function startGame() {
     updatePreview();
     switchBgmRole(BGM_ROLES.GAME);
     startBgmIfEnabled();
-    spawnNewPiece();
+    if (!spawnNewPiece()) {
+        refreshMobileControls();
+        syncBgmVolume();
+        updateBgmStatusText();
+        return;
+    }
+    updateGameBgmForDanger();
     refreshMobileControls();
     syncBgmVolume();
     updateBgmStatusText();
@@ -1124,10 +1185,13 @@ function lockPiece() {
             return;
         }
 
+        updateGameBgmForDanger();
+
         if (!spawnNewPiece()) {
             refreshMobileControls();
             return;
         }
+        updateGameBgmForDanger();
         refreshMobileControls();
     });
 }
