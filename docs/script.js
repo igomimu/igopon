@@ -204,80 +204,22 @@ const BGM_ROLES = {
     LOBBY: 'lobby',
     GAME: 'game'
 };
-const BGM_DEFAULTS = {
+const BGM_PRESETS = {
     [BGM_ROLES.LOBBY]: {
+        // TODO: Replace with the final lobby BGM asset path.
         src: 'assets/igopon-bgm.wav',
-        label: '標準BGM'
+        label: 'ロビーBGM'
     },
     [BGM_ROLES.GAME]: {
+        // TODO: Replace with the final in-game BGM asset path.
         src: 'assets/igopon-bgm.wav',
-        label: '標準BGM'
-    }
-};
-const BGM_STORAGE_KEYS = {
-    [BGM_ROLES.LOBBY]: {
-        src: 'igoponBgmSourceLobby',
-        label: 'igoponBgmSourceLabelLobby'
-    },
-    [BGM_ROLES.GAME]: {
-        src: 'igoponBgmSourceGame',
-        label: 'igoponBgmSourceLabelGame'
-    }
-};
-const BGM_CONTROL_IDS = {
-    [BGM_ROLES.LOBBY]: {
-        input: 'bgmLobbySourceInput',
-        applyBtn: 'bgmLobbyApplyBtn',
-        fileInput: 'bgmLobbyFileInput',
-        resetBtn: 'bgmLobbyResetBtn',
-        status: 'bgmLobbySourceStatus'
-    },
-    [BGM_ROLES.GAME]: {
-        input: 'bgmGameSourceInput',
-        applyBtn: 'bgmGameApplyBtn',
-        fileInput: 'bgmGameFileInput',
-        resetBtn: 'bgmGameResetBtn',
-        status: 'bgmGameSourceStatus'
+        label: 'ゲームBGM'
     }
 };
 
 let bgmPreference = true;
 let bgmUnlocked = false;
-const bgmState = {
-    [BGM_ROLES.LOBBY]: {
-        src: BGM_DEFAULTS[BGM_ROLES.LOBBY].src,
-        label: BGM_DEFAULTS[BGM_ROLES.LOBBY].label,
-        type: 'default',
-        objectUrl: null
-    },
-    [BGM_ROLES.GAME]: {
-        src: BGM_DEFAULTS[BGM_ROLES.GAME].src,
-        label: BGM_DEFAULTS[BGM_ROLES.GAME].label,
-        type: 'default',
-        objectUrl: null
-    }
-};
 let activeBgmRole = BGM_ROLES.LOBBY;
-
-function getBgmControls(role) {
-    const ids = BGM_CONTROL_IDS[role];
-    if (!ids) {
-        return {
-            input: null,
-            applyBtn: null,
-            fileInput: null,
-            resetBtn: null,
-            status: null
-        };
-    }
-    return {
-        input: document.getElementById(ids.input),
-        applyBtn: document.getElementById(ids.applyBtn),
-        fileInput: document.getElementById(ids.fileInput),
-        resetBtn: document.getElementById(ids.resetBtn),
-        status: document.getElementById(ids.status)
-    };
-}
 
 try {
     const storedPreference = localStorage.getItem(BGM_PREF_KEY);
@@ -288,6 +230,15 @@ try {
     bgmPreference = true;
 }
 
+function getConfiguredBgm(role) {
+    return BGM_PRESETS[role] || BGM_PRESETS[BGM_ROLES.LOBBY];
+}
+
+function currentBgmLabel() {
+    const preset = getConfiguredBgm(activeBgmRole);
+    return preset ? preset.label : '';
+}
+
 function updateBgmStatusText() {
     if (!bgmStatusLabel) {
         return;
@@ -296,18 +247,23 @@ function updateBgmStatusText() {
         bgmStatusLabel.textContent = '音源が見つかりません。';
         return;
     }
+    const label = currentBgmLabel();
+    const labelSuffix = label ? ` (${label})` : '';
     if (!bgmPreference) {
-        bgmStatusLabel.textContent = 'BGMはオフになっています。';
+        bgmStatusLabel.textContent = `BGMはオフになっています。${labelSuffix}`.trim();
         return;
     }
     if (bgmAudio.paused) {
-        bgmStatusLabel.textContent = bgmUnlocked
+        const resumeText = bgmUnlocked
             ? 'スタートするとBGMが再開します。'
             : '操作後にBGMを有効化できます。';
+        bgmStatusLabel.textContent = `${resumeText}${labelSuffix}`;
         return;
     }
     const quiet = paused || document.hidden;
-    bgmStatusLabel.textContent = quiet ? 'BGM再生中 (静音モード)' : 'BGM再生中';
+    bgmStatusLabel.textContent = quiet
+        ? `BGM再生中 (静音モード)${labelSuffix}`
+        : `BGM再生中${labelSuffix}`;
 }
 
 function updateBgmToggleUI() {
@@ -360,225 +316,50 @@ function stopBgmPlayback(resetPosition = false) {
     updateBgmStatusText();
 }
 
-function getBgmRoleLabel(role) {
-    return role === BGM_ROLES.GAME ? 'ゲーム中BGM' : 'タイトル / リザルトBGM';
-}
-
-function disposeBgmObjectUrl(role) {
-    const state = bgmState[role];
-    if (!state || state.type !== 'file' || !state.objectUrl) {
-        return;
-    }
-    URL.revokeObjectURL(state.objectUrl);
-    state.objectUrl = null;
-}
-
-function updateBgmSourceStatus(role, message) {
-    const controls = getBgmControls(role);
-    if (!controls || !controls.status) {
-        return;
-    }
-    if (message) {
-        controls.status.textContent = message;
-        return;
-    }
-    const state = bgmState[role];
-    if (!state) {
-        controls.status.textContent = `${getBgmRoleLabel(role)}: 設定が見つかりません。`;
-        return;
-    }
-    const label = state.label || '指定したBGM';
-    const scopeNote = state.type === 'file' ? ' (このタブのみ)' : '';
-    const activeNote = activeBgmRole === role ? '（現在のシーン）' : '';
-    controls.status.textContent = `現在: ${label}${scopeNote}${activeNote}`;
-}
-
-function updateAllBgmSourceStatuses() {
-    updateBgmSourceStatus(BGM_ROLES.LOBBY);
-    updateBgmSourceStatus(BGM_ROLES.GAME);
-}
-
-function persistBgmSource(role, path, label) {
-    const keys = BGM_STORAGE_KEYS[role];
-    if (!keys) {
-        return;
-    }
-    try {
-        localStorage.setItem(keys.src, path);
-        localStorage.setItem(keys.label, label || '');
-    } catch (error) {
-        // ignore persistence errors
-    }
-}
-
-function clearPersistedBgmSource(role) {
-    const keys = BGM_STORAGE_KEYS[role];
-    if (!keys) {
-        return;
-    }
-    try {
-        localStorage.removeItem(keys.src);
-        localStorage.removeItem(keys.label);
-    } catch (error) {
-        // ignore persistence errors
-    }
-}
-
-function applyBgmSource(role, path, label, options = {}) {
-    if (!path || !bgmState[role]) {
-        return;
-    }
-    const state = bgmState[role];
-    const {
-        sourceType = 'path',
-        skipActiveReload = false,
-        autoplay = true
-    } = options;
-    const normalizedLabel = label || path;
-    const previousSrc = state.src;
-    const previousType = state.type;
-    const previousLabel = state.label;
-    const previousObjectUrl = state.objectUrl;
-    const pathChanged = previousSrc !== path || previousType !== sourceType;
-    const labelChanged = previousLabel !== normalizedLabel;
-    if (!pathChanged && !labelChanged) {
-        if (!skipActiveReload && activeBgmRole === role) {
-            updateAllBgmSourceStatuses();
-        } else {
-            updateBgmSourceStatus(role);
-        }
-        return;
-    }
-    if (previousType === 'file' && previousObjectUrl && (pathChanged || sourceType !== 'file')) {
-        URL.revokeObjectURL(previousObjectUrl);
-    }
-    state.src = path;
-    state.label = normalizedLabel;
-    state.type = sourceType;
-    state.objectUrl = sourceType === 'file' ? path : null;
-    if (pathChanged && activeBgmRole === role && !skipActiveReload) {
-        loadActiveBgmSource({ autoplay });
-    } else {
-        updateAllBgmSourceStatuses();
-    }
-}
-
-function loadBgmFromStorage(role) {
-    const controls = getBgmControls(role);
-    const keys = BGM_STORAGE_KEYS[role];
-    if (!keys || !bgmState[role]) {
-        return;
-    }
-    let storedSrc = null;
-    let storedLabel = null;
-    try {
-        storedSrc = localStorage.getItem(keys.src);
-        storedLabel = localStorage.getItem(keys.label);
-    } catch (error) {
-        storedSrc = null;
-        storedLabel = null;
-    }
-    if (storedSrc) {
-        const trimmed = storedSrc.trim();
-        if (trimmed.length > 0) {
-            applyBgmSource(role, trimmed, storedLabel && storedLabel.length > 0 ? storedLabel : trimmed, {
-                sourceType: 'path',
-                skipActiveReload: true,
-                autoplay: false
-            });
-            if (controls && controls.input) {
-                controls.input.value = trimmed;
-            }
-            return;
-        }
-    }
-    const defaults = BGM_DEFAULTS[role];
-    applyBgmSource(role, defaults.src, defaults.label, {
-        sourceType: 'default',
-        skipActiveReload: true,
-        autoplay: false
-    });
-    if (controls && controls.input) {
-        controls.input.value = '';
-    }
-}
-
-function handleBgmPathApply(role) {
-    const controls = getBgmControls(role);
-    if (!controls || !controls.input) {
-        return;
-    }
-    const rawPath = controls.input.value.trim();
-    if (!rawPath) {
-        updateBgmSourceStatus(role, 'BGMパスを入力してください。');
-        return;
-    }
-    updateBgmSourceStatus(role, '指定したBGMを読み込み中...');
-    applyBgmSource(role, rawPath, rawPath, { sourceType: 'path' });
-    persistBgmSource(role, rawPath, rawPath);
-}
-
-function handleBgmFileSelection(role, file) {
-    if (!file) {
-        return;
-    }
-    const controls = getBgmControls(role);
-    updateBgmSourceStatus(role, 'ファイルを読み込み中...');
-    const objectUrl = URL.createObjectURL(file);
-    applyBgmSource(role, objectUrl, file.name || '選択したファイル', {
-        sourceType: 'file'
-    });
-    if (controls && controls.input) {
-        controls.input.value = '';
-    }
-}
-
-function handleBgmReset(role) {
-    const defaults = BGM_DEFAULTS[role];
-    applyBgmSource(role, defaults.src, defaults.label, { sourceType: 'default' });
-    clearPersistedBgmSource(role);
-    const controls = getBgmControls(role);
-    if (controls && controls.input) {
-        controls.input.value = '';
-    }
-}
-
-function loadActiveBgmSource({ autoplay = true } = {}) {
+function loadFixedBgm(role, options = {}) {
     if (!bgmAudio) {
         return;
     }
-    const state = bgmState[activeBgmRole];
-    if (!state) {
+    const preset = getConfiguredBgm(role);
+    if (!preset) {
         return;
     }
-    stopBgmPlayback(true);
-    bgmAudio.src = state.src;
-    bgmAudio.load();
-    updateAllBgmSourceStatuses();
+    const autoplay = options.autoplay ?? true;
+    const currentRole = bgmAudio.dataset.activeBgmRole;
+    const currentSrc = bgmAudio.getAttribute('src');
+    const needsReload = currentRole !== role || currentSrc !== preset.src;
+
+    if (needsReload) {
+        stopBgmPlayback(true);
+        bgmAudio.src = preset.src;
+        bgmAudio.dataset.activeBgmRole = role;
+        bgmUnlocked = false;
+        bgmAudio.load();
+    }
+
     if (autoplay && bgmPreference) {
-        const restartPlayback = () => {
-            bgmAudio.removeEventListener('canplay', restartPlayback);
+        if (needsReload) {
+            const restartPlayback = () => {
+                bgmAudio.removeEventListener('canplay', restartPlayback);
+                attemptPlayBgm();
+                syncBgmVolume();
+            };
+            bgmAudio.addEventListener('canplay', restartPlayback, { once: true });
+        } else {
             attemptPlayBgm();
             syncBgmVolume();
-        };
-        bgmAudio.addEventListener('canplay', restartPlayback, { once: true });
+        }
     } else {
         updateBgmStatusText();
     }
 }
 
 function switchBgmRole(role, options = {}) {
-    if (!bgmState[role]) {
+    if (!BGM_PRESETS[role]) {
         return;
     }
-    const autoplay = options.autoplay ?? true;
-    if (activeBgmRole !== role) {
-        activeBgmRole = role;
-        loadActiveBgmSource({ autoplay });
-    } else if (autoplay && bgmPreference) {
-        startBgmIfEnabled();
-    }
-    updateAllBgmSourceStatuses();
+    activeBgmRole = role;
+    loadFixedBgm(role, options);
 }
 
 function setBgmPreference(enabled) {
@@ -591,10 +372,9 @@ function setBgmPreference(enabled) {
     if (!enabled) {
         stopBgmPlayback(true);
     } else {
-        attemptPlayBgm();
+        loadFixedBgm(activeBgmRole, { autoplay: true });
     }
     updateBgmToggleUI();
-    updateAllBgmSourceStatuses();
 }
 
 function startBgmIfEnabled() {
@@ -602,7 +382,7 @@ function startBgmIfEnabled() {
         updateBgmStatusText();
         return;
     }
-    attemptPlayBgm();
+    loadFixedBgm(activeBgmRole, { autoplay: true });
 }
 
 function initializeAudioControls() {
@@ -610,65 +390,16 @@ function initializeAudioControls() {
         bgmAudio.volume = BGM_ACTIVE_VOLUME;
         bgmAudio.addEventListener('playing', updateBgmStatusText);
         bgmAudio.addEventListener('pause', updateBgmStatusText);
-        bgmAudio.addEventListener('error', () => {
-            updateBgmSourceStatus(activeBgmRole, 'BGMの読み込みに失敗しました。ファイルやURLを確認してください。');
-        });
-        bgmAudio.addEventListener('loadeddata', () => {
-            updateAllBgmSourceStatuses();
-        });
+        loadFixedBgm(activeBgmRole, { autoplay: false });
     }
-    Object.values(BGM_ROLES).forEach(role => {
-        loadBgmFromStorage(role);
-    });
-    activeBgmRole = BGM_ROLES.LOBBY;
-    loadActiveBgmSource({ autoplay: false });
     if (bgmToggleBtn) {
         bgmToggleBtn.addEventListener('click', event => {
             event.preventDefault();
             setBgmPreference(!bgmPreference);
         });
     }
-    Object.values(BGM_ROLES).forEach(role => {
-        const controls = getBgmControls(role);
-        if (!controls) {
-            return;
-        }
-        if (controls.applyBtn && controls.input) {
-            controls.applyBtn.addEventListener('click', event => {
-                event.preventDefault();
-                handleBgmPathApply(role);
-            });
-            controls.input.addEventListener('keydown', event => {
-                if (event.key === 'Enter') {
-                    event.preventDefault();
-                    handleBgmPathApply(role);
-                }
-            });
-        }
-        if (controls.fileInput) {
-            controls.fileInput.addEventListener('change', event => {
-                const fileList = event.target.files;
-                const file = fileList && fileList.length > 0 ? fileList[0] : null;
-                handleBgmFileSelection(role, file);
-                event.target.value = '';
-            });
-        }
-        if (controls.resetBtn) {
-            controls.resetBtn.addEventListener('click', event => {
-                event.preventDefault();
-                handleBgmReset(role);
-            });
-        }
-    });
-    window.addEventListener('beforeunload', () => {
-        disposeBgmObjectUrl(BGM_ROLES.LOBBY);
-        disposeBgmObjectUrl(BGM_ROLES.GAME);
-    });
-    if (bgmToggleBtn) {
-        bgmToggleBtn.setAttribute('aria-pressed', bgmPreference ? 'true' : 'false');
-    }
     updateBgmToggleUI();
-    updateAllBgmSourceStatuses();
+    updateBgmStatusText();
 }
 
 function configureCanvasResolution(canvasElement, context, targetWidth, targetHeight) {

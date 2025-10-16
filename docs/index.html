@@ -73,40 +73,10 @@
                 <button id="startBtn" type="button">スタート</button>
                 <button id="pauseBtn" type="button" disabled>ポーズ</button>
                 <div class="audio-controls">
-                    <div class="bgm-toggle-group">
-                        <button id="bgmToggleBtn" type="button" class="toggle-button" aria-pressed="false">
-                            BGM オフ
-                        </button>
-                        <p id="bgmStatus" class="bgm-status">操作後にBGMを有効化できます。</p>
-                    </div>
-                    <div class="bgm-source-controls">
-                        <div class="bgm-section" role="group" aria-labelledby="bgmLobbyTitle">
-                            <h3 id="bgmLobbyTitle" class="bgm-section-title">タイトル / リザルト</h3>
-                            <label for="bgmLobbySourceInput" class="bgm-source-label">パスまたはURL</label>
-                            <div class="bgm-source-row">
-                                <input id="bgmLobbySourceInput" type="text" class="bgm-source-input" placeholder="assets/lobby-theme.mp3" inputmode="url">
-                                <button id="bgmLobbyApplyBtn" type="button" class="bgm-apply-btn">パスを適用</button>
-                            </div>
-                            <div class="bgm-source-row">
-                                <input id="bgmLobbyFileInput" type="file" class="bgm-file-input" accept="audio/*">
-                                <button id="bgmLobbyResetBtn" type="button" class="bgm-reset-btn">標準に戻す</button>
-                            </div>
-                            <p id="bgmLobbySourceStatus" class="bgm-status">現在: 標準BGM</p>
-                        </div>
-                        <div class="bgm-section" role="group" aria-labelledby="bgmGameTitle">
-                            <h3 id="bgmGameTitle" class="bgm-section-title">ゲーム中</h3>
-                            <label for="bgmGameSourceInput" class="bgm-source-label">パスまたはURL</label>
-                            <div class="bgm-source-row">
-                                <input id="bgmGameSourceInput" type="text" class="bgm-source-input" placeholder="assets/game-theme.mp3" inputmode="url">
-                                <button id="bgmGameApplyBtn" type="button" class="bgm-apply-btn">パスを適用</button>
-                            </div>
-                            <div class="bgm-source-row">
-                                <input id="bgmGameFileInput" type="file" class="bgm-file-input" accept="audio/*">
-                                <button id="bgmGameResetBtn" type="button" class="bgm-reset-btn">標準に戻す</button>
-                            </div>
-                            <p id="bgmGameSourceStatus" class="bgm-status">現在: 標準BGM</p>
-                        </div>
-                    </div>
+                    <button id="bgmToggleBtn" type="button" class="toggle-button" aria-pressed="false">
+                        BGM オフ
+                    </button>
+                    <p id="bgmStatus" class="bgm-status">操作後にBGMを有効化できます。</p>
                 </div>
                 <div id="statusMessage" class="status-message" aria-live="polite"></div>
             </section>

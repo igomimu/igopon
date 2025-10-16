@@ -209,63 +209,10 @@ body {
 }
 
 .audio-controls {
-    display: grid;
-    gap: 0.75rem;
-    align-content: start;
-}
-
-.bgm-toggle-group {
     display: flex;
     align-items: center;
     gap: 0.75rem;
     flex-wrap: wrap;
-}
-
-.bgm-source-controls {
-    display: grid;
-    gap: 1rem;
-}
-
-.bgm-section {
-    display: grid;
-    gap: 0.5rem;
-    padding: 0.75rem;
-    background: rgba(54, 90, 46, 0.08);
-    border: 1px solid rgba(54, 90, 46, 0.18);
-    border-radius: 12px;
-}
-
-.bgm-section-title {
-    margin: 0;
-    font-size: 1rem;
-    color: var(--accent);
-}
-
-.bgm-source-row {
-    display: flex;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-}
-
-.bgm-source-label {
-    font-size: 0.9rem;
-    color: var(--text-muted);
-}
-
-.bgm-source-input {
-    flex: 1 1 200px;
-    min-width: 160px;
-    padding: 0.55rem 0.6rem;
-    border: 1px solid rgba(54, 90, 46, 0.3);
-    border-radius: 8px;
-    font-size: 0.95rem;
-    background: #fff;
-    color: var(--text-dark);
-}
-
-.bgm-file-input {
-    flex: 1 1 200px;
-    min-width: 160px;
 }
 
 .toggle-button {
