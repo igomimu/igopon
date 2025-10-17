@@ -367,6 +367,7 @@ function switchBgmRole(role, options = {}) {
 
 const DANGER_FILL_RATIO = 0.7;
 const DANGER_FILL_THRESHOLD = Math.ceil(ROWS * COLS * DANGER_FILL_RATIO);
+const DANGER_HIGH_ROW_INDEX = Math.max(0, ROWS - 8);
 
 function countOccupiedCells(includeCurrentPiece = true) {
     let occupied = 0;
@@ -393,7 +394,28 @@ function countOccupiedCells(includeCurrentPiece = true) {
 
 function isDangerZoneTriggered() {
     const occupiedCells = countOccupiedCells(true);
-    return occupiedCells >= DANGER_FILL_THRESHOLD;
+    if (occupiedCells >= DANGER_FILL_THRESHOLD) {
+        return true;
+    }
+
+    for (let row = 0; row < DANGER_HIGH_ROW_INDEX; row += 1) {
+        for (let col = 0; col < COLS; col += 1) {
+            if (board[row][col] !== CELL_EMPTY) {
+                return true;
+            }
+        }
+    }
+
+    if (currentPiece) {
+        for (const cell of currentPiece.cells) {
+            const row = currentPiece.position.row + cell.row;
+            if (row >= 0 && row < DANGER_HIGH_ROW_INDEX) {
+                return true;
+            }
+        }
+    }
+
+    return false;
 }
 
 function updateGameBgmForDanger() {
