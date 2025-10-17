@@ -407,18 +407,6 @@ function isDangerZoneTriggered() {
         }
     }
 
-    if (currentPiece && lockedCells > 0) {
-        for (const cell of currentPiece.cells) {
-            const row = currentPiece.position.row + cell.row;
-            const col = currentPiece.position.col + cell.col;
-            if (row >= 0 && row < DANGER_HIGH_ROW_CUTOFF && col >= 0 && col < COLS) {
-                if (board[row][col] === CELL_EMPTY) {
-                    return true;
-                }
-            }
-        }
-    }
-
     return false;
 }
 
