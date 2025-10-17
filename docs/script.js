@@ -341,17 +341,8 @@ function loadFixedBgm(role, options = {}) {
     }
 
     if (autoplay && bgmPreference) {
-        if (needsReload) {
-            const restartPlayback = () => {
-                bgmAudio.removeEventListener('canplay', restartPlayback);
-                attemptPlayBgm();
-                syncBgmVolume();
-            };
-            bgmAudio.addEventListener('canplay', restartPlayback, { once: true });
-        } else {
-            attemptPlayBgm();
-            syncBgmVolume();
-        }
+        attemptPlayBgm();
+        syncBgmVolume();
     } else {
         updateBgmStatusText();
     }
