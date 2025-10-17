@@ -222,6 +222,7 @@ const BGM_PRESETS = {
 
 let bgmPreference = true;
 let bgmUnlocked = false;
+let bgmAutoplayUnlockHandler = null;
 let activeBgmRole = BGM_ROLES.LOBBY;
 
 try {
@@ -338,6 +339,14 @@ function loadFixedBgm(role, options = {}) {
         bgmAudio.dataset.activeBgmRole = role;
         bgmUnlocked = false;
         bgmAudio.load();
+        const restartPlayback = () => {
+            bgmAudio.removeEventListener('canplay', restartPlayback);
+            if (bgmPreference) {
+                attemptPlayBgm();
+                syncBgmVolume();
+            }
+        };
+        bgmAudio.addEventListener('canplay', restartPlayback, { once: true });
     }
 
     if (autoplay && bgmPreference) {
@@ -346,6 +355,8 @@ function loadFixedBgm(role, options = {}) {
     } else {
         updateBgmStatusText();
     }
+
+    ensureBgmAutoplayUnlockArm();
 }
 
 function switchBgmRole(role, options = {}) {
@@ -354,6 +365,40 @@ function switchBgmRole(role, options = {}) {
     }
     activeBgmRole = role;
     loadFixedBgm(role, options);
+}
+
+function ensureBgmAutoplayUnlockArm() {
+    if (!bgmAudio) {
+        return;
+    }
+    const needsHandler = !bgmAutoplayUnlockHandler;
+    if (!needsHandler) {
+        return;
+    }
+    const handler = () => {
+        if (!bgmPreference) {
+            return;
+        }
+        if (bgmUnlocked) {
+            cleanup();
+            return;
+        }
+        attemptPlayBgm();
+        if (bgmUnlocked) {
+            cleanup();
+        }
+    };
+    function cleanup() {
+        if (!bgmAutoplayUnlockHandler) {
+            return;
+        }
+        document.removeEventListener('pointerdown', handler);
+        document.removeEventListener('keydown', handler);
+        bgmAutoplayUnlockHandler = null;
+    }
+    bgmAutoplayUnlockHandler = handler;
+    document.addEventListener('pointerdown', handler, { passive: true });
+    document.addEventListener('keydown', handler);
 }
 
 const DANGER_FILL_RATIO = 0.7;
@@ -452,6 +497,7 @@ function initializeAudioControls() {
     }
     updateBgmToggleUI();
     updateBgmStatusText();
+    ensureBgmAutoplayUnlockArm();
 }
 
 function configureCanvasResolution(canvasElement, context, targetWidth, targetHeight) {
