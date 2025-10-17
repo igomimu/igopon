@@ -367,7 +367,7 @@ function switchBgmRole(role, options = {}) {
 
 const DANGER_FILL_RATIO = 0.7;
 const DANGER_FILL_THRESHOLD = Math.ceil(ROWS * COLS * DANGER_FILL_RATIO);
-const DANGER_HIGH_ROW_INDEX = Math.max(0, ROWS - 8);
+const DANGER_HIGH_ROW_CUTOFF = 8; // zero-indexed rows 0-7
 
 function countOccupiedCells(includeCurrentPiece = true) {
     let occupied = 0;
@@ -393,12 +393,13 @@ function countOccupiedCells(includeCurrentPiece = true) {
 }
 
 function isDangerZoneTriggered() {
-    const occupiedCells = countOccupiedCells(true);
-    if (occupiedCells >= DANGER_FILL_THRESHOLD) {
+    const lockedCells = countOccupiedCells(false);
+    const totalCells = countOccupiedCells(true);
+    if (totalCells >= DANGER_FILL_THRESHOLD) {
         return true;
     }
 
-    for (let row = 0; row < DANGER_HIGH_ROW_INDEX; row += 1) {
+    for (let row = 0; row < DANGER_HIGH_ROW_CUTOFF; row += 1) {
         for (let col = 0; col < COLS; col += 1) {
             if (board[row][col] !== CELL_EMPTY) {
                 return true;
@@ -406,11 +407,14 @@ function isDangerZoneTriggered() {
         }
     }
 
-    if (currentPiece) {
+    if (currentPiece && lockedCells > 0) {
         for (const cell of currentPiece.cells) {
             const row = currentPiece.position.row + cell.row;
-            if (row >= 0 && row < DANGER_HIGH_ROW_INDEX) {
-                return true;
+            const col = currentPiece.position.col + cell.col;
+            if (row >= 0 && row < DANGER_HIGH_ROW_CUTOFF && col >= 0 && col < COLS) {
+                if (board[row][col] === CELL_EMPTY) {
+                    return true;
+                }
             }
         }
     }
