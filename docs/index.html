@@ -12,9 +12,14 @@
             <h1>いごぽん</h1>
             <button id="headerStartBtn" type="button" class="header-start-btn">GO!</button>
         </div>
-        <div id="headerScore" class="header-score" aria-live="polite" aria-atomic="true">
-            <span class="header-score-label">総スコア</span>
-            <span id="inGameScoreValue" class="header-score-value">0</span>
+        <div class="header-actions">
+            <button id="bgmToggleBtn" type="button" class="header-bgm-btn toggle-button" aria-pressed="false">
+                BGM オフ
+            </button>
+            <div id="headerScore" class="header-score" aria-live="polite" aria-atomic="true">
+                <span class="header-score-label">スコア</span>
+                <span id="inGameScoreValue" class="header-score-value">0</span>
+            </div>
         </div>
     </header>
     <main class="layout">
@@ -77,9 +82,6 @@
                 <button id="startBtn" type="button">スタート</button>
                 <button id="pauseBtn" type="button" disabled>ポーズ</button>
                 <div class="audio-controls">
-                    <button id="bgmToggleBtn" type="button" class="toggle-button" aria-pressed="false">
-                        BGM オフ
-                    </button>
                     <p id="bgmStatus" class="bgm-status">操作後にBGMを有効化できます。</p>
                 </div>
                 <div id="statusMessage" class="status-message" aria-live="polite"></div>
