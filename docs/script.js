@@ -2,6 +2,10 @@ const ROWS = 20;
 const COLS = 10;
 const CELL_SIZE = 30;
 const BASE_DROP_INTERVAL = 900;
+const LEVEL_INTERVAL_STEP = 80;
+const SCORE_SPEED_STEP = 1500;
+const SCORE_INTERVAL_STEP = 45;
+const MIN_DROP_INTERVAL = 160;
 const DIRECTIONS = [
     [1, 0],
     [-1, 0],
@@ -133,6 +137,8 @@ const chainValue = document.getElementById('chainValue');
 const blackCaptureValue = document.getElementById('blackCaptureValue');
 const whiteCaptureValue = document.getElementById('whiteCaptureValue');
 const piecesValue = document.getElementById('piecesValue');
+const headerScore = document.getElementById('headerScore');
+const inGameScoreValue = document.getElementById('inGameScoreValue');
 const mobileLeftBtn = document.getElementById('mobileLeftBtn');
 const mobileRightBtn = document.getElementById('mobileRightBtn');
 const mobileRotateBtn = document.getElementById('mobileRotateBtn');
@@ -219,6 +225,15 @@ const BGM_PRESETS = {
         label: 'ゲームBGM（危険）'
     }
 };
+
+const CONTROL_KEY_CODES = new Set([
+    'ArrowLeft',
+    'ArrowRight',
+    'ArrowDown',
+    'ArrowUp',
+    'Space',
+    'Enter'
+]);
 
 let bgmPreference = true;
 let bgmUnlocked = false;
@@ -862,6 +877,7 @@ let lastFrameTime = null;
 let gameActive = false;
 let paused = false;
 let statusTimeoutId = null;
+let scoreSpeedTier = 0;
 
 const PIECE_TEMPLATES = [
     {
@@ -981,6 +997,9 @@ function startGame() {
     lastFrameTime = null;
     gameActive = true;
     paused = false;
+    scoreSpeedTier = 0;
+    recalculateDropInterval();
+    setHeaderScoreActive(true);
     currentPiece = null;
     specialPieceQueue.length = 0;
     activeEyeFrames.length = 0;
@@ -1015,6 +1034,7 @@ function endGame(reason) {
     }
     gameActive = false;
     paused = false;
+    setHeaderScoreActive(false);
     pauseBtn.disabled = true;
     pauseBtn.textContent = 'ポーズ';
     overlayTitle.textContent = reason;
@@ -1166,26 +1186,34 @@ function lockPiece() {
     settleBoardWithHighlights(result => {
         const { totalRemoved, captureTotals, removedStones } = result;
 
+        const statusMessages = [];
+        let scoreSpeedBoosted = false;
+
         if (totalRemoved > 0) {
             chain += 1;
             const chainMultiplier = 1 + (chain - 1) * 0.5;
             const pointsEarned = Math.floor(totalRemoved * 60 * chainMultiplier);
             score += pointsEarned;
+            scoreSpeedBoosted = updateScoreSpeedTier();
             captures.black += captureTotals.black;
             captures.white += captureTotals.white;
             spawnCaptureEffects(removedStones);
             spawnScorePopup(pointsEarned, removedStones);
-            setStatusMessage(`${totalRemoved}個捕獲。チェインx${chain}！`);
+            let captureMessage = `${totalRemoved}個捕獲。チェインx${chain}！`;
+            if (scoreSpeedBoosted) {
+                captureMessage += ' スコアアップで落下速度上昇！';
+            }
+            statusMessages.push(captureMessage);
         } else {
             chain = 0;
-            setStatusMessage('石を配置。捕獲なし。');
+            statusMessages.push('石を配置。捕獲なし。');
         }
 
         piecesPlaced += 1;
         if (piecesPlaced % 5 === 0) {
             level += 1;
-            dropInterval = Math.max(220, BASE_DROP_INTERVAL - (level - 1) * 80);
-            setStatusMessage(`レベル${level}。落下間隔 ${(dropInterval / 1000).toFixed(2)}秒。`);
+            recalculateDropInterval();
+            statusMessages.push(`レベル${level}。落下間隔 ${formatDropIntervalSeconds()}秒。`);
         }
 
         maybeScheduleEyeFramePiece();
@@ -1216,12 +1244,23 @@ function lockPiece() {
             }
         }
 
-        updateStats();
+        let finalStatusMessage = statusMessages.join(' ').trim();
         if (placedEyeFrame) {
             chain = 0;
-            setStatusMessage('色付き眼フレームを設置しました。');
+            finalStatusMessage = '色付き眼フレームを設置しました。';
         } else if (clearedEyeFrame) {
-            setStatusMessage('眼フレームが崩壊しました。');
+            finalStatusMessage = '眼フレームが崩壊しました。';
+        } else if (!finalStatusMessage) {
+            finalStatusMessage = scoreSpeedBoosted
+                ? 'スコアアップで落下速度上昇！'
+                : '';
+        }
+
+        updateStats();
+        if (finalStatusMessage) {
+            setStatusMessage(finalStatusMessage);
+        } else {
+            setStatusMessage('');
         }
         captureResolutionInProgress = false;
 
@@ -2110,6 +2149,9 @@ function maybeScheduleEyeFramePiece() {
 
 function updateStats() {
     scoreValue.textContent = score.toLocaleString('en-US');
+    if (inGameScoreValue) {
+        inGameScoreValue.textContent = score.toLocaleString('en-US');
+    }
     levelValue.textContent = level;
     chainValue.textContent = chain;
     blackCaptureValue.textContent = captures.black;
@@ -2157,6 +2199,34 @@ function refreshMobileControls() {
     if (mobilePauseBtn) {
         mobilePauseBtn.textContent = paused ? RESUME_ICON : PAUSE_ICON;
     }
+}
+
+function setHeaderScoreActive(active) {
+    if (!headerScore) {
+        return;
+    }
+    headerScore.classList.toggle('inactive', !active);
+}
+
+function recalculateDropInterval() {
+    const levelReduction = Math.max(0, (level - 1) * LEVEL_INTERVAL_STEP);
+    const scoreReduction = Math.max(0, scoreSpeedTier * SCORE_INTERVAL_STEP);
+    const computedInterval = BASE_DROP_INTERVAL - levelReduction - scoreReduction;
+    dropInterval = Math.max(MIN_DROP_INTERVAL, computedInterval);
+    return dropInterval;
+}
+
+function updateScoreSpeedTier() {
+    const safeScore = Math.max(0, score);
+    const newTier = Math.floor(safeScore / SCORE_SPEED_STEP);
+    const previousTier = scoreSpeedTier;
+    scoreSpeedTier = newTier;
+    recalculateDropInterval();
+    return newTier > previousTier;
+}
+
+function formatDropIntervalSeconds() {
+    return (dropInterval / 1000).toFixed(2);
 }
 
 function runIfPlayable(fn) {
@@ -2796,31 +2866,36 @@ function handleKeyDown(event) {
         return;
     }
 
-    if (!gameActive || paused || !currentPiece) {
+    if (!gameActive) {
+        return;
+    }
+
+    if (!CONTROL_KEY_CODES.has(event.code)) {
+        return;
+    }
+
+    event.preventDefault();
+
+    if (paused || !currentPiece) {
         return;
     }
 
     switch (event.code) {
         case 'ArrowLeft':
-            event.preventDefault();
             movePiece(-1);
             break;
         case 'ArrowRight':
-            event.preventDefault();
             movePiece(1);
             break;
         case 'ArrowDown':
-            event.preventDefault();
             stepDown();
             dropAccumulator = 0;
             break;
         case 'ArrowUp':
-            event.preventDefault();
             rotateCurrentPiece(1);
             break;
         case 'Space':
         case 'Enter':
-            event.preventDefault();
             hardDrop();
             break;
         default:
@@ -2938,6 +3013,7 @@ initializeMobileControls();
 refreshMobileControls();
 requestAnimationFrame(gameLoop);
 
+setHeaderScoreActive(false);
 updateStats();
 updatePreview();
 

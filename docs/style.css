@@ -75,6 +75,35 @@ body {
     transition: transform 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
 }
 
+.header-score {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.45rem;
+    padding: 0.4rem 0.85rem;
+    border-radius: 999px;
+    background: rgba(35, 29, 20, 0.78);
+    color: #fff;
+    font-variant-numeric: tabular-nums;
+    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.18);
+    min-width: 160px;
+    justify-content: space-between;
+}
+
+.header-score.inactive {
+    opacity: 0.55;
+}
+
+.header-score-label {
+    font-size: 0.85rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+}
+
+.header-score-value {
+    font-size: 1.65rem;
+    font-weight: 700;
+}
+
 .header-start-btn:not(:disabled):hover {
     background: var(--accent-hover);
     transform: translateY(-1px);
@@ -299,6 +328,11 @@ button:not(:disabled):hover {
         gap: 0.5rem;
     }
 
+    .header-score {
+        width: 100%;
+        max-width: 320px;
+    }
+
     .board-panel {
         padding: 0.8rem;
     }
@@ -306,6 +340,10 @@ button:not(:disabled):hover {
     #board {
         width: 100%;
         height: auto;
+    }
+
+    .header-score-value {
+        font-size: 1.45rem;
     }
 }
 .mobile-controls {
