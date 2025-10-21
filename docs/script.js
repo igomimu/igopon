@@ -2,10 +2,6 @@ const ROWS = 20;
 const COLS = 10;
 const CELL_SIZE = 30;
 const BASE_DROP_INTERVAL = 900;
-const LEVEL_INTERVAL_STEP = 80;
-const SCORE_SPEED_STEP = 1500;
-const SCORE_INTERVAL_STEP = 45;
-const MIN_DROP_INTERVAL = 160;
 const DIRECTIONS = [
     [1, 0],
     [-1, 0],
@@ -137,8 +133,6 @@ const chainValue = document.getElementById('chainValue');
 const blackCaptureValue = document.getElementById('blackCaptureValue');
 const whiteCaptureValue = document.getElementById('whiteCaptureValue');
 const piecesValue = document.getElementById('piecesValue');
-const headerScore = document.getElementById('headerScore');
-const inGameScoreValue = document.getElementById('inGameScoreValue');
 const mobileLeftBtn = document.getElementById('mobileLeftBtn');
 const mobileRightBtn = document.getElementById('mobileRightBtn');
 const mobileRotateBtn = document.getElementById('mobileRotateBtn');
@@ -150,9 +144,12 @@ const playerNameInput = document.getElementById('playerNameInput');
 const dailyLeaderboardList = document.getElementById('dailyLeaderboard');
 const leaderboardEmpty = document.getElementById('leaderboardEmpty');
 const leaderboardDateLabel = document.getElementById('leaderboardDate');
+const weeklyLeaderboardList = document.getElementById('weeklyLeaderboard');
+const weeklyLeaderboardEmpty = document.getElementById('weeklyLeaderboardEmpty');
+const monthlyLeaderboardList = document.getElementById('monthlyLeaderboard');
+const monthlyLeaderboardEmpty = document.getElementById('monthlyLeaderboardEmpty');
 const bgmToggleBtn = document.getElementById('bgmToggleBtn');
 const bgmStatusLabel = document.getElementById('bgmStatus');
-const bgmAudio = document.getElementById('bgmAudio');
 
 const PAUSE_ICON = '\u23F8';
 const RESUME_ICON = '\u25B6';
@@ -195,7 +192,6 @@ const SCORE_POPUP_FILL = 'rgba(255, 248, 224, 0.96)';
 const SCORE_POPUP_STROKE = 'rgba(56, 42, 24, 0.68)';
 const SCORE_POPUP_SHADOW = 'rgba(0, 0, 0, 0.3)';
 
-
 const SWIPE_THRESHOLD = CELL_SIZE;
 const effects = [];
 const HIGH_SCORE_KEY = 'goDropHighScore';
@@ -203,42 +199,14 @@ const PLAYER_NAME_KEY = 'goDropPlayerName';
 const API_BASE = 'https://script.google.com/macros/s/AKfycbwcZpx3SLF1z8jTOL6lHeayA4eWzIDGAjzc_fXIffIGyAOliZuiMxVrfV3682ACfT5g/exec';
 const LEADERBOARD_LIMIT = 5;
 const LEADERBOARD_TIMEOUT_MS = 6000;
+
+const bgmAudio = document.getElementById('bgmAudio');
 const BGM_PREF_KEY = 'igoponBgmEnabled';
 const BGM_ACTIVE_VOLUME = 0.6;
 const BGM_PAUSE_VOLUME = 0.25;
-const BGM_ROLES = {
-    LOBBY: 'lobby',
-    GAME: 'game',
-    DANGER: 'game-danger'
-};
-const BGM_PRESETS = {
-    [BGM_ROLES.LOBBY]: {
-        src: 'assets/igopon-lobby.mp3',
-        label: 'ロビーBGM'
-    },
-    [BGM_ROLES.GAME]: {
-        src: 'assets/igopon-game.mp3',
-        label: 'ゲームBGM'
-    },
-    [BGM_ROLES.DANGER]: {
-        src: 'assets/igopon-game2.mp3',
-        label: 'ゲームBGM（危険）'
-    }
-};
-
-const CONTROL_KEY_CODES = new Set([
-    'ArrowLeft',
-    'ArrowRight',
-    'ArrowDown',
-    'ArrowUp',
-    'Space',
-    'Enter'
-]);
 
 let bgmPreference = true;
 let bgmUnlocked = false;
-let bgmAutoplayUnlockHandler = null;
-let activeBgmRole = BGM_ROLES.LOBBY;
 
 try {
     const storedPreference = localStorage.getItem(BGM_PREF_KEY);
@@ -249,15 +217,6 @@ try {
     bgmPreference = true;
 }
 
-function getConfiguredBgm(role) {
-    return BGM_PRESETS[role] || BGM_PRESETS[BGM_ROLES.LOBBY];
-}
-
-function currentBgmLabel() {
-    const preset = getConfiguredBgm(activeBgmRole);
-    return preset ? preset.label : '';
-}
-
 function updateBgmStatusText() {
     if (!bgmStatusLabel) {
         return;
@@ -266,23 +225,18 @@ function updateBgmStatusText() {
         bgmStatusLabel.textContent = '音源が見つかりません。';
         return;
     }
-    const label = currentBgmLabel();
-    const labelSuffix = label ? ` (${label})` : '';
     if (!bgmPreference) {
-        bgmStatusLabel.textContent = `BGMはオフになっています。${labelSuffix}`.trim();
+        bgmStatusLabel.textContent = 'BGMはオフになっています。';
         return;
     }
     if (bgmAudio.paused) {
-        const resumeText = bgmUnlocked
+        bgmStatusLabel.textContent = bgmUnlocked
             ? 'スタートするとBGMが再開します。'
             : '操作後にBGMを有効化できます。';
-        bgmStatusLabel.textContent = `${resumeText}${labelSuffix}`;
         return;
     }
     const quiet = paused || document.hidden;
-    bgmStatusLabel.textContent = quiet
-        ? `BGM再生中 (静音モード)${labelSuffix}`
-        : `BGM再生中${labelSuffix}`;
+    bgmStatusLabel.textContent = quiet ? 'BGM再生中 (静音モード)' : 'BGM再生中';
 }
 
 function updateBgmToggleUI() {
@@ -335,145 +289,6 @@ function stopBgmPlayback(resetPosition = false) {
     updateBgmStatusText();
 }
 
-function loadFixedBgm(role, options = {}) {
-    if (!bgmAudio) {
-        return;
-    }
-    const preset = getConfiguredBgm(role);
-    if (!preset) {
-        return;
-    }
-    const autoplay = options.autoplay ?? true;
-    const currentRole = bgmAudio.dataset.activeBgmRole;
-    const currentSrc = bgmAudio.getAttribute('src');
-    const needsReload = currentRole !== role || currentSrc !== preset.src;
-
-    if (needsReload) {
-        stopBgmPlayback(true);
-        bgmAudio.src = preset.src;
-        bgmAudio.dataset.activeBgmRole = role;
-        bgmUnlocked = false;
-        bgmAudio.load();
-        const restartPlayback = () => {
-            bgmAudio.removeEventListener('canplay', restartPlayback);
-            if (bgmPreference) {
-                attemptPlayBgm();
-                syncBgmVolume();
-            }
-        };
-        bgmAudio.addEventListener('canplay', restartPlayback, { once: true });
-    }
-
-    if (autoplay && bgmPreference) {
-        attemptPlayBgm();
-        syncBgmVolume();
-    } else {
-        updateBgmStatusText();
-    }
-
-    ensureBgmAutoplayUnlockArm();
-}
-
-function switchBgmRole(role, options = {}) {
-    if (!BGM_PRESETS[role]) {
-        return;
-    }
-    activeBgmRole = role;
-    loadFixedBgm(role, options);
-}
-
-function ensureBgmAutoplayUnlockArm() {
-    if (!bgmAudio) {
-        return;
-    }
-    const needsHandler = !bgmAutoplayUnlockHandler;
-    if (!needsHandler) {
-        return;
-    }
-    const handler = () => {
-        if (!bgmPreference) {
-            return;
-        }
-        if (bgmUnlocked) {
-            cleanup();
-            return;
-        }
-        attemptPlayBgm();
-        if (bgmUnlocked) {
-            cleanup();
-        }
-    };
-    function cleanup() {
-        if (!bgmAutoplayUnlockHandler) {
-            return;
-        }
-        document.removeEventListener('pointerdown', handler);
-        document.removeEventListener('keydown', handler);
-        bgmAutoplayUnlockHandler = null;
-    }
-    bgmAutoplayUnlockHandler = handler;
-    document.addEventListener('pointerdown', handler, { passive: true });
-    document.addEventListener('keydown', handler);
-}
-
-const DANGER_FILL_RATIO = 0.7;
-const DANGER_FILL_THRESHOLD = Math.ceil(ROWS * COLS * DANGER_FILL_RATIO);
-const DANGER_HIGH_ROW_CUTOFF = 8; // zero-indexed rows 0-7
-
-function countOccupiedCells(includeCurrentPiece = true) {
-    let occupied = 0;
-    for (let row = 0; row < ROWS; row += 1) {
-        for (let col = 0; col < COLS; col += 1) {
-            if (board[row][col] !== CELL_EMPTY) {
-                occupied += 1;
-            }
-        }
-    }
-    if (includeCurrentPiece && currentPiece) {
-        currentPiece.cells.forEach(cell => {
-            const row = currentPiece.position.row + cell.row;
-            const col = currentPiece.position.col + cell.col;
-            if (row >= 0 && row < ROWS && col >= 0 && col < COLS) {
-                if (board[row][col] === CELL_EMPTY) {
-                    occupied += 1;
-                }
-            }
-        });
-    }
-    return occupied;
-}
-
-function isDangerZoneTriggered() {
-    const lockedCells = countOccupiedCells(false);
-    const totalCells = countOccupiedCells(true);
-    if (totalCells >= DANGER_FILL_THRESHOLD) {
-        return true;
-    }
-
-    for (let row = 0; row < DANGER_HIGH_ROW_CUTOFF; row += 1) {
-        for (let col = 0; col < COLS; col += 1) {
-            if (board[row][col] !== CELL_EMPTY) {
-                return true;
-            }
-        }
-    }
-
-    return false;
-}
-
-function updateGameBgmForDanger() {
-    if (!gameActive) {
-        return;
-    }
-    const dangerActive = isDangerZoneTriggered();
-    const targetRole = dangerActive ? BGM_ROLES.DANGER : BGM_ROLES.GAME;
-    if (activeBgmRole !== targetRole) {
-        switchBgmRole(targetRole, { autoplay: true });
-    } else {
-        updateBgmStatusText();
-    }
-}
-
 function setBgmPreference(enabled) {
     bgmPreference = enabled;
     try {
@@ -484,7 +299,7 @@ function setBgmPreference(enabled) {
     if (!enabled) {
         stopBgmPlayback(true);
     } else {
-        loadFixedBgm(activeBgmRole, { autoplay: true });
+        attemptPlayBgm();
     }
     updateBgmToggleUI();
 }
@@ -494,7 +309,7 @@ function startBgmIfEnabled() {
         updateBgmStatusText();
         return;
     }
-    loadFixedBgm(activeBgmRole, { autoplay: true });
+    attemptPlayBgm();
 }
 
 function initializeAudioControls() {
@@ -502,7 +317,6 @@ function initializeAudioControls() {
         bgmAudio.volume = BGM_ACTIVE_VOLUME;
         bgmAudio.addEventListener('playing', updateBgmStatusText);
         bgmAudio.addEventListener('pause', updateBgmStatusText);
-        loadFixedBgm(activeBgmRole, { autoplay: false });
     }
     if (bgmToggleBtn) {
         bgmToggleBtn.addEventListener('click', event => {
@@ -511,8 +325,6 @@ function initializeAudioControls() {
         });
     }
     updateBgmToggleUI();
-    updateBgmStatusText();
-    ensureBgmAutoplayUnlockArm();
 }
 
 function configureCanvasResolution(canvasElement, context, targetWidth, targetHeight) {
@@ -625,11 +437,75 @@ function formatLeaderboardDate(key) {
     return `${year}年${monthNum}月${dayNum}日`;
 }
 
+function showLeaderboardMessage(element, message) {
+    if (!element) {
+        return;
+    }
+    element.textContent = message;
+    element.classList.remove('hidden');
+}
+
+function hideLeaderboardMessage(element) {
+    if (!element) {
+        return;
+    }
+    element.classList.add('hidden');
+}
+
 
 function getActivePlayerName() {
     const current = playerNameInput ? sanitizePlayerName(playerNameInput.value) : playerName;
     const resolved = current || playerName || 'プレイヤー';
     return resolved;
+}
+
+function buildLeaderboardUrl(params = {}) {
+    const query = new URLSearchParams();
+    if (params.date) {
+        query.set('date', params.date);
+    }
+    if (params.range) {
+        query.set('range', params.range);
+    }
+    query.set('limit', String(params.limit ?? LEADERBOARD_LIMIT));
+    return `${API_BASE}?${query.toString()}`;
+}
+
+async function loadLeaderboardGroup({ params, listElement, emptyElement }) {
+    if (!listElement) {
+        return;
+    }
+
+    showLeaderboardMessage(emptyElement, '読み込み中…');
+
+    const useAbort = typeof AbortController !== 'undefined';
+    const controller = useAbort ? new AbortController() : null;
+    const timeoutId = useAbort ? setTimeout(() => controller.abort(), LEADERBOARD_TIMEOUT_MS) : null;
+
+    try {
+        const response = await fetch(buildLeaderboardUrl(params), {
+            method: 'GET',
+            mode: 'cors',
+            cache: 'no-store',
+            signal: controller ? controller.signal : undefined
+        });
+
+        if (!response.ok) {
+            throw new Error(`Leaderboard request failed: ${response.status}`);
+        }
+
+        const payload = await response.json();
+        const entries = Array.isArray(payload.entries) ? payload.entries : [];
+        renderLeaderboard(entries, listElement, emptyElement);
+    } catch (error) {
+        console.error('Failed to load leaderboard', error);
+        listElement.innerHTML = '';
+        showLeaderboardMessage(emptyElement, 'ランキングを読み込めませんでした。');
+    } finally {
+        if (timeoutId !== null) {
+            clearTimeout(timeoutId);
+        }
+    }
 }
 
 async function refreshLeaderboard() {
@@ -638,75 +514,67 @@ async function refreshLeaderboard() {
         leaderboardDateLabel.textContent = formatLeaderboardDate(todayKey);
     }
 
-    if (!dailyLeaderboardList) {
+    const tasks = [];
+    if (dailyLeaderboardList) {
+        tasks.push(loadLeaderboardGroup({
+            params: { date: todayKey, limit: LEADERBOARD_LIMIT },
+            listElement: dailyLeaderboardList,
+            emptyElement: leaderboardEmpty
+        }));
+    }
+    if (weeklyLeaderboardList) {
+        tasks.push(loadLeaderboardGroup({
+            params: { range: 'week', limit: LEADERBOARD_LIMIT },
+            listElement: weeklyLeaderboardList,
+            emptyElement: weeklyLeaderboardEmpty
+        }));
+    }
+    if (monthlyLeaderboardList) {
+        tasks.push(loadLeaderboardGroup({
+            params: { range: 'month', limit: LEADERBOARD_LIMIT },
+            listElement: monthlyLeaderboardList,
+            emptyElement: monthlyLeaderboardEmpty
+        }));
+    }
+
+    if (tasks.length === 0) {
         return;
     }
 
-    if (leaderboardEmpty) {
-        leaderboardEmpty.textContent = '読み込み中…';
-        leaderboardEmpty.classList.remove('hidden');
-    }
-
-    try {
-        const useAbort = typeof AbortController !== 'undefined';
-        const controller = useAbort ? new AbortController() : null;
-        const timeoutId = useAbort ? setTimeout(() => controller.abort(), LEADERBOARD_TIMEOUT_MS) : null;
-        const response = await fetch(`${API_BASE}?date=${encodeURIComponent(todayKey)}&limit=${LEADERBOARD_LIMIT}`, {
-            method: 'GET',
-            mode: 'cors',
-            cache: 'no-store',
-            signal: controller ? controller.signal : undefined
-        });
-        if (timeoutId !== null) {
-            clearTimeout(timeoutId);
-        }
-        if (!response.ok) {
-            throw new Error(`Leaderboard request failed: ${response.status}`);
-        }
-        const payload = await response.json();
-        const entries = Array.isArray(payload.entries) ? payload.entries : [];
-        renderLeaderboard(entries);
-    } catch (error) {
-        console.error('Failed to load leaderboard', error);
-        renderLeaderboard([]);
-        if (leaderboardEmpty) {
-            leaderboardEmpty.textContent = 'ランキングを読み込めませんでした。';
-            leaderboardEmpty.classList.remove('hidden');
-        }
-    }
+    await Promise.all(tasks);
 }
 
-function renderLeaderboard(entries) {
-    if (!dailyLeaderboardList) {
+function renderLeaderboard(entries, listElement, emptyElement) {
+    if (!listElement) {
         return;
     }
-    dailyLeaderboardList.innerHTML = '';
+    listElement.innerHTML = '';
     if (!entries || entries.length === 0) {
-        if (leaderboardEmpty) {
-            leaderboardEmpty.textContent = 'まだスコアがありません。';
-            leaderboardEmpty.classList.remove('hidden');
-        }
+        showLeaderboardMessage(emptyElement, 'まだスコアがありません。');
         return;
     }
-    if (leaderboardEmpty) {
-        leaderboardEmpty.classList.add('hidden');
-    }
+
+    hideLeaderboardMessage(emptyElement);
+
     entries.slice(0, LEADERBOARD_LIMIT).forEach((entry, index) => {
         const item = document.createElement('li');
         const rank = document.createElement('span');
         rank.className = 'rank';
         rank.textContent = String(index + 1);
+
         const name = document.createElement('span');
         name.className = 'name';
         const rawName = entry.name ?? entry.playerName ?? entry.player ?? entry.displayName ?? entry.nickname ?? '';
         const safeName = sanitizePlayerName(rawName) || 'プレイヤー';
         name.textContent = safeName;
+
         const score = document.createElement('span');
         score.className = 'score';
         const scoreValue = Number.isFinite(entry.score) ? Number(entry.score) : 0;
         score.textContent = scoreValue.toLocaleString('ja-JP');
+
         item.append(rank, name, score);
-        dailyLeaderboardList.appendChild(item);
+        listElement.appendChild(item);
     });
 }
 
@@ -877,7 +745,6 @@ let lastFrameTime = null;
 let gameActive = false;
 let paused = false;
 let statusTimeoutId = null;
-let scoreSpeedTier = 0;
 
 const PIECE_TEMPLATES = [
     {
@@ -997,9 +864,6 @@ function startGame() {
     lastFrameTime = null;
     gameActive = true;
     paused = false;
-    scoreSpeedTier = 0;
-    recalculateDropInterval();
-    setHeaderScoreActive(true);
     currentPiece = null;
     specialPieceQueue.length = 0;
     activeEyeFrames.length = 0;
@@ -1014,15 +878,8 @@ function startGame() {
     setStatusMessage('新しい対局開始。囲んで捕獲しよう。');
     updateStats();
     updatePreview();
-    switchBgmRole(BGM_ROLES.GAME);
     startBgmIfEnabled();
-    if (!spawnNewPiece()) {
-        refreshMobileControls();
-        syncBgmVolume();
-        updateBgmStatusText();
-        return;
-    }
-    updateGameBgmForDanger();
+    spawnNewPiece();
     refreshMobileControls();
     syncBgmVolume();
     updateBgmStatusText();
@@ -1034,7 +891,6 @@ function endGame(reason) {
     }
     gameActive = false;
     paused = false;
-    setHeaderScoreActive(false);
     pauseBtn.disabled = true;
     pauseBtn.textContent = 'ポーズ';
     overlayTitle.textContent = reason;
@@ -1059,8 +915,6 @@ function endGame(reason) {
         headerStartBtn.textContent = 'GO!';
     }
     setStatusMessage('ゲーム終了。');
-    switchBgmRole(BGM_ROLES.LOBBY);
-    startBgmIfEnabled();
     refreshMobileControls();
     syncBgmVolume();
     updateBgmStatusText();
@@ -1186,34 +1040,26 @@ function lockPiece() {
     settleBoardWithHighlights(result => {
         const { totalRemoved, captureTotals, removedStones } = result;
 
-        const statusMessages = [];
-        let scoreSpeedBoosted = false;
-
         if (totalRemoved > 0) {
             chain += 1;
             const chainMultiplier = 1 + (chain - 1) * 0.5;
             const pointsEarned = Math.floor(totalRemoved * 60 * chainMultiplier);
             score += pointsEarned;
-            scoreSpeedBoosted = updateScoreSpeedTier();
             captures.black += captureTotals.black;
             captures.white += captureTotals.white;
             spawnCaptureEffects(removedStones);
             spawnScorePopup(pointsEarned, removedStones);
-            let captureMessage = `${totalRemoved}個捕獲。チェインx${chain}！`;
-            if (scoreSpeedBoosted) {
-                captureMessage += ' スコアアップで落下速度上昇！';
-            }
-            statusMessages.push(captureMessage);
+            setStatusMessage(`${totalRemoved}個捕獲。チェインx${chain}！`);
         } else {
             chain = 0;
-            statusMessages.push('石を配置。捕獲なし。');
+            setStatusMessage('石を配置。捕獲なし。');
         }
 
         piecesPlaced += 1;
         if (piecesPlaced % 5 === 0) {
             level += 1;
-            recalculateDropInterval();
-            statusMessages.push(`レベル${level}。落下間隔 ${formatDropIntervalSeconds()}秒。`);
+            dropInterval = Math.max(220, BASE_DROP_INTERVAL - (level - 1) * 80);
+            setStatusMessage(`レベル${level}。落下間隔 ${(dropInterval / 1000).toFixed(2)}秒。`);
         }
 
         maybeScheduleEyeFramePiece();
@@ -1244,23 +1090,12 @@ function lockPiece() {
             }
         }
 
-        let finalStatusMessage = statusMessages.join(' ').trim();
+        updateStats();
         if (placedEyeFrame) {
             chain = 0;
-            finalStatusMessage = '色付き眼フレームを設置しました。';
+            setStatusMessage('色付き眼フレームを設置しました。');
         } else if (clearedEyeFrame) {
-            finalStatusMessage = '眼フレームが崩壊しました。';
-        } else if (!finalStatusMessage) {
-            finalStatusMessage = scoreSpeedBoosted
-                ? 'スコアアップで落下速度上昇！'
-                : '';
-        }
-
-        updateStats();
-        if (finalStatusMessage) {
-            setStatusMessage(finalStatusMessage);
-        } else {
-            setStatusMessage('');
+            setStatusMessage('眼フレームが崩壊しました。');
         }
         captureResolutionInProgress = false;
 
@@ -1269,13 +1104,10 @@ function lockPiece() {
             return;
         }
 
-        updateGameBgmForDanger();
-
         if (!spawnNewPiece()) {
             refreshMobileControls();
             return;
         }
-        updateGameBgmForDanger();
         refreshMobileControls();
     });
 }
@@ -1626,7 +1458,6 @@ function spawnScorePopup(points, removedStones) {
         shadow: SCORE_POPUP_SHADOW
     });
 }
-
 function spawnEyePulseEffect(centerRow, centerCol, stoneColor) {
 
 
@@ -2149,9 +1980,6 @@ function maybeScheduleEyeFramePiece() {
 
 function updateStats() {
     scoreValue.textContent = score.toLocaleString('en-US');
-    if (inGameScoreValue) {
-        inGameScoreValue.textContent = score.toLocaleString('en-US');
-    }
     levelValue.textContent = level;
     chainValue.textContent = chain;
     blackCaptureValue.textContent = captures.black;
@@ -2199,34 +2027,6 @@ function refreshMobileControls() {
     if (mobilePauseBtn) {
         mobilePauseBtn.textContent = paused ? RESUME_ICON : PAUSE_ICON;
     }
-}
-
-function setHeaderScoreActive(active) {
-    if (!headerScore) {
-        return;
-    }
-    headerScore.classList.toggle('inactive', !active);
-}
-
-function recalculateDropInterval() {
-    const levelReduction = Math.max(0, (level - 1) * LEVEL_INTERVAL_STEP);
-    const scoreReduction = Math.max(0, scoreSpeedTier * SCORE_INTERVAL_STEP);
-    const computedInterval = BASE_DROP_INTERVAL - levelReduction - scoreReduction;
-    dropInterval = Math.max(MIN_DROP_INTERVAL, computedInterval);
-    return dropInterval;
-}
-
-function updateScoreSpeedTier() {
-    const safeScore = Math.max(0, score);
-    const newTier = Math.floor(safeScore / SCORE_SPEED_STEP);
-    const previousTier = scoreSpeedTier;
-    scoreSpeedTier = newTier;
-    recalculateDropInterval();
-    return newTier > previousTier;
-}
-
-function formatDropIntervalSeconds() {
-    return (dropInterval / 1000).toFixed(2);
 }
 
 function runIfPlayable(fn) {
@@ -2866,36 +2666,31 @@ function handleKeyDown(event) {
         return;
     }
 
-    if (!gameActive) {
-        return;
-    }
-
-    if (!CONTROL_KEY_CODES.has(event.code)) {
-        return;
-    }
-
-    event.preventDefault();
-
-    if (paused || !currentPiece) {
+    if (!gameActive || paused || !currentPiece) {
         return;
     }
 
     switch (event.code) {
         case 'ArrowLeft':
+            event.preventDefault();
             movePiece(-1);
             break;
         case 'ArrowRight':
+            event.preventDefault();
             movePiece(1);
             break;
         case 'ArrowDown':
+            event.preventDefault();
             stepDown();
             dropAccumulator = 0;
             break;
         case 'ArrowUp':
+            event.preventDefault();
             rotateCurrentPiece(1);
             break;
         case 'Space':
         case 'Enter':
+            event.preventDefault();
             hardDrop();
             break;
         default:
@@ -2918,6 +2713,8 @@ function togglePause(forceState) {
         lastFrameTime = null;
     }
     refreshMobileControls();
+    syncBgmVolume();
+    updateBgmStatusText();
 }
 
 document.addEventListener('keydown', handleKeyDown);
@@ -3013,7 +2810,6 @@ initializeMobileControls();
 refreshMobileControls();
 requestAnimationFrame(gameLoop);
 
-setHeaderScoreActive(false);
 updateStats();
 updatePreview();
 

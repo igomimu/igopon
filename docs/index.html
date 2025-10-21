@@ -12,15 +12,6 @@
             <h1>いごぽん</h1>
             <button id="headerStartBtn" type="button" class="header-start-btn">GO!</button>
         </div>
-        <div class="header-actions">
-            <button id="bgmToggleBtn" type="button" class="header-bgm-btn toggle-button" aria-pressed="false">
-                BGM オフ
-            </button>
-            <div id="headerScore" class="header-score" aria-live="polite" aria-atomic="true">
-                <span class="header-score-label">スコア</span>
-                <span id="inGameScoreValue" class="header-score-value">0</span>
-            </div>
-        </div>
     </header>
     <main class="layout">
         <section class="board-panel">
@@ -62,10 +53,25 @@
                 <input type="text" id="playerNameInput" maxlength="20" placeholder="プレイヤー名" autocomplete="name">
             </section>
             <section class="leaderboard-panel" aria-live="polite">
-                <h2>本日のハイスコア</h2>
-                <p id="leaderboardDate" class="leaderboard-date"></p>
-                <p id="leaderboardEmpty" class="leaderboard-empty">まだスコアがありません。</p>
-                <ol id="dailyLeaderboard" class="leaderboard-list"></ol>
+                <h2>ランキング</h2>
+                <div class="leaderboard-group">
+                    <h3>本日のベストスコア</h3>
+                    <p id="leaderboardDate" class="leaderboard-date"></p>
+                    <p id="leaderboardEmpty" class="leaderboard-empty">まだスコアがありません。</p>
+                    <ol id="dailyLeaderboard" class="leaderboard-list"></ol>
+                </div>
+                <div class="leaderboard-group">
+                    <h3>今週のベストスコア</h3>
+                    <p class="leaderboard-caption">直近7日間のハイスコア</p>
+                    <p id="weeklyLeaderboardEmpty" class="leaderboard-empty">まだスコアがありません。</p>
+                    <ol id="weeklyLeaderboard" class="leaderboard-list"></ol>
+                </div>
+                <div class="leaderboard-group">
+                    <h3>今月のベストスコア</h3>
+                    <p class="leaderboard-caption">直近30日間のハイスコア</p>
+                    <p id="monthlyLeaderboardEmpty" class="leaderboard-empty">まだスコアがありません。</p>
+                    <ol id="monthlyLeaderboard" class="leaderboard-list"></ol>
+                </div>
             </section>
             <section class="stats-panel">
                 <h2>ステータス</h2>
@@ -82,21 +88,21 @@
                 <button id="startBtn" type="button">スタート</button>
                 <button id="pauseBtn" type="button" disabled>ポーズ</button>
                 <div class="audio-controls">
+                    <button id="bgmToggleBtn" type="button" class="toggle-button" aria-pressed="false">
+                        BGM オフ
+                    </button>
                     <p id="bgmStatus" class="bgm-status">操作後にBGMを有効化できます。</p>
                 </div>
                 <div id="statusMessage" class="status-message" aria-live="polite"></div>
             </section>
             <section class="help-panel">
                 <h2>遊び方</h2>
-                <p>石を落として連結させ、囲んだ石を捕獲すると得点が入ります。</p>
-                <ul>
-                    <li>&#x2190; / &#x2192;: 左右に移動</li>
-                    <li>&#x2191;: 回転</li>
-                    <li>&#x2193;: ソフトドロップ</li>
-                    <li>スペース: ハードドロップ</li>
-                    <li>P: 一時停止 / 再開</li>
-                </ul>
-                <p>黒石は攻め、白石は守り。5行連続で捕獲するとレベルが上がり、落下速度が速くなります。</p>
+                <p>
+                    囲碁の世界観を持つ落ち物パズルです。反対色を囲むと消去＆得点<br>
+                    5回連続消去でレベルUP（落下加速）<br>
+                    特殊：<strong>「眼」</strong>は通常では消せないが、石20個消すと消滅<br>
+                    操作：←/→ 移動｜↑ 回転｜↓ ソフト｜Space ハード｜P 一時停止
+                </p>
             </section>
         </aside>
     </main>
