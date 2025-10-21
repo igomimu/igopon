@@ -133,6 +133,7 @@ const chainValue = document.getElementById('chainValue');
 const blackCaptureValue = document.getElementById('blackCaptureValue');
 const whiteCaptureValue = document.getElementById('whiteCaptureValue');
 const piecesValue = document.getElementById('piecesValue');
+const inGameScoreValue = document.getElementById('inGameScoreValue');
 const mobileLeftBtn = document.getElementById('mobileLeftBtn');
 const mobileRightBtn = document.getElementById('mobileRightBtn');
 const mobileRotateBtn = document.getElementById('mobileRotateBtn');
@@ -3085,6 +3086,5 @@ requestAnimationFrame(gameLoop);
 
 updateStats();
 updatePreview();
-
 
 
