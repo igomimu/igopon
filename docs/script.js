@@ -141,6 +141,7 @@ const mobileSoftDropBtn = document.getElementById('mobileSoftDropBtn');
 const mobileHardDropBtn = document.getElementById('mobileHardDropBtn');
 const mobilePauseBtn = document.getElementById('mobilePauseBtn');
 const headerStartBtn = document.getElementById('headerStartBtn');
+const headerScore = document.getElementById('headerScore');
 const playerNameInput = document.getElementById('playerNameInput');
 const dailyLeaderboardList = document.getElementById('dailyLeaderboard');
 const leaderboardEmpty = document.getElementById('leaderboardEmpty');
@@ -1052,6 +1053,7 @@ function startGame() {
     if (headerStartBtn) {
         headerStartBtn.textContent = 'リスタート';
     }
+    setHeaderScoreActive(true);
     setStatusMessage('新しい対局開始。囲んで捕獲しよう。');
     updateStats();
     updatePreview();
@@ -1098,6 +1100,7 @@ function endGame(reason) {
     if (headerStartBtn) {
         headerStartBtn.textContent = 'GO!';
     }
+    setHeaderScoreActive(false);
     setStatusMessage('ゲーム終了。');
     switchBgmRole(BGM_ROLES.LOBBY);
     startBgmIfEnabled();
@@ -2240,6 +2243,9 @@ function maybeScheduleEyeFramePiece() {
 
 function updateStats() {
     scoreValue.textContent = score.toLocaleString('en-US');
+    if (inGameScoreValue) {
+        inGameScoreValue.textContent = score.toLocaleString('en-US');
+    }
     levelValue.textContent = level;
     chainValue.textContent = chain;
     blackCaptureValue.textContent = captures.black;
@@ -2259,6 +2265,13 @@ function setStatusMessage(text) {
             statusTimeoutId = null;
         }, 2600);
     }
+}
+
+function setHeaderScoreActive(active) {
+    if (!headerScore) {
+        return;
+    }
+    headerScore.classList.toggle('inactive', !active);
 }
 
 function refreshMobileControls() {
@@ -3075,7 +3088,6 @@ initializeMobileControls();
 refreshMobileControls();
 requestAnimationFrame(gameLoop);
 
+setHeaderScoreActive(false);
 updateStats();
 updatePreview();
-
-
