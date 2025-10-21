@@ -205,16 +205,18 @@ const BGM_PREF_KEY = 'igoponBgmEnabled';
 const BGM_ACTIVE_VOLUME = 0.6;
 const BGM_PAUSE_VOLUME = 0.25;
 
-let bgmPreference = true;
+let bgmPreference = false;
 let bgmUnlocked = false;
 
 try {
     const storedPreference = localStorage.getItem(BGM_PREF_KEY);
-    if (storedPreference === '0' || storedPreference === 'false') {
+    if (storedPreference === '1' || storedPreference === 'true') {
+        bgmPreference = true;
+    } else if (storedPreference === '0' || storedPreference === 'false') {
         bgmPreference = false;
     }
 } catch (error) {
-    bgmPreference = true;
+    bgmPreference = false;
 }
 
 function updateBgmStatusText() {
