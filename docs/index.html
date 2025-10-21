@@ -62,10 +62,19 @@
                 <input type="text" id="playerNameInput" maxlength="20" placeholder="プレイヤー名" autocomplete="name">
             </section>
             <section class="leaderboard-panel" aria-live="polite">
-                <h2>本日のハイスコア</h2>
-                <p id="leaderboardDate" class="leaderboard-date"></p>
-                <p id="leaderboardEmpty" class="leaderboard-empty">まだスコアがありません。</p>
-                <ol id="dailyLeaderboard" class="leaderboard-list"></ol>
+                <h2>ランキング</h2>
+                <div class="leaderboard-group">
+                    <h3>本日のベストスコア</h3>
+                    <p id="leaderboardDate" class="leaderboard-date"></p>
+                    <p id="leaderboardEmpty" class="leaderboard-empty">まだスコアがありません。</p>
+                    <ol id="dailyLeaderboard" class="leaderboard-list"></ol>
+                </div>
+                <div class="leaderboard-group">
+                    <h3>今週のベストスコア</h3>
+                    <p class="leaderboard-caption">直近7日間のハイスコア</p>
+                    <p id="weeklyLeaderboardEmpty" class="leaderboard-empty">まだスコアがありません。</p>
+                    <ol id="weeklyLeaderboard" class="leaderboard-list"></ol>
+                </div>
             </section>
             <section class="stats-panel">
                 <h2>ステータス</h2>

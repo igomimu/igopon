@@ -471,6 +471,23 @@ button:not(:disabled):hover {
 }
 
 .leaderboard-panel h2 {
+.leaderboard-group + .leaderboard-group {
+    margin-top: 14px;
+}
+
+.leaderboard-group h3 {
+    margin: 10px 0 4px;
+    font-size: 1rem;
+    color: #2b2615;
+}
+
+.leaderboard-caption {
+    margin: 0;
+    font-size: 0.8rem;
+    color: rgba(58, 42, 20, 0.6);
+}
+
+
     margin-bottom: 6px;
 }
 
@@ -536,6 +553,23 @@ button:not(:disabled):hover {
     background: linear-gradient(160deg, rgba(248, 242, 215, 0.98), rgba(232, 216, 177, 0.92));
 }
 .player-panel h2, .leaderboard-panel h2 {
+.leaderboard-group + .leaderboard-group {
+    margin-top: 14px;
+}
+
+.leaderboard-group h3 {
+    margin: 10px 0 4px;
+    font-size: 1rem;
+    color: #2b2615;
+}
+
+.leaderboard-caption {
+    margin: 0;
+    font-size: 0.8rem;
+    color: rgba(58, 42, 20, 0.6);
+}
+
+
     display: flex;
     align-items: center;
     gap: 0.5rem;

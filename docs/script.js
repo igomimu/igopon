@@ -147,8 +147,6 @@ const leaderboardEmpty = document.getElementById('leaderboardEmpty');
 const leaderboardDateLabel = document.getElementById('leaderboardDate');
 const weeklyLeaderboardList = document.getElementById('weeklyLeaderboard');
 const weeklyLeaderboardEmpty = document.getElementById('weeklyLeaderboardEmpty');
-const monthlyLeaderboardList = document.getElementById('monthlyLeaderboard');
-const monthlyLeaderboardEmpty = document.getElementById('monthlyLeaderboardEmpty');
 const bgmToggleBtn = document.getElementById('bgmToggleBtn');
 const bgmStatusLabel = document.getElementById('bgmStatus');
 
@@ -713,13 +711,6 @@ async function refreshLeaderboard() {
             params: { range: 'week', limit: LEADERBOARD_LIMIT },
             listElement: weeklyLeaderboardList,
             emptyElement: weeklyLeaderboardEmpty
-        }));
-    }
-    if (monthlyLeaderboardList) {
-        tasks.push(loadLeaderboardGroup({
-            params: { range: 'month', limit: LEADERBOARD_LIMIT },
-            listElement: monthlyLeaderboardList,
-            emptyElement: monthlyLeaderboardEmpty
         }));
     }
 
