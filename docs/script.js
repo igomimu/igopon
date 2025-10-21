@@ -204,19 +204,55 @@ const bgmAudio = document.getElementById('bgmAudio');
 const BGM_PREF_KEY = 'igoponBgmEnabled';
 const BGM_ACTIVE_VOLUME = 0.6;
 const BGM_PAUSE_VOLUME = 0.25;
+const BGM_ROLES = {
+    LOBBY: 'lobby',
+    GAME: 'game',
+    DANGER: 'game-danger'
+};
+const BGM_PRESETS = {
+    [BGM_ROLES.LOBBY]: {
+        src: 'assets/igopon-lobby.mp3',
+        label: 'ロビーBGM'
+    },
+    [BGM_ROLES.GAME]: {
+        src: 'assets/igopon-game.mp3',
+        label: 'ゲームBGM'
+    },
+    [BGM_ROLES.DANGER]: {
+        src: 'assets/igopon-game2.mp3',
+        label: 'ゲームBGM（危険）'
+    }
+};
+const CONTROL_KEY_CODES = new Set([
+    'ArrowLeft',
+    'ArrowRight',
+    'ArrowDown',
+    'ArrowUp',
+    'Space',
+    'Enter'
+]);
 
-let bgmPreference = false;
+let bgmPreference = true;
 let bgmUnlocked = false;
+let bgmAutoplayUnlockHandler = null;
+let activeBgmRole = BGM_ROLES.LOBBY;
 
 try {
     const storedPreference = localStorage.getItem(BGM_PREF_KEY);
-    if (storedPreference === '1' || storedPreference === 'true') {
-        bgmPreference = true;
-    } else if (storedPreference === '0' || storedPreference === 'false') {
+    if (storedPreference === '0' || storedPreference === 'false') {
         bgmPreference = false;
     }
 } catch (error) {
-    bgmPreference = false;
+    bgmPreference = true;
+}
+
+function getConfiguredBgm(role) {
+    return BGM_PRESETS[role] || BGM_PRESETS[BGM_ROLES.LOBBY];
+}
+
+function currentBgmLabel() {
+    const preset = getConfiguredBgm(activeBgmRole);
+    return preset ? preset.label : '';
 }
 
 function updateBgmStatusText() {
@@ -227,18 +263,23 @@ function updateBgmStatusText() {
         bgmStatusLabel.textContent = '音源が見つかりません。';
         return;
     }
+    const label = currentBgmLabel();
+    const labelSuffix = label ? ` (${label})` : '';
     if (!bgmPreference) {
-        bgmStatusLabel.textContent = 'BGMはオフになっています。';
+        bgmStatusLabel.textContent = `BGMはオフになっています。${labelSuffix}`.trim();
         return;
     }
     if (bgmAudio.paused) {
-        bgmStatusLabel.textContent = bgmUnlocked
+        const resumeText = bgmUnlocked
             ? 'スタートするとBGMが再開します。'
             : '操作後にBGMを有効化できます。';
+        bgmStatusLabel.textContent = `${resumeText}${labelSuffix}`;
         return;
     }
     const quiet = paused || document.hidden;
-    bgmStatusLabel.textContent = quiet ? 'BGM再生中 (静音モード)' : 'BGM再生中';
+    bgmStatusLabel.textContent = quiet
+        ? `BGM再生中 (静音モード)${labelSuffix}`
+        : `BGM再生中${labelSuffix}`;
 }
 
 function updateBgmToggleUI() {
@@ -291,6 +332,145 @@ function stopBgmPlayback(resetPosition = false) {
     updateBgmStatusText();
 }
 
+function loadFixedBgm(role, options = {}) {
+    if (!bgmAudio) {
+        return;
+    }
+    const preset = getConfiguredBgm(role);
+    if (!preset) {
+        return;
+    }
+    const autoplay = options.autoplay ?? true;
+    const currentRole = bgmAudio.dataset.activeBgmRole;
+    const currentSrc = bgmAudio.getAttribute('src');
+    const needsReload = currentRole !== role || currentSrc !== preset.src;
+
+    if (needsReload) {
+        stopBgmPlayback(true);
+        bgmAudio.src = preset.src;
+        bgmAudio.dataset.activeBgmRole = role;
+        bgmUnlocked = false;
+        bgmAudio.load();
+        const restartPlayback = () => {
+            bgmAudio.removeEventListener('canplay', restartPlayback);
+            if (bgmPreference) {
+                attemptPlayBgm();
+                syncBgmVolume();
+            }
+        };
+        bgmAudio.addEventListener('canplay', restartPlayback, { once: true });
+    }
+
+    if (autoplay && bgmPreference) {
+        attemptPlayBgm();
+        syncBgmVolume();
+    } else {
+        updateBgmStatusText();
+    }
+
+    ensureBgmAutoplayUnlockArm();
+}
+
+function switchBgmRole(role, options = {}) {
+    if (!BGM_PRESETS[role]) {
+        return;
+    }
+    activeBgmRole = role;
+    loadFixedBgm(role, options);
+}
+
+function ensureBgmAutoplayUnlockArm() {
+    if (!bgmAudio) {
+        return;
+    }
+    const needsHandler = !bgmAutoplayUnlockHandler;
+    if (!needsHandler) {
+        return;
+    }
+    const handler = () => {
+        if (!bgmPreference) {
+            return;
+        }
+        if (bgmUnlocked) {
+            cleanup();
+            return;
+        }
+        attemptPlayBgm();
+        if (bgmUnlocked) {
+            cleanup();
+        }
+    };
+    function cleanup() {
+        if (!bgmAutoplayUnlockHandler) {
+            return;
+        }
+        document.removeEventListener('pointerdown', handler);
+        document.removeEventListener('keydown', handler);
+        bgmAutoplayUnlockHandler = null;
+    }
+    bgmAutoplayUnlockHandler = handler;
+    document.addEventListener('pointerdown', handler, { passive: true });
+    document.addEventListener('keydown', handler);
+}
+
+const DANGER_FILL_RATIO = 0.7;
+const DANGER_FILL_THRESHOLD = Math.ceil(ROWS * COLS * DANGER_FILL_RATIO);
+const DANGER_HIGH_ROW_CUTOFF = 8;
+
+function countOccupiedCells(includeCurrentPiece = true) {
+    let occupied = 0;
+    for (let row = 0; row < ROWS; row += 1) {
+        for (let col = 0; col < COLS; col += 1) {
+            if (board[row][col] !== CELL_EMPTY) {
+                occupied += 1;
+            }
+        }
+    }
+    if (includeCurrentPiece && currentPiece) {
+        currentPiece.cells.forEach(cell => {
+            const row = currentPiece.position.row + cell.row;
+            const col = currentPiece.position.col + cell.col;
+            if (row >= 0 && row < ROWS && col >= 0 && col < COLS) {
+                if (board[row][col] === CELL_EMPTY) {
+                    occupied += 1;
+                }
+            }
+        });
+    }
+    return occupied;
+}
+
+function isDangerZoneTriggered() {
+    const lockedCellsCount = countOccupiedCells(false);
+    const totalCells = countOccupiedCells(true);
+    if (totalCells >= DANGER_FILL_THRESHOLD) {
+        return true;
+    }
+
+    for (let row = 0; row < DANGER_HIGH_ROW_CUTOFF; row += 1) {
+        for (let col = 0; col < COLS; col += 1) {
+            if (board[row][col] !== CELL_EMPTY) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+function updateGameBgmForDanger() {
+    if (!gameActive) {
+        return;
+    }
+    const dangerActive = isDangerZoneTriggered();
+    const targetRole = dangerActive ? BGM_ROLES.DANGER : BGM_ROLES.GAME;
+    if (activeBgmRole !== targetRole) {
+        switchBgmRole(targetRole, { autoplay: true });
+    } else {
+        updateBgmStatusText();
+    }
+}
+
 function setBgmPreference(enabled) {
     bgmPreference = enabled;
     try {
@@ -301,7 +481,7 @@ function setBgmPreference(enabled) {
     if (!enabled) {
         stopBgmPlayback(true);
     } else {
-        attemptPlayBgm();
+        loadFixedBgm(activeBgmRole, { autoplay: true });
     }
     updateBgmToggleUI();
 }
@@ -311,7 +491,7 @@ function startBgmIfEnabled() {
         updateBgmStatusText();
         return;
     }
-    attemptPlayBgm();
+    loadFixedBgm(activeBgmRole, { autoplay: true });
 }
 
 function initializeAudioControls() {
@@ -319,6 +499,7 @@ function initializeAudioControls() {
         bgmAudio.volume = BGM_ACTIVE_VOLUME;
         bgmAudio.addEventListener('playing', updateBgmStatusText);
         bgmAudio.addEventListener('pause', updateBgmStatusText);
+        loadFixedBgm(activeBgmRole, { autoplay: false });
     }
     if (bgmToggleBtn) {
         bgmToggleBtn.addEventListener('click', event => {
@@ -327,6 +508,8 @@ function initializeAudioControls() {
         });
     }
     updateBgmToggleUI();
+    updateBgmStatusText();
+    ensureBgmAutoplayUnlockArm();
 }
 
 function configureCanvasResolution(canvasElement, context, targetWidth, targetHeight) {
@@ -880,8 +1063,15 @@ function startGame() {
     setStatusMessage('新しい対局開始。囲んで捕獲しよう。');
     updateStats();
     updatePreview();
+    switchBgmRole(BGM_ROLES.GAME);
     startBgmIfEnabled();
-    spawnNewPiece();
+    if (!spawnNewPiece()) {
+        refreshMobileControls();
+        syncBgmVolume();
+        updateBgmStatusText();
+        return;
+    }
+    updateGameBgmForDanger();
     refreshMobileControls();
     syncBgmVolume();
     updateBgmStatusText();
@@ -917,6 +1107,8 @@ function endGame(reason) {
         headerStartBtn.textContent = 'GO!';
     }
     setStatusMessage('ゲーム終了。');
+    switchBgmRole(BGM_ROLES.LOBBY);
+    startBgmIfEnabled();
     refreshMobileControls();
     syncBgmVolume();
     updateBgmStatusText();
@@ -1106,10 +1298,13 @@ function lockPiece() {
             return;
         }
 
+        updateGameBgmForDanger();
+
         if (!spawnNewPiece()) {
             refreshMobileControls();
             return;
         }
+        updateGameBgmForDanger();
         refreshMobileControls();
     });
 }
@@ -2668,31 +2863,36 @@ function handleKeyDown(event) {
         return;
     }
 
-    if (!gameActive || paused || !currentPiece) {
+    if (!gameActive) {
+        return;
+    }
+
+    if (!CONTROL_KEY_CODES.has(event.code)) {
+        return;
+    }
+
+    event.preventDefault();
+
+    if (paused || !currentPiece) {
         return;
     }
 
     switch (event.code) {
         case 'ArrowLeft':
-            event.preventDefault();
             movePiece(-1);
             break;
         case 'ArrowRight':
-            event.preventDefault();
             movePiece(1);
             break;
         case 'ArrowDown':
-            event.preventDefault();
             stepDown();
             dropAccumulator = 0;
             break;
         case 'ArrowUp':
-            event.preventDefault();
             rotateCurrentPiece(1);
             break;
         case 'Space':
         case 'Enter':
-            event.preventDefault();
             hardDrop();
             break;
         default:
