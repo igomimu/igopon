@@ -935,12 +935,30 @@ const PIECE_TEMPLATES = [
         ]
     },
     {
+        name: 'TigerMouthWhite',
+        cells: [
+            { row: 0, col: 1, color: 2 },
+            { row: 1, col: 0, color: 2 },
+            { row: 1, col: 1, color: 1 },
+            { row: 1, col: 2, color: 2 }
+        ]
+    },
+    {
         name: 'BambooJoint',
         cells: [
             { row: 0, col: 0, color: 1 },
             { row: 1, col: 0, color: 2 },
             { row: 2, col: 0, color: 1 },
             { row: 3, col: 0, color: 2 }
+        ]
+    },
+    {
+        name: 'BambooJointWhite',
+        cells: [
+            { row: 0, col: 0, color: 2 },
+            { row: 1, col: 0, color: 1 },
+            { row: 2, col: 0, color: 2 },
+            { row: 3, col: 0, color: 1 }
         ]
     },
     {
@@ -953,21 +971,12 @@ const PIECE_TEMPLATES = [
         ]
     },
     {
-        name: 'Ladder',
-        cells: [
-            { row: 0, col: 0, color: 1 },
-            { row: 1, col: 0, color: 1 },
-            { row: 1, col: 1, color: 2 },
-            { row: 2, col: 1, color: 2 }
-        ]
-    },
-    {
-        name: 'Keima',
+        name: 'HaneWhite',
         cells: [
             { row: 0, col: 0, color: 1 },
             { row: 0, col: 1, color: 2 },
-            { row: 1, col: 2, color: 1 },
-            { row: 2, col: 2, color: 2 }
+            { row: 1, col: 1, color: 2 },
+            { row: 1, col: 2, color: 1 }
         ]
     },
     {
@@ -980,12 +989,30 @@ const PIECE_TEMPLATES = [
         ]
     },
     {
+        name: 'ClampBlack',
+        cells: [
+            { row: 0, col: 0, color: 1 },
+            { row: 1, col: 0, color: 1 },
+            { row: 1, col: 1, color: 2 },
+            { row: 1, col: 2, color: 2 }
+        ]
+    },
+    {
         name: 'Seki',
         cells: [
             { row: 0, col: 0, color: 1 },
             { row: 0, col: 1, color: 2 },
             { row: 1, col: 0, color: 2 },
             { row: 1, col: 1, color: 1 }
+        ]
+    },
+    {
+        name: 'SekiAlt',
+        cells: [
+            { row: 0, col: 0, color: 2 },
+            { row: 0, col: 1, color: 1 },
+            { row: 1, col: 0, color: 1 },
+            { row: 1, col: 1, color: 2 }
         ]
     }
 ];
