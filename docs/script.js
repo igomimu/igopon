@@ -784,30 +784,16 @@ function renderLeaderboard(entries, listElement, emptyElement) {
 
     hideLeaderboardMessage(emptyElement);
 
-    const uniqueEntries = [];
-    const seenKeys = new Set();
-    const normalizedEntries = entries.slice();
+    const limitedEntries = entries.slice(0, LEADERBOARD_LIMIT);
 
-    for (const entry of normalizedEntries) {
+    const normalizedEntries = limitedEntries.map((entry, index) => {
         const rawName = entry.name ?? entry.playerName ?? entry.player ?? entry.displayName ?? entry.nickname ?? '';
         const safeName = sanitizePlayerName(rawName) || 'プレイヤー';
         const scoreValue = Number.isFinite(entry.score) ? Number(entry.score) : 0;
-        const key = `${safeName}::${scoreValue}`;
-        if (!seenKeys.has(key)) {
-            uniqueEntries.push({ safeName, scoreValue });
-            seenKeys.add(key);
-        }
-        if (uniqueEntries.length >= LEADERBOARD_LIMIT) {
-            break;
-        }
-    }
+        return { safeName, scoreValue };
+    });
 
-    if (uniqueEntries.length === 0) {
-        showLeaderboardMessage(emptyElement, 'まだスコアがありません。');
-        return;
-    }
-
-    uniqueEntries.forEach((entry, index) => {
+    normalizedEntries.forEach((entry, index) => {
         const item = document.createElement('li');
         const rank = document.createElement('span');
         rank.className = 'rank';
