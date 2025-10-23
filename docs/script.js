@@ -721,9 +721,17 @@ async function loadLeaderboardGroup({ params, listElement, emptyElement }) {
 
     try {
         const limit = params.limit ?? LEADERBOARD_LIMIT;
-        let entries;
+        let entries = [];
         if (params.range === 'week') {
-            entries = await fetchRollingWeekEntries(limit);
+            try {
+                entries = await fetchLeaderboardEntries(params);
+                if (!entries || entries.length === 0) {
+                    entries = await fetchRollingWeekEntries(limit);
+                }
+            } catch (weeklyError) {
+                console.warn('Fallback to rolling week aggregation', weeklyError);
+                entries = await fetchRollingWeekEntries(limit);
+            }
         } else {
             entries = await fetchLeaderboardEntries(params);
         }
@@ -816,6 +824,7 @@ function renderLeaderboard(entries, listElement, emptyElement) {
         item.append(rank, name, score);
         listElement.appendChild(item);
     });
+}
 
 function submitScore(finalScore) {
     if (!Number.isFinite(finalScore) || finalScore <= 0) {
