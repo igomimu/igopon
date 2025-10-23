@@ -776,7 +776,30 @@ function renderLeaderboard(entries, listElement, emptyElement) {
 
     hideLeaderboardMessage(emptyElement);
 
-    entries.slice(0, LEADERBOARD_LIMIT).forEach((entry, index) => {
+    const uniqueEntries = [];
+    const seenKeys = new Set();
+    const normalizedEntries = entries.slice();
+
+    for (const entry of normalizedEntries) {
+        const rawName = entry.name ?? entry.playerName ?? entry.player ?? entry.displayName ?? entry.nickname ?? '';
+        const safeName = sanitizePlayerName(rawName) || 'プレイヤー';
+        const scoreValue = Number.isFinite(entry.score) ? Number(entry.score) : 0;
+        const key = `${safeName}::${scoreValue}`;
+        if (!seenKeys.has(key)) {
+            uniqueEntries.push({ safeName, scoreValue });
+            seenKeys.add(key);
+        }
+        if (uniqueEntries.length >= LEADERBOARD_LIMIT) {
+            break;
+        }
+    }
+
+    if (uniqueEntries.length === 0) {
+        showLeaderboardMessage(emptyElement, 'まだスコアがありません。');
+        return;
+    }
+
+    uniqueEntries.forEach((entry, index) => {
         const item = document.createElement('li');
         const rank = document.createElement('span');
         rank.className = 'rank';
@@ -784,19 +807,15 @@ function renderLeaderboard(entries, listElement, emptyElement) {
 
         const name = document.createElement('span');
         name.className = 'name';
-        const rawName = entry.name ?? entry.playerName ?? entry.player ?? entry.displayName ?? entry.nickname ?? '';
-        const safeName = sanitizePlayerName(rawName) || 'プレイヤー';
-        name.textContent = safeName;
+        name.textContent = entry.safeName;
 
         const score = document.createElement('span');
         score.className = 'score';
-        const scoreValue = Number.isFinite(entry.score) ? Number(entry.score) : 0;
-        score.textContent = scoreValue.toLocaleString('ja-JP');
+        score.textContent = entry.scoreValue.toLocaleString('ja-JP');
 
         item.append(rank, name, score);
         listElement.appendChild(item);
     });
-}
 
 function submitScore(finalScore) {
     if (!Number.isFinite(finalScore) || finalScore <= 0) {
