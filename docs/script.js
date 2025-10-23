@@ -784,14 +784,7 @@ function renderLeaderboard(entries, listElement, emptyElement) {
 
     hideLeaderboardMessage(emptyElement);
 
-    const limitedEntries = entries.slice(0, LEADERBOARD_LIMIT);
-
-    const normalizedEntries = limitedEntries.map((entry, index) => {
-        const rawName = entry.name ?? entry.playerName ?? entry.player ?? entry.displayName ?? entry.nickname ?? '';
-        const safeName = sanitizePlayerName(rawName) || 'プレイヤー';
-        const scoreValue = Number.isFinite(entry.score) ? Number(entry.score) : 0;
-        return { safeName, scoreValue };
-    });
+    const normalizedEntries = normalizeLeaderboardEntries(entries);
 
     normalizedEntries.forEach((entry, index) => {
         const item = document.createElement('li');
@@ -810,6 +803,46 @@ function renderLeaderboard(entries, listElement, emptyElement) {
         item.append(rank, name, score);
         listElement.appendChild(item);
     });
+}
+
+function normalizeLeaderboardEntries(entries) {
+    const buckets = entries.reduce((acc, entry) => {
+        const scoreValue = Number.isFinite(entry.score) ? Number(entry.score) : 0;
+        const bucket = acc.get(scoreValue) || [];
+        bucket.push(entry);
+        acc.set(scoreValue, bucket);
+        return acc;
+    }, new Map());
+
+    const normalized = [];
+    const quotients = new Map();
+
+    Array.from(buckets.keys())
+        .sort((a, b) => b - a)
+        .forEach(scoreValue => {
+            const bucket = buckets.get(scoreValue) || [];
+            if (bucket.length === 0) {
+                return;
+            }
+            bucket.sort((a, b) => {
+                const timeA = Date.parse(a.timestamp || a.created_at || 0) || 0;
+                const timeB = Date.parse(b.timestamp || b.created_at || 0) || 0;
+                return timeA - timeB;
+            });
+
+            bucket.forEach(entry => {
+                const rawName = entry.name ?? entry.playerName ?? entry.player ?? entry.displayName ?? entry.nickname ?? '';
+                const safeName = sanitizePlayerName(rawName) || 'プレイヤー';
+
+                const appearance = quotients.get(scoreValue) || 0;
+                const decoratedName = appearance == 0 ? safeName : `${safeName} (${appearance + 1})`;
+                quotients.set(scoreValue, appearance + 1);
+
+                normalized.push({ safeName: decoratedName, scoreValue });
+            });
+        });
+
+    return normalized.slice(0, LEADERBOARD_LIMIT);
 }
 
 function submitScore(finalScore) {
