@@ -612,6 +612,15 @@ function getTodayKey() {
     return `${year}-${month}-${day}`;
 }
 
+function getDateKeyWithOffset(daysBack) {
+    const target = new Date();
+    target.setDate(target.getDate() - daysBack);
+    const year = target.getFullYear();
+    const month = String(target.getMonth() + 1).padStart(2, '0');
+    const day = String(target.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
 function formatLeaderboardDate(key) {
     if (!key) {
         return '';
@@ -656,13 +665,7 @@ function buildLeaderboardUrl(params = {}) {
     return `${API_BASE}?${query.toString()}`;
 }
 
-async function loadLeaderboardGroup({ params, listElement, emptyElement }) {
-    if (!listElement) {
-        return;
-    }
-
-    showLeaderboardMessage(emptyElement, '読み込み中…');
-
+async function fetchLeaderboardEntries(params) {
     const useAbort = typeof AbortController !== 'undefined';
     const controller = useAbort ? new AbortController() : null;
     const timeoutId = useAbort ? setTimeout(() => controller.abort(), LEADERBOARD_TIMEOUT_MS) : null;
@@ -680,16 +683,55 @@ async function loadLeaderboardGroup({ params, listElement, emptyElement }) {
         }
 
         const payload = await response.json();
-        const entries = Array.isArray(payload.entries) ? payload.entries : [];
+        return Array.isArray(payload.entries) ? payload.entries : [];
+    } finally {
+        if (timeoutId !== null) {
+            clearTimeout(timeoutId);
+        }
+    }
+}
+
+async function fetchRollingWeekEntries(limit) {
+    const aggregate = [];
+    for (let offset = 0; offset < 7; offset += 1) {
+        const dateKey = getDateKeyWithOffset(offset);
+        try {
+            const entries = await fetchLeaderboardEntries({ date: dateKey, limit });
+            entries.forEach(entry => {
+                aggregate.push({ ...entry });
+            });
+        } catch (error) {
+            console.warn('Failed to load leaderboard for', dateKey, error);
+        }
+    }
+    aggregate.sort((a, b) => {
+        const scoreA = Number.isFinite(a.score) ? Number(a.score) : 0;
+        const scoreB = Number.isFinite(b.score) ? Number(b.score) : 0;
+        return scoreB - scoreA;
+    });
+    return aggregate.slice(0, limit);
+}
+
+async function loadLeaderboardGroup({ params, listElement, emptyElement }) {
+    if (!listElement) {
+        return;
+    }
+
+    showLeaderboardMessage(emptyElement, '読み込み中…');
+
+    try {
+        const limit = params.limit ?? LEADERBOARD_LIMIT;
+        let entries;
+        if (params.range === 'week') {
+            entries = await fetchRollingWeekEntries(limit);
+        } else {
+            entries = await fetchLeaderboardEntries(params);
+        }
         renderLeaderboard(entries, listElement, emptyElement);
     } catch (error) {
         console.error('Failed to load leaderboard', error);
         listElement.innerHTML = '';
         showLeaderboardMessage(emptyElement, 'ランキングを読み込めませんでした。');
-    } finally {
-        if (timeoutId !== null) {
-            clearTimeout(timeoutId);
-        }
     }
 }
 
