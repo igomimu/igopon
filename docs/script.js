@@ -148,6 +148,8 @@ const leaderboardEmpty = document.getElementById('leaderboardEmpty');
 const leaderboardDateLabel = document.getElementById('leaderboardDate');
 const weeklyLeaderboardList = document.getElementById('weeklyLeaderboard');
 const weeklyLeaderboardEmpty = document.getElementById('weeklyLeaderboardEmpty');
+const monthlyLeaderboardList = document.getElementById('monthlyLeaderboard');
+const monthlyLeaderboardEmpty = document.getElementById('monthlyLeaderboardEmpty');
 const bgmToggleBtn = document.getElementById('bgmToggleBtn');
 const bgmStatusLabel = document.getElementById('bgmStatus');
 
@@ -197,7 +199,10 @@ const effects = [];
 const HIGH_SCORE_KEY = 'goDropHighScore';
 const PLAYER_NAME_KEY = 'goDropPlayerName';
 const API_BASE = 'https://script.google.com/macros/s/AKfycbwcZpx3SLF1z8jTOL6lHeayA4eWzIDGAjzc_fXIffIGyAOliZuiMxVrfV3682ACfT5g/exec';
-const LEADERBOARD_LIMIT = 5;
+const DAILY_TOP_LIMIT = 5;
+const WEEKLY_TOP_LIMIT = 1;
+const MONTHLY_TOP_LIMIT = 1;
+const DEFAULT_LEADERBOARD_LIMIT = DAILY_TOP_LIMIT;
 const LEADERBOARD_TIMEOUT_MS = 6000;
 
 const bgmAudio = document.getElementById('bgmAudio');
@@ -661,7 +666,7 @@ function buildLeaderboardUrl(params = {}) {
     if (params.range) {
         query.set('range', params.range);
     }
-    query.set('limit', String(params.limit ?? LEADERBOARD_LIMIT));
+    query.set('limit', String(params.limit ?? DEFAULT_LEADERBOARD_LIMIT));
     return `${API_BASE}?${query.toString()}`;
 }
 
@@ -691,27 +696,6 @@ async function fetchLeaderboardEntries(params) {
     }
 }
 
-async function fetchRollingWeekEntries(limit) {
-    const aggregate = [];
-    for (let offset = 0; offset < 7; offset += 1) {
-        const dateKey = getDateKeyWithOffset(offset);
-        try {
-            const entries = await fetchLeaderboardEntries({ date: dateKey, limit });
-            entries.forEach(entry => {
-                aggregate.push({ ...entry });
-            });
-        } catch (error) {
-            console.warn('Failed to load leaderboard for', dateKey, error);
-        }
-    }
-    aggregate.sort((a, b) => {
-        const scoreA = Number.isFinite(a.score) ? Number(a.score) : 0;
-        const scoreB = Number.isFinite(b.score) ? Number(b.score) : 0;
-        return scoreB - scoreA;
-    });
-    return aggregate.slice(0, limit);
-}
-
 function mergeLeaderboardEntries(primaryEntries, secondaryEntries) {
     const combined = [];
     const seen = new Set();
@@ -739,6 +723,27 @@ function mergeLeaderboardEntries(primaryEntries, secondaryEntries) {
     return combined;
 }
 
+async function fetchRollingEntries(days, limit) {
+    const aggregate = [];
+    for (let offset = 0; offset < days; offset += 1) {
+        const dateKey = getDateKeyWithOffset(offset);
+        try {
+            const entries = await fetchLeaderboardEntries({ date: dateKey, limit });
+            entries.forEach(entry => {
+                aggregate.push({ ...entry });
+            });
+        } catch (error) {
+            console.warn('Failed to load leaderboard for', dateKey, error);
+        }
+    }
+    aggregate.sort((a, b) => {
+        const scoreA = Number.isFinite(a.score) ? Number(a.score) : 0;
+        const scoreB = Number.isFinite(b.score) ? Number(b.score) : 0;
+        return scoreB - scoreA;
+    });
+    return aggregate;
+}
+
 async function loadLeaderboardGroup({ params, listElement, emptyElement }) {
     if (!listElement) {
         return;
@@ -747,24 +752,29 @@ async function loadLeaderboardGroup({ params, listElement, emptyElement }) {
     showLeaderboardMessage(emptyElement, '読み込み中…');
 
     try {
-        const limit = params.limit ?? LEADERBOARD_LIMIT;
+        const limit = params.limit ?? DEFAULT_LEADERBOARD_LIMIT;
         let entries = [];
-        if (params.range === 'week') {
-            let weeklyEntries = [];
+        const rollingDaysMap = {
+            week: 7,
+            month: 30
+        };
+        if (params.range && rollingDaysMap[params.range]) {
+            let primaryEntries = [];
             try {
-                weeklyEntries = await fetchLeaderboardEntries(params);
-            } catch (weeklyError) {
-                console.warn('Fallback to rolling week aggregation', weeklyError);
+                primaryEntries = await fetchLeaderboardEntries(params);
+            } catch (rangeError) {
+                console.warn('Fallback to rolling aggregation for', params.range, rangeError);
             }
             let fallbackEntries = [];
-            if (!weeklyEntries || weeklyEntries.length < limit) {
+            if (!primaryEntries || primaryEntries.length < limit) {
                 try {
-                    fallbackEntries = await fetchRollingWeekEntries(Math.max(limit * 2, limit));
+                    const rollingLimit = Math.max(limit * 3, limit);
+                    fallbackEntries = await fetchRollingEntries(rollingDaysMap[params.range], rollingLimit);
                 } catch (fallbackError) {
-                    console.warn('Failed to load rolling week entries', fallbackError);
+                    console.warn('Failed to load rolling entries', fallbackError);
                 }
             }
-            entries = mergeLeaderboardEntries(weeklyEntries, fallbackEntries);
+            entries = mergeLeaderboardEntries(primaryEntries, fallbackEntries);
             if (!entries || entries.length === 0) {
                 showLeaderboardMessage(emptyElement, 'まだスコアがありません。');
                 listElement.innerHTML = '';
@@ -773,7 +783,7 @@ async function loadLeaderboardGroup({ params, listElement, emptyElement }) {
         } else {
             entries = await fetchLeaderboardEntries(params);
         }
-        renderLeaderboard(entries, listElement, emptyElement);
+        renderLeaderboard(entries, listElement, emptyElement, limit);
     } catch (error) {
         console.error('Failed to load leaderboard', error);
         listElement.innerHTML = '';
@@ -790,16 +800,23 @@ async function refreshLeaderboard() {
     const tasks = [];
     if (dailyLeaderboardList) {
         tasks.push(loadLeaderboardGroup({
-            params: { date: todayKey, limit: LEADERBOARD_LIMIT },
+            params: { date: todayKey, limit: DAILY_TOP_LIMIT },
             listElement: dailyLeaderboardList,
             emptyElement: leaderboardEmpty
         }));
     }
     if (weeklyLeaderboardList) {
         tasks.push(loadLeaderboardGroup({
-            params: { range: 'week', limit: LEADERBOARD_LIMIT },
+            params: { range: 'week', limit: WEEKLY_TOP_LIMIT },
             listElement: weeklyLeaderboardList,
             emptyElement: weeklyLeaderboardEmpty
+        }));
+    }
+    if (monthlyLeaderboardList) {
+        tasks.push(loadLeaderboardGroup({
+            params: { range: 'month', limit: MONTHLY_TOP_LIMIT },
+            listElement: monthlyLeaderboardList,
+            emptyElement: monthlyLeaderboardEmpty
         }));
     }
 
@@ -810,20 +827,21 @@ async function refreshLeaderboard() {
     await Promise.all(tasks);
 }
 
-function renderLeaderboard(entries, listElement, emptyElement) {
+function renderLeaderboard(entries, listElement, emptyElement, limit = DEFAULT_LEADERBOARD_LIMIT) {
     if (!listElement) {
         return;
     }
     listElement.innerHTML = '';
     const sourceEntries = Array.isArray(entries) ? entries : [];
-    const normalizedEntries = normalizeLeaderboardEntries(sourceEntries);
+    const normalizedEntries = normalizeLeaderboardEntries(sourceEntries, limit);
     if (!normalizedEntries || normalizedEntries.length === 0) {
         showLeaderboardMessage(emptyElement, 'まだスコアがありません。');
     } else {
         hideLeaderboardMessage(emptyElement);
     }
 
-    for (let index = 0; index < LEADERBOARD_LIMIT; index += 1) {
+    const effectiveLimit = limit && Number.isFinite(limit) && limit > 0 ? limit : DEFAULT_LEADERBOARD_LIMIT;
+    for (let index = 0; index < effectiveLimit; index += 1) {
         const entry = normalizedEntries[index];
         const item = document.createElement('li');
         const rank = document.createElement('span');
@@ -848,7 +866,7 @@ function renderLeaderboard(entries, listElement, emptyElement) {
     }
 }
 
-function normalizeLeaderboardEntries(entries) {
+function normalizeLeaderboardEntries(entries, limit = DEFAULT_LEADERBOARD_LIMIT) {
     const buckets = entries.reduce((acc, entry) => {
         const scoreValue = Number.isFinite(entry.score) ? Number(entry.score) : 0;
         const bucket = acc.get(scoreValue) || [];
@@ -885,7 +903,8 @@ function normalizeLeaderboardEntries(entries) {
             });
         });
 
-    return normalized.slice(0, LEADERBOARD_LIMIT);
+    const effectiveLimit = limit && Number.isFinite(limit) && limit > 0 ? limit : DEFAULT_LEADERBOARD_LIMIT;
+    return normalized.slice(0, effectiveLimit);
 }
 
 function submitScore(finalScore) {
