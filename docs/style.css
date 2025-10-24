@@ -543,6 +543,16 @@ button:not(:disabled):hover {
     color: rgba(58, 42, 20, 0.85);
 }
 
+.leaderboard-list li.placeholder {
+    opacity: 0.6;
+}
+
+.leaderboard-list li.placeholder .name,
+.leaderboard-list li.placeholder .score {
+    font-style: italic;
+    color: rgba(58, 42, 20, 0.45);
+}
+
 .hidden {
     display: none !important;
 }

@@ -712,6 +712,33 @@ async function fetchRollingWeekEntries(limit) {
     return aggregate.slice(0, limit);
 }
 
+function mergeLeaderboardEntries(primaryEntries, secondaryEntries) {
+    const combined = [];
+    const seen = new Set();
+    const append = (entry) => {
+        if (!entry) {
+            return;
+        }
+        const rawName = entry.name ?? entry.playerName ?? entry.player ?? entry.displayName ?? entry.nickname ?? '';
+        const key = [
+            rawName,
+            entry.score,
+            entry.timestamp,
+            entry.created_at,
+            entry.date_key
+        ].map(value => (value === undefined || value === null) ? '' : String(value)).join('::');
+        if (seen.has(key)) {
+            return;
+        }
+        seen.add(key);
+        combined.push(entry);
+    };
+
+    (primaryEntries || []).forEach(append);
+    (secondaryEntries || []).forEach(append);
+    return combined;
+}
+
 async function loadLeaderboardGroup({ params, listElement, emptyElement }) {
     if (!listElement) {
         return;
@@ -723,14 +750,25 @@ async function loadLeaderboardGroup({ params, listElement, emptyElement }) {
         const limit = params.limit ?? LEADERBOARD_LIMIT;
         let entries = [];
         if (params.range === 'week') {
+            let weeklyEntries = [];
             try {
-                entries = await fetchLeaderboardEntries(params);
-                if (!entries || entries.length === 0) {
-                    entries = await fetchRollingWeekEntries(limit);
-                }
+                weeklyEntries = await fetchLeaderboardEntries(params);
             } catch (weeklyError) {
                 console.warn('Fallback to rolling week aggregation', weeklyError);
-                entries = await fetchRollingWeekEntries(limit);
+            }
+            let fallbackEntries = [];
+            if (!weeklyEntries || weeklyEntries.length < limit) {
+                try {
+                    fallbackEntries = await fetchRollingWeekEntries(Math.max(limit * 2, limit));
+                } catch (fallbackError) {
+                    console.warn('Failed to load rolling week entries', fallbackError);
+                }
+            }
+            entries = mergeLeaderboardEntries(weeklyEntries, fallbackEntries);
+            if (!entries || entries.length === 0) {
+                showLeaderboardMessage(emptyElement, 'まだスコアがありません。');
+                listElement.innerHTML = '';
+                return;
             }
         } else {
             entries = await fetchLeaderboardEntries(params);
@@ -777,16 +815,16 @@ function renderLeaderboard(entries, listElement, emptyElement) {
         return;
     }
     listElement.innerHTML = '';
-    if (!entries || entries.length === 0) {
+    const sourceEntries = Array.isArray(entries) ? entries : [];
+    const normalizedEntries = normalizeLeaderboardEntries(sourceEntries);
+    if (!normalizedEntries || normalizedEntries.length === 0) {
         showLeaderboardMessage(emptyElement, 'まだスコアがありません。');
-        return;
+    } else {
+        hideLeaderboardMessage(emptyElement);
     }
 
-    hideLeaderboardMessage(emptyElement);
-
-    const normalizedEntries = normalizeLeaderboardEntries(entries);
-
-    normalizedEntries.forEach((entry, index) => {
+    for (let index = 0; index < LEADERBOARD_LIMIT; index += 1) {
+        const entry = normalizedEntries[index];
         const item = document.createElement('li');
         const rank = document.createElement('span');
         rank.className = 'rank';
@@ -794,15 +832,20 @@ function renderLeaderboard(entries, listElement, emptyElement) {
 
         const name = document.createElement('span');
         name.className = 'name';
-        name.textContent = entry.safeName;
-
         const score = document.createElement('span');
         score.className = 'score';
-        score.textContent = entry.scoreValue.toLocaleString('ja-JP');
+        if (entry) {
+            name.textContent = entry.safeName;
+            score.textContent = entry.scoreValue.toLocaleString('ja-JP');
+        } else {
+            item.classList.add('placeholder');
+            name.textContent = '—';
+            score.textContent = '—';
+        }
 
         item.append(rank, name, score);
         listElement.appendChild(item);
-    });
+    }
 }
 
 function normalizeLeaderboardEntries(entries) {
