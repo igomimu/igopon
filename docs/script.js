@@ -202,8 +202,6 @@ const API_BASE = 'https://script.google.com/macros/s/AKfycbwcZpx3SLF1z8jTOL6lHea
 const DAILY_TOP_LIMIT = 5;
 const WEEKLY_TOP_LIMIT = 1;
 const MONTHLY_TOP_LIMIT = 1;
-const WEEKLY_FETCH_LIMIT = Math.max(5, WEEKLY_TOP_LIMIT);
-const MONTHLY_FETCH_LIMIT = Math.max(5, MONTHLY_TOP_LIMIT);
 const DEFAULT_LEADERBOARD_LIMIT = DAILY_TOP_LIMIT;
 const LEADERBOARD_TIMEOUT_MS = 6000;
 
@@ -746,7 +744,7 @@ async function fetchRollingEntries(days, limit) {
     return aggregate;
 }
 
-async function loadLeaderboardGroup({ params, listElement, emptyElement, displayLimit }) {
+async function loadLeaderboardGroup({ params, listElement, emptyElement }) {
     if (!listElement) {
         return;
     }
@@ -754,10 +752,7 @@ async function loadLeaderboardGroup({ params, listElement, emptyElement, display
     showLeaderboardMessage(emptyElement, '読み込み中…');
 
     try {
-        const requestLimit = params.limit ?? DEFAULT_LEADERBOARD_LIMIT;
-        const effectiveDisplayLimit = Number.isFinite(displayLimit) && displayLimit > 0
-            ? displayLimit
-            : DEFAULT_LEADERBOARD_LIMIT;
+        const limit = params.limit ?? DEFAULT_LEADERBOARD_LIMIT;
         let entries = [];
         const rollingDaysMap = {
             week: 7,
@@ -771,9 +766,9 @@ async function loadLeaderboardGroup({ params, listElement, emptyElement, display
                 console.warn('Fallback to rolling aggregation for', params.range, rangeError);
             }
             let fallbackEntries = [];
-            if (!primaryEntries || primaryEntries.length < effectiveDisplayLimit) {
+            if (!primaryEntries || primaryEntries.length < limit) {
                 try {
-                    const rollingLimit = Math.max(requestLimit, effectiveDisplayLimit * 3);
+                    const rollingLimit = Math.max(limit * 3, limit);
                     fallbackEntries = await fetchRollingEntries(rollingDaysMap[params.range], rollingLimit);
                 } catch (fallbackError) {
                     console.warn('Failed to load rolling entries', fallbackError);
@@ -788,7 +783,7 @@ async function loadLeaderboardGroup({ params, listElement, emptyElement, display
         } else {
             entries = await fetchLeaderboardEntries(params);
         }
-        renderLeaderboard(entries, listElement, emptyElement, effectiveDisplayLimit);
+        renderLeaderboard(entries, listElement, emptyElement, limit);
     } catch (error) {
         console.error('Failed to load leaderboard', error);
         listElement.innerHTML = '';
@@ -807,24 +802,21 @@ async function refreshLeaderboard() {
         tasks.push(loadLeaderboardGroup({
             params: { date: todayKey, limit: DAILY_TOP_LIMIT },
             listElement: dailyLeaderboardList,
-            emptyElement: leaderboardEmpty,
-            displayLimit: DAILY_TOP_LIMIT
+            emptyElement: leaderboardEmpty
         }));
     }
     if (weeklyLeaderboardList) {
         tasks.push(loadLeaderboardGroup({
-            params: { range: 'week', limit: WEEKLY_FETCH_LIMIT },
+            params: { range: 'week', limit: WEEKLY_TOP_LIMIT },
             listElement: weeklyLeaderboardList,
-            emptyElement: weeklyLeaderboardEmpty,
-            displayLimit: WEEKLY_TOP_LIMIT
+            emptyElement: weeklyLeaderboardEmpty
         }));
     }
     if (monthlyLeaderboardList) {
         tasks.push(loadLeaderboardGroup({
-            params: { range: 'month', limit: MONTHLY_FETCH_LIMIT },
+            params: { range: 'month', limit: MONTHLY_TOP_LIMIT },
             listElement: monthlyLeaderboardList,
-            emptyElement: monthlyLeaderboardEmpty,
-            displayLimit: MONTHLY_TOP_LIMIT
+            emptyElement: monthlyLeaderboardEmpty
         }));
     }
 
