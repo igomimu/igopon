@@ -202,6 +202,8 @@ const API_BASE = 'https://script.google.com/macros/s/AKfycbwcZpx3SLF1z8jTOL6lHea
 const DAILY_TOP_LIMIT = 5;
 const WEEKLY_TOP_LIMIT = 1;
 const MONTHLY_TOP_LIMIT = 1;
+const WEEKLY_FETCH_LIMIT = Math.max(5, WEEKLY_TOP_LIMIT);
+const MONTHLY_FETCH_LIMIT = Math.max(5, MONTHLY_TOP_LIMIT);
 const DEFAULT_LEADERBOARD_LIMIT = DAILY_TOP_LIMIT;
 const LEADERBOARD_TIMEOUT_MS = 6000;
 
@@ -744,7 +746,7 @@ async function fetchRollingEntries(days, limit) {
     return aggregate;
 }
 
-async function loadLeaderboardGroup({ params, listElement, emptyElement }) {
+async function loadLeaderboardGroup({ params, listElement, emptyElement, displayLimit }) {
     if (!listElement) {
         return;
     }
@@ -752,7 +754,10 @@ async function loadLeaderboardGroup({ params, listElement, emptyElement }) {
     showLeaderboardMessage(emptyElement, '読み込み中…');
 
     try {
-        const limit = params.limit ?? DEFAULT_LEADERBOARD_LIMIT;
+        const requestLimit = params.limit ?? DEFAULT_LEADERBOARD_LIMIT;
+        const effectiveDisplayLimit = Number.isFinite(displayLimit) && displayLimit > 0
+            ? displayLimit
+            : DEFAULT_LEADERBOARD_LIMIT;
         let entries = [];
         const rollingDaysMap = {
             week: 7,
@@ -766,9 +771,9 @@ async function loadLeaderboardGroup({ params, listElement, emptyElement }) {
                 console.warn('Fallback to rolling aggregation for', params.range, rangeError);
             }
             let fallbackEntries = [];
-            if (!primaryEntries || primaryEntries.length < limit) {
+            if (!primaryEntries || primaryEntries.length < effectiveDisplayLimit) {
                 try {
-                    const rollingLimit = Math.max(limit * 3, limit);
+                    const rollingLimit = Math.max(requestLimit, effectiveDisplayLimit * 3);
                     fallbackEntries = await fetchRollingEntries(rollingDaysMap[params.range], rollingLimit);
                 } catch (fallbackError) {
                     console.warn('Failed to load rolling entries', fallbackError);
@@ -783,7 +788,7 @@ async function loadLeaderboardGroup({ params, listElement, emptyElement }) {
         } else {
             entries = await fetchLeaderboardEntries(params);
         }
-        renderLeaderboard(entries, listElement, emptyElement, limit);
+        renderLeaderboard(entries, listElement, emptyElement, effectiveDisplayLimit);
     } catch (error) {
         console.error('Failed to load leaderboard', error);
         listElement.innerHTML = '';
@@ -802,21 +807,24 @@ async function refreshLeaderboard() {
         tasks.push(loadLeaderboardGroup({
             params: { date: todayKey, limit: DAILY_TOP_LIMIT },
             listElement: dailyLeaderboardList,
-            emptyElement: leaderboardEmpty
+            emptyElement: leaderboardEmpty,
+            displayLimit: DAILY_TOP_LIMIT
         }));
     }
     if (weeklyLeaderboardList) {
         tasks.push(loadLeaderboardGroup({
-            params: { range: 'week', limit: WEEKLY_TOP_LIMIT },
+            params: { range: 'week', limit: WEEKLY_FETCH_LIMIT },
             listElement: weeklyLeaderboardList,
-            emptyElement: weeklyLeaderboardEmpty
+            emptyElement: weeklyLeaderboardEmpty,
+            displayLimit: WEEKLY_TOP_LIMIT
         }));
     }
     if (monthlyLeaderboardList) {
         tasks.push(loadLeaderboardGroup({
-            params: { range: 'month', limit: MONTHLY_TOP_LIMIT },
+            params: { range: 'month', limit: MONTHLY_FETCH_LIMIT },
             listElement: monthlyLeaderboardList,
-            emptyElement: monthlyLeaderboardEmpty
+            emptyElement: monthlyLeaderboardEmpty,
+            displayLimit: MONTHLY_TOP_LIMIT
         }));
     }
 
