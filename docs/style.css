@@ -350,12 +350,14 @@ button:not(:disabled):hover {
 
 @media (min-width: 960px) {
     .layout {
-        grid-template-columns: minmax(0, 1.4fr) 320px;
+        grid-template-columns: auto 320px;
         align-items: flex-start;
+        justify-content: center;
+        column-gap: 2rem;
     }
 
     .board-panel {
-        margin-right: 0;
+        justify-self: center;
     }
 
     .sidebar {
