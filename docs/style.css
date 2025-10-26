@@ -9,6 +9,9 @@
     --text-dark: #2f2714;
     --text-muted: #655a44;
     --shadow: rgba(46, 36, 20, 0.22);
+    --header-height: 104px;
+    --mobile-controls-height: 10.5rem;
+    --control-panel-height: 7.5rem;
 }
 
 * {
@@ -39,6 +42,9 @@ body {
     background: rgba(248, 240, 216, 0.9);
     border-bottom: 1px solid rgba(89, 69, 36, 0.18);
     box-shadow: 0 8px 18px rgba(46, 36, 20, 0.12);
+    position: sticky;
+    top: 0;
+    z-index: 70;
 }
 
 .home-link {
@@ -140,8 +146,8 @@ body {
 
 .layout {
     flex: 1;
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: 1fr;
     padding: 1.5rem;
     gap: 1.5rem;
     width: min(1180px, 100%);
@@ -330,17 +336,16 @@ button:not(:disabled):hover {
 
 @media (min-width: 960px) {
     .layout {
-        flex-direction: row;
+        grid-template-columns: minmax(0, 1.4fr) 320px;
         align-items: flex-start;
-        justify-content: center;
     }
 
     .board-panel {
-        margin-right: 2rem;
+        margin-right: 0;
     }
 
     .sidebar {
-        width: 320px;
+        width: 100%;
     }
 }
 
@@ -420,23 +425,111 @@ button:not(:disabled):hover {
 
 @media (max-width: 900px) {
     .layout {
-        padding-bottom: 5rem;
-        align-items: center;
+        padding-bottom: calc(var(--mobile-controls-height) + var(--control-panel-height) + 3rem);
+    }
+
+    .app-header {
+        backdrop-filter: blur(14px);
+        background: rgba(248, 240, 216, 0.88);
     }
 
     .board-panel {
         align-self: center;
         margin-left: auto;
         margin-right: auto;
+        margin-bottom: calc(var(--mobile-controls-height) + var(--control-panel-height) + 1.5rem);
     }
 
     .mobile-controls {
         display: flex;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        max-width: none;
+        padding: 0.75rem 1rem calc(0.75rem + env(safe-area-inset-bottom));
+        background: rgba(248, 242, 215, 0.96);
+        backdrop-filter: blur(14px);
+        border-radius: 18px 18px 0 0;
+        box-shadow: 0 -10px 28px rgba(46, 36, 20, 0.22);
+        z-index: 90;
+    }
+
+    .mobile-controls .mobile-row:not(:last-child) {
+        margin-bottom: 0.5rem;
+    }
+
+    .mobile-row {
+        display: flex;
+        gap: 0.6rem;
+    }
+
+    .mobile-btn {
+        font-size: 1.35rem;
+        padding: 0.8rem;
     }
 
     .sidebar {
-        order: 3;
         width: 100%;
+    }
+
+    .control-panel {
+        position: fixed;
+        bottom: calc(env(safe-area-inset-bottom) + var(--mobile-controls-height) + 0.75rem);
+        left: 50%;
+        transform: translateX(-50%);
+        width: min(520px, calc(100% - 2rem));
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        background: rgba(248, 242, 215, 0.96);
+        border-radius: 16px;
+        border: 1px solid rgba(104, 82, 45, 0.24);
+        box-shadow: 0 14px 28px rgba(46, 36, 20, 0.2);
+        padding: 0.75rem 1rem;
+        z-index: 85;
+    }
+
+    .control-panel button {
+        flex: 1;
+        min-width: 120px;
+    }
+
+    .control-panel .audio-controls {
+        flex: 1 1 auto;
+    }
+
+    .status-message {
+        flex: 1 1 100%;
+        min-height: 1.2rem;
+    }
+
+    .next-panel {
+        position: fixed;
+        right: 1rem;
+        bottom: calc(env(safe-area-inset-bottom) + var(--mobile-controls-height) + var(--control-panel-height) + 1.25rem);
+        width: 150px;
+        max-width: 40vw;
+        background: rgba(248, 242, 215, 0.96);
+        border-radius: 14px;
+        border: 1px solid rgba(104, 82, 45, 0.24);
+        box-shadow: 0 12px 24px rgba(46, 36, 20, 0.2);
+        padding: 0.75rem;
+        z-index: 84;
+    }
+
+    .next-panel h2 {
+        margin-bottom: 0.35rem;
+        font-size: 1rem;
+        text-align: center;
+    }
+
+    .next-panel canvas {
+        width: 100%;
+        height: auto;
+        display: block;
     }
 }
 .player-panel,
