@@ -312,6 +312,8 @@ function attemptPlayBgm() {
     if (!bgmAudio || !bgmPreference) {
         return;
     }
+    bgmAudio.defaultPlaybackRate = 1;
+    bgmAudio.playbackRate = 1;
     bgmAudio.volume = paused || document.hidden ? BGM_PAUSE_VOLUME : BGM_ACTIVE_VOLUME;
     const playPromise = bgmAudio.play();
     if (playPromise && typeof playPromise.then === 'function') {
@@ -357,6 +359,17 @@ function loadFixedBgm(role, options = {}) {
         stopBgmPlayback(true);
         bgmAudio.src = preset.src;
         bgmAudio.dataset.activeBgmRole = role;
+        bgmAudio.defaultPlaybackRate = 1;
+        bgmAudio.playbackRate = 1;
+        if ('preservesPitch' in bgmAudio) {
+            bgmAudio.preservesPitch = true;
+        }
+        if ('mozPreservesPitch' in bgmAudio) {
+            bgmAudio.mozPreservesPitch = true;
+        }
+        if ('webkitPreservesPitch' in bgmAudio) {
+            bgmAudio.webkitPreservesPitch = true;
+        }
         bgmUnlocked = false;
         bgmAudio.load();
         const restartPlayback = () => {
