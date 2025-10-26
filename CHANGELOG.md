@@ -1,3 +1,9 @@
+### 2025/10/26 - Apps Script 範囲集計とBGM修正
+
+- Apps Script (`docs/gas.js`) に週次・月次クエリ用の範囲フィルタを追加し、日付文字列しか残っていない履歴行でも正しく集計されるように修正。
+- Web アプリのエンドポイント URL を最新デプロイの ID (`AKfycby6x7sGLKNAbc9ZXhlLniKHiblTQkAkmrsd13IiCim7cRDFyI3zuZC6LlOdUp2VoRLB`) に差し替え。
+- BGM 再生時に `playbackRate` を強制的に 1.0 に戻し、トラック切り替え時のピッチ保持も有効化して再生速度の低下を解消。
+
 ### 2025/10/24 - プロジェクト名変更と週間ランキングの補強
 
 - GitHub 上のリポジトリ名を `igopon` に合わせ、ローカル/リモート双方の名称を統一。
