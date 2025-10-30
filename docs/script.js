@@ -564,6 +564,32 @@ const BASE_PREVIEW_WIDTH = nextCanvas.width;
 const BASE_PREVIEW_HEIGHT = nextCanvas.height;
 const BOARD_PIXEL_WIDTH = BASE_BOARD_WIDTH;
 const BOARD_PIXEL_HEIGHT = BASE_BOARD_HEIGHT;
+const PREVIEW_RESPONSIVE_QUERY = '(max-width: 900px)';
+const previewMediaQuery = typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+    ? window.matchMedia(PREVIEW_RESPONSIVE_QUERY)
+    : null;
+let previewWidth = BASE_PREVIEW_WIDTH;
+let previewHeight = BASE_PREVIEW_HEIGHT;
+
+function resolvePreviewTargetSize() {
+    const fallbackIsMobile = typeof window !== 'undefined' ? window.innerWidth <= 900 : false;
+    const isMobile = previewMediaQuery ? previewMediaQuery.matches : fallbackIsMobile;
+    const scale = isMobile ? 0.5 : 1;
+    return {
+        width: Math.max(1, Math.round(BASE_PREVIEW_WIDTH * scale)),
+        height: Math.max(1, Math.round(BASE_PREVIEW_HEIGHT * scale))
+    };
+}
+
+function applyPreviewCanvasSize({ redraw = true } = {}) {
+    const { width, height } = resolvePreviewTargetSize();
+    previewWidth = width;
+    previewHeight = height;
+    configureCanvasResolution(nextCanvas, nextCtx, width, height);
+    if (redraw) {
+        updatePreview();
+    }
+}
 
 function loadHighScore() {
     try {
@@ -1002,12 +1028,21 @@ refreshLeaderboard();
 
 
 configureCanvasResolution(canvas, ctx, BASE_BOARD_WIDTH, BASE_BOARD_HEIGHT);
-configureCanvasResolution(nextCanvas, nextCtx, BASE_PREVIEW_WIDTH, BASE_PREVIEW_HEIGHT);
+applyPreviewCanvasSize();
 
 window.addEventListener('resize', () => {
     configureCanvasResolution(canvas, ctx, BASE_BOARD_WIDTH, BASE_BOARD_HEIGHT);
-    configureCanvasResolution(nextCanvas, nextCtx, BASE_PREVIEW_WIDTH, BASE_PREVIEW_HEIGHT);
+    applyPreviewCanvasSize();
 });
+
+if (previewMediaQuery) {
+    const handlePreviewMediaChange = () => applyPreviewCanvasSize();
+    if (typeof previewMediaQuery.addEventListener === 'function') {
+        previewMediaQuery.addEventListener('change', handlePreviewMediaChange);
+    } else if (typeof previewMediaQuery.addListener === 'function') {
+        previewMediaQuery.addListener(handlePreviewMediaChange);
+    }
+}
 
 if (SUPPORTS_POINTER) {
     canvas.addEventListener('pointerdown', event => {
@@ -2722,16 +2757,16 @@ function initializeMobileControls() {
     }
 }
 function updatePreview() {
-    nextCtx.clearRect(0, 0, BASE_PREVIEW_WIDTH, BASE_PREVIEW_HEIGHT);
+    nextCtx.clearRect(0, 0, previewWidth, previewHeight);
 
-    const gradient = nextCtx.createLinearGradient(0, 0, 0, BASE_PREVIEW_HEIGHT);
+    const gradient = nextCtx.createLinearGradient(0, 0, 0, previewHeight);
     gradient.addColorStop(0, 'rgba(252, 242, 210, 0.95)');
     gradient.addColorStop(1, 'rgba(216, 183, 135, 0.9)');
     nextCtx.fillStyle = gradient;
-    nextCtx.fillRect(0, 0, BASE_PREVIEW_WIDTH, BASE_PREVIEW_HEIGHT);
+    nextCtx.fillRect(0, 0, previewWidth, previewHeight);
 
     nextCtx.strokeStyle = 'rgba(60, 40, 20, 0.2)';
-    nextCtx.strokeRect(0.5, 0.5, BASE_PREVIEW_WIDTH - 1, BASE_PREVIEW_HEIGHT - 1);
+    nextCtx.strokeRect(0.5, 0.5, Math.max(previewWidth - 1, 0), Math.max(previewHeight - 1, 0));
 
     if (!nextPiece) {
         return;
@@ -2739,11 +2774,13 @@ function updatePreview() {
 
     const width = nextPiece.width;
     const height = nextPiece.height;
-    const usableWidth = BASE_PREVIEW_WIDTH - 40;
-    const usableHeight = BASE_PREVIEW_HEIGHT - 40;
+    const insetWidth = Math.max(12, Math.round(previewWidth * (40 / BASE_PREVIEW_WIDTH)));
+    const insetHeight = Math.max(12, Math.round(previewHeight * (40 / BASE_PREVIEW_HEIGHT)));
+    const usableWidth = Math.max(previewWidth - insetWidth, 0);
+    const usableHeight = Math.max(previewHeight - insetHeight, 0);
     const cellSize = Math.min(usableWidth / width, usableHeight / height);
-    const offsetX = (BASE_PREVIEW_WIDTH - width * cellSize) / 2;
-    const offsetY = (BASE_PREVIEW_HEIGHT - height * cellSize) / 2;
+    const offsetX = (previewWidth - width * cellSize) / 2;
+    const offsetY = (previewHeight - height * cellSize) / 2;
 
     nextPiece.cells.forEach(cell => {
         const cx = offsetX + cell.col * cellSize + cellSize / 2;
