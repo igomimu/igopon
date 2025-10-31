@@ -330,24 +330,6 @@ button:not(:disabled):hover {
     margin-bottom: 0.4rem;
 }
 
-.app-footer {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: var(--footer-height);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0 1rem;
-    font-size: 0.9rem;
-    color: var(--text-muted);
-    background: rgba(248, 240, 216, 0.92);
-    border-top: 1px solid rgba(89, 69, 36, 0.18);
-    box-shadow: 0 -10px 20px rgba(46, 36, 20, 0.12);
-    z-index: 65;
-}
-
 @media (min-width: 960px) {
     .layout {
         grid-template-columns: auto 320px;
