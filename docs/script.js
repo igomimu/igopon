@@ -114,7 +114,9 @@ function enqueueEyeFramePiece(stoneColor, prioritizeNext = false) {
 const canvas = document.getElementById('board');
 const ctx = canvas.getContext('2d');
 const nextCanvas = document.getElementById('nextPiece');
-const nextCtx = nextCanvas.getContext('2d');
+const nextCtx = nextCanvas ? nextCanvas.getContext('2d') : null;
+const mobileNextCanvas = document.getElementById('nextPieceMobile');
+const mobileNextCtx = mobileNextCanvas ? mobileNextCanvas.getContext('2d') : null;
 
 const overlay = document.getElementById('overlay');
 const overlayTitle = document.getElementById('overlayTitle');
@@ -137,7 +139,6 @@ const mobileLeftBtn = document.getElementById('mobileLeftBtn');
 const mobileRightBtn = document.getElementById('mobileRightBtn');
 const mobileRotateBtn = document.getElementById('mobileRotateBtn');
 const mobileSoftDropBtn = document.getElementById('mobileSoftDropBtn');
-const mobileHardDropBtn = document.getElementById('mobileHardDropBtn');
 const headerStartBtn = document.getElementById('headerStartBtn');
 const headerScore = document.getElementById('headerScore');
 const playerNameInput = document.getElementById('playerNameInput');
@@ -572,8 +573,10 @@ function shuffleArray(array) {
 
 const BASE_BOARD_WIDTH = canvas.width;
 const BASE_BOARD_HEIGHT = canvas.height;
-const BASE_PREVIEW_WIDTH = nextCanvas.width;
-const BASE_PREVIEW_HEIGHT = nextCanvas.height;
+const BASE_PREVIEW_WIDTH = nextCanvas ? nextCanvas.width : 150;
+const BASE_PREVIEW_HEIGHT = nextCanvas ? nextCanvas.height : 150;
+const MOBILE_PREVIEW_BASE_WIDTH = mobileNextCanvas ? mobileNextCanvas.width : BASE_PREVIEW_WIDTH;
+const MOBILE_PREVIEW_BASE_HEIGHT = mobileNextCanvas ? mobileNextCanvas.height : BASE_PREVIEW_HEIGHT;
 const BOARD_PIXEL_WIDTH = BASE_BOARD_WIDTH;
 const BOARD_PIXEL_HEIGHT = BASE_BOARD_HEIGHT;
 const PREVIEW_RESPONSIVE_QUERY = '(max-width: 900px)';
@@ -582,6 +585,8 @@ const previewMediaQuery = typeof window !== 'undefined' && typeof window.matchMe
     : null;
 let previewWidth = BASE_PREVIEW_WIDTH;
 let previewHeight = BASE_PREVIEW_HEIGHT;
+let mobilePreviewWidth = mobileNextCanvas ? (mobileNextCanvas.clientWidth || MOBILE_PREVIEW_BASE_WIDTH) : 0;
+let mobilePreviewHeight = mobileNextCanvas ? (mobileNextCanvas.clientHeight || MOBILE_PREVIEW_BASE_HEIGHT) : 0;
 
 function resolvePreviewTargetSize() {
     const fallbackIsMobile = typeof window !== 'undefined' ? window.innerWidth <= 900 : false;
@@ -597,7 +602,16 @@ function applyPreviewCanvasSize({ redraw = true } = {}) {
     const { width, height } = resolvePreviewTargetSize();
     previewWidth = width;
     previewHeight = height;
-    configureCanvasResolution(nextCanvas, nextCtx, width, height);
+    if (nextCanvas && nextCtx) {
+        configureCanvasResolution(nextCanvas, nextCtx, width, height);
+    }
+    if (mobileNextCanvas && mobileNextCtx) {
+        const targetWidth = Math.max(1, Math.round(mobileNextCanvas.clientWidth || MOBILE_PREVIEW_BASE_WIDTH));
+        const targetHeight = Math.max(1, Math.round(mobileNextCanvas.clientHeight || MOBILE_PREVIEW_BASE_HEIGHT));
+        mobilePreviewWidth = targetWidth;
+        mobilePreviewHeight = targetHeight;
+        configureCanvasResolution(mobileNextCanvas, mobileNextCtx, targetWidth, targetHeight);
+    }
     if (redraw) {
         updatePreview();
     }
@@ -2549,17 +2563,13 @@ function refreshMobileControls() {
         mobileLeftBtn,
         mobileRightBtn,
         mobileRotateBtn,
-        mobileSoftDropBtn,
-        mobileHardDropBtn
-    ];
-    if (controls.every(btn => !btn)) {
+        mobileSoftDropBtn
+    ].filter(Boolean);
+    if (controls.length === 0) {
         return;
     }
     const active = gameActive && !paused;
     controls.forEach(btn => {
-        if (!btn) {
-            return;
-        }
         btn.disabled = !active;
     });
 }
@@ -2734,41 +2744,52 @@ function bindHoldButton(button, action, options = {}) {
 }
 
 function initializeMobileControls() {
-    bindHoldButton(mobileLeftBtn, runIfPlayable(() => movePiece(-1)), { repeat: false });
-    bindHoldButton(mobileRightBtn, runIfPlayable(() => movePiece(1)), { repeat: false });
-    bindHoldButton(mobileSoftDropBtn, runIfPlayable(() => {
-        stepDown();
-        dropAccumulator = 0;
-    }), { repeatDelay: 110 });
-    bindHoldButton(mobileRotateBtn, runIfPlayable(() => rotateCurrentPiece(1)), { repeat: false });
-    bindHoldButton(mobileHardDropBtn, runIfPlayable(() => hardDrop()), { repeat: false });
-
+    if (mobileLeftBtn) {
+        bindHoldButton(mobileLeftBtn, runIfPlayable(() => movePiece(-1)), { repeat: false });
+    }
+    if (mobileRightBtn) {
+        bindHoldButton(mobileRightBtn, runIfPlayable(() => movePiece(1)), { repeat: false });
+    }
+    if (mobileSoftDropBtn) {
+        bindHoldButton(mobileSoftDropBtn, runIfPlayable(() => {
+            stepDown();
+            dropAccumulator = 0;
+        }), { repeatDelay: 110 });
+    }
+    if (mobileRotateBtn) {
+        bindHoldButton(mobileRotateBtn, runIfPlayable(() => rotateCurrentPiece(1)), { repeat: false });
+    }
 }
-function updatePreview() {
-    nextCtx.clearRect(0, 0, previewWidth, previewHeight);
 
-    const gradient = nextCtx.createLinearGradient(0, 0, 0, previewHeight);
+function drawPreviewOnContext(context, width, height) {
+    if (!context || width <= 0 || height <= 0) {
+        return;
+    }
+
+    context.clearRect(0, 0, width, height);
+
+    const gradient = context.createLinearGradient(0, 0, 0, height);
     gradient.addColorStop(0, 'rgba(252, 242, 210, 0.95)');
     gradient.addColorStop(1, 'rgba(216, 183, 135, 0.9)');
-    nextCtx.fillStyle = gradient;
-    nextCtx.fillRect(0, 0, previewWidth, previewHeight);
+    context.fillStyle = gradient;
+    context.fillRect(0, 0, width, height);
 
-    nextCtx.strokeStyle = 'rgba(60, 40, 20, 0.2)';
-    nextCtx.strokeRect(0.5, 0.5, Math.max(previewWidth - 1, 0), Math.max(previewHeight - 1, 0));
+    context.strokeStyle = 'rgba(60, 40, 20, 0.2)';
+    context.strokeRect(0.5, 0.5, Math.max(width - 1, 0), Math.max(height - 1, 0));
 
     if (!nextPiece) {
         return;
     }
 
-    const width = nextPiece.width;
-    const height = nextPiece.height;
-    const insetWidth = Math.max(12, Math.round(previewWidth * (40 / BASE_PREVIEW_WIDTH)));
-    const insetHeight = Math.max(12, Math.round(previewHeight * (40 / BASE_PREVIEW_HEIGHT)));
-    const usableWidth = Math.max(previewWidth - insetWidth, 0);
-    const usableHeight = Math.max(previewHeight - insetHeight, 0);
-    const cellSize = Math.min(usableWidth / width, usableHeight / height);
-    const offsetX = (previewWidth - width * cellSize) / 2;
-    const offsetY = (previewHeight - height * cellSize) / 2;
+    const pieceWidth = nextPiece.width;
+    const pieceHeight = nextPiece.height;
+    const insetWidth = Math.max(12, Math.round(width * (40 / BASE_PREVIEW_WIDTH)));
+    const insetHeight = Math.max(12, Math.round(height * (40 / BASE_PREVIEW_HEIGHT)));
+    const usableWidth = Math.max(width - insetWidth, 0);
+    const usableHeight = Math.max(height - insetHeight, 0);
+    const cellSize = Math.min(usableWidth / pieceWidth, usableHeight / pieceHeight);
+    const offsetX = (width - pieceWidth * cellSize) / 2;
+    const offsetY = (height - pieceHeight * cellSize) / 2;
 
     nextPiece.cells.forEach(cell => {
         const cx = offsetX + cell.col * cellSize + cellSize / 2;
@@ -2778,14 +2799,19 @@ function updatePreview() {
             return;
         }
         if (value === CELL_EYE_BLACK || value === CELL_EYE_WHITE) {
-            drawEyeStone(nextCtx, cx, cy, cellSize * 0.42, value, 1);
+            drawEyeStone(context, cx, cy, cellSize * 0.42, value, 1);
         } else if (value === CELL_BLOCK_BLACK || value === CELL_BLOCK_WHITE) {
             const baseColor = value === CELL_BLOCK_BLACK ? CELL_BLACK : CELL_WHITE;
-            drawStone(nextCtx, cx, cy, cellSize * 0.42, baseColor, 1);
+            drawStone(context, cx, cy, cellSize * 0.42, baseColor, 1);
         } else {
-            drawStone(nextCtx, cx, cy, cellSize * 0.42, value, 1);
+            drawStone(context, cx, cy, cellSize * 0.42, value, 1);
         }
     });
+}
+
+function updatePreview() {
+    drawPreviewOnContext(nextCtx, previewWidth, previewHeight);
+    drawPreviewOnContext(mobileNextCtx, mobilePreviewWidth, mobilePreviewHeight);
 }
 
 function draw() {
