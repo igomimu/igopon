@@ -245,6 +245,22 @@ let bgmUnlocked = false;
 let bgmAutoplayUnlockHandler = null;
 let activeBgmRole = BGM_ROLES.LOBBY;
 
+let currentPiece = null;
+let nextPiece = null;
+let score = 0;
+let level = 1;
+let chain = 0;
+let piecesPlaced = 0;
+let eyeFrameCooldown = 0;
+let eyeFrameFirstDropPending = true;
+let captures = { black: 0, white: 0 };
+let dropInterval = BASE_DROP_INTERVAL;
+let dropAccumulator = 0;
+let lastFrameTime = null;
+let gameActive = false;
+let paused = false;
+let statusTimeoutId = null;
+
 try {
     const storedPreference = localStorage.getItem(BGM_PREF_KEY);
     if (storedPreference === '0' || storedPreference === 'false') {
@@ -1121,23 +1137,6 @@ if (SUPPORTS_POINTER) {
     });
 }
 
-
-let currentPiece = null;
-let nextPiece = null;
-let score = 0;
-let level = 1;
-let chain = 0;
-let piecesPlaced = 0;
-let eyeFrameCooldown = 0;
-let eyeFrameFirstDropPending = true;
-let captures = { black: 0, white: 0 };
-let dropInterval = BASE_DROP_INTERVAL;
-let dropAccumulator = 0;
-let lastFrameTime = null;
-let gameActive = false;
-let paused = false;
-let statusTimeoutId = null;
-
 const PIECE_TEMPLATES = [
     {
         name: 'TigerMouth',
@@ -1300,7 +1299,9 @@ function startGame() {
     updatePreview();
     switchBgmRole(BGM_ROLES.GAME);
     startBgmIfEnabled();
-    if (!spawnNewPiece()) {
+    const spawned = spawnNewPiece();
+    ensureBoardVisible({ smooth: true });
+    if (!spawned) {
         refreshMobileControls();
         syncBgmVolume();
         updateBgmStatusText();
@@ -2505,6 +2506,36 @@ function setStatusMessage(text) {
             statusMessageEl.textContent = '';
             statusTimeoutId = null;
         }, 2600);
+    }
+}
+
+function ensureBoardVisible({ smooth = false } = {}) {
+    if (!canvas || typeof window === 'undefined') {
+        return;
+    }
+    const behavior = smooth ? 'smooth' : 'auto';
+    const header = document.querySelector('.app-header');
+    const headerHeight = header ? header.offsetHeight : 0;
+
+    let attempts = 0;
+
+    const adjustScroll = () => {
+        const rect = canvas.getBoundingClientRect();
+        if (rect.top >= headerHeight + 8) {
+            return;
+        }
+        const target = Math.max(window.scrollY + rect.top - headerHeight - 12, 0);
+        window.scrollTo({ top: target, behavior });
+        attempts += 1;
+        if (attempts < 4) {
+            setTimeout(adjustScroll, 90);
+        }
+    };
+
+    if (typeof requestAnimationFrame === 'function') {
+        requestAnimationFrame(adjustScroll);
+    } else {
+        adjustScroll();
     }
 }
 
