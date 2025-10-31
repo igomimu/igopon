@@ -139,6 +139,7 @@ const mobileLeftBtn = document.getElementById('mobileLeftBtn');
 const mobileRightBtn = document.getElementById('mobileRightBtn');
 const mobileRotateBtn = document.getElementById('mobileRotateBtn');
 const mobileSoftDropBtn = document.getElementById('mobileSoftDropBtn');
+const mobileHardDropBtn = document.getElementById('mobileHardDropBtn');
 const headerStartBtn = document.getElementById('headerStartBtn');
 const headerScore = document.getElementById('headerScore');
 const playerNameInput = document.getElementById('playerNameInput');
@@ -2563,7 +2564,8 @@ function refreshMobileControls() {
         mobileLeftBtn,
         mobileRightBtn,
         mobileRotateBtn,
-        mobileSoftDropBtn
+        mobileSoftDropBtn,
+        mobileHardDropBtn
     ].filter(Boolean);
     if (controls.length === 0) {
         return;
@@ -2758,6 +2760,9 @@ function initializeMobileControls() {
     }
     if (mobileRotateBtn) {
         bindHoldButton(mobileRotateBtn, runIfPlayable(() => rotateCurrentPiece(1)), { repeat: false });
+    }
+    if (mobileHardDropBtn) {
+        bindHoldButton(mobileHardDropBtn, runIfPlayable(() => hardDrop()), { repeat: false });
     }
 }
 
