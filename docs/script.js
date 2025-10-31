@@ -1300,7 +1300,7 @@ function startGame() {
     switchBgmRole(BGM_ROLES.GAME);
     startBgmIfEnabled();
     const spawned = spawnNewPiece();
-    ensureBoardVisible({ smooth: true });
+    ensureBoardVisible();
     if (!spawned) {
         refreshMobileControls();
         syncBgmVolume();
@@ -2509,11 +2509,10 @@ function setStatusMessage(text) {
     }
 }
 
-function ensureBoardVisible({ smooth = false } = {}) {
+function ensureBoardVisible() {
     if (!canvas || typeof window === 'undefined') {
         return;
     }
-    const behavior = smooth ? 'smooth' : 'auto';
     const header = document.querySelector('.app-header');
     const headerHeight = header ? header.offsetHeight : 0;
 
@@ -2525,18 +2524,14 @@ function ensureBoardVisible({ smooth = false } = {}) {
             return;
         }
         const target = Math.max(window.scrollY + rect.top - headerHeight - 12, 0);
-        window.scrollTo({ top: target, behavior });
+        window.scrollTo({ top: target, behavior: 'smooth' });
         attempts += 1;
         if (attempts < 4) {
             setTimeout(adjustScroll, 90);
         }
     };
 
-    if (typeof requestAnimationFrame === 'function') {
-        requestAnimationFrame(adjustScroll);
-    } else {
-        adjustScroll();
-    }
+    requestAnimationFrame(adjustScroll);
 }
 
 function setHeaderScoreActive(active) {
