@@ -432,7 +432,7 @@ button:not(:disabled):hover {
 .mobile-controls {
     display: none;
     margin: 0 auto;
-    padding: 0.5rem 0 0.25rem;
+    padding: 0.5rem 0 0.4rem;
     width: 100%;
     max-width: 360px;
 }
@@ -443,7 +443,7 @@ button:not(:disabled):hover {
     grid-template-columns: repeat(3, minmax(0, 1fr));
     grid-template-areas:
         "left rotate right"
-        "soft preview preview";
+        "soft soft soft";
 }
 
 .mobile-btn {
@@ -488,34 +488,6 @@ button:not(:disabled):hover {
     grid-area: soft;
 }
 
-.mobile-next-preview {
-    grid-area: preview;
-    border-radius: 12px;
-    padding: 0.55rem 0.7rem 0.75rem;
-    background: linear-gradient(155deg, rgba(248, 242, 215, 0.95), rgba(233, 216, 177, 0.9));
-    border: 1px solid rgba(104, 82, 45, 0.22);
-    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.12);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    min-height: 100%;
-}
-
-.mobile-next-label {
-    font-size: 0.85rem;
-    color: rgba(58, 42, 20, 0.72);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-}
-
-#nextPieceMobile {
-    width: min(100%, 108px);
-    aspect-ratio: 1 / 1;
-    display: block;
-}
-
 @media (max-width: 900px) {
     .layout {
         grid-template-rows: auto auto 1fr;
@@ -543,11 +515,12 @@ button:not(:disabled):hover {
     .mobile-controls {
         display: block;
         width: min(100%, 420px);
-        margin: 0.25rem auto 0;
+        margin: 0.25rem auto 0.35rem;
     }
 
     .mobile-grid {
         gap: 0.6rem;
+        grid-auto-rows: minmax(3.1rem, auto);
     }
 
     .mobile-btn {
@@ -592,6 +565,48 @@ button:not(:disabled):hover {
 
     .help-panel {
         order: 5;
+    }
+}
+.board-next-mobile {
+    display: none;
+}
+
+.board-next-mobile-label {
+    display: none;
+}
+
+#nextPieceMobile {
+    width: 75px;
+    height: 75px;
+    display: block;
+}
+
+@media (max-width: 900px) {
+    .board-panel {
+        position: relative;
+    }
+
+    .board-next-mobile {
+        display: flex;
+        position: absolute;
+        top: 0.65rem;
+        right: 0.65rem;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.25rem;
+        background: rgba(250, 245, 226, 0.86);
+        border: 1px solid rgba(104, 82, 45, 0.35);
+        border-radius: 10px;
+        padding: 0.35rem 0.4rem 0.45rem;
+        box-shadow: 0 6px 14px rgba(46, 36, 20, 0.18);
+    }
+
+    .board-next-mobile-label {
+        display: block;
+        font-size: 0.65rem;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: rgba(58, 42, 20, 0.7);
     }
 }
 .player-panel,

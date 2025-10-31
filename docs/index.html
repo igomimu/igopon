@@ -25,6 +25,10 @@
     <main class="layout">
         <section class="board-panel">
             <canvas id="board" width="300" height="600" aria-label="プレイフィールド"></canvas>
+            <div class="board-next-mobile" aria-hidden="true">
+                <span class="board-next-mobile-label">次のグループ</span>
+                <canvas id="nextPieceMobile" width="75" height="75" role="img" aria-label="次のピースプレビュー（モバイル）"></canvas>
+            </div>
             <div id="overlay" class="overlay hidden" role="status" aria-live="polite">
                 <h2 id="overlayTitle">ゲーム終了</h2>
                 <div class="overlay-score">
@@ -45,10 +49,6 @@
                 <button id="mobileRotateBtn" type="button" class="mobile-btn mobile-btn-rotate" aria-label="回転">&#x21BB;</button>
                 <button id="mobileRightBtn" type="button" class="mobile-btn mobile-btn-right" aria-label="右に移動">&#x2192;</button>
                 <button id="mobileSoftDropBtn" type="button" class="mobile-btn mobile-btn-soft" aria-label="ソフトドロップ">&#x2193;</button>
-                <div class="mobile-next-preview" aria-label="次のグループ">
-                    <span class="mobile-next-label">次のグループ</span>
-                    <canvas id="nextPieceMobile" width="118" height="118" role="img" aria-label="次のピースプレビュー（モバイル）"></canvas>
-                </div>
             </div>
         </section>
         <aside class="sidebar">
