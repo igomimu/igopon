@@ -124,7 +124,6 @@ const bestScoreValue = document.getElementById('bestScore');
 const restartBtn = document.getElementById('restartBtn');
 
 const startBtn = document.getElementById('startBtn');
-const pauseBtn = document.getElementById('pauseBtn');
 const statusMessageEl = document.getElementById('statusMessage');
 
 const scoreValue = document.getElementById('scoreValue');
@@ -139,7 +138,6 @@ const mobileRightBtn = document.getElementById('mobileRightBtn');
 const mobileRotateBtn = document.getElementById('mobileRotateBtn');
 const mobileSoftDropBtn = document.getElementById('mobileSoftDropBtn');
 const mobileHardDropBtn = document.getElementById('mobileHardDropBtn');
-const mobilePauseBtn = document.getElementById('mobilePauseBtn');
 const headerStartBtn = document.getElementById('headerStartBtn');
 const headerScore = document.getElementById('headerScore');
 const playerNameInput = document.getElementById('playerNameInput');
@@ -153,8 +151,6 @@ const monthlyLeaderboardEmpty = document.getElementById('monthlyLeaderboardEmpty
 const bgmToggleBtn = document.getElementById('bgmToggleBtn');
 const bgmStatusLabel = document.getElementById('bgmStatus');
 
-const PAUSE_ICON = '\u23F8';
-const RESUME_ICON = '\u25B6';
 const SUPPORTS_POINTER = window.PointerEvent !== undefined;
 
 const GRID_MARGIN = CELL_SIZE / 2;
@@ -1287,12 +1283,10 @@ function startGame() {
     activeEyeFrames.length = 0;
     nextPiece = pullNextPiecePrototype();
     overlay.classList.add('hidden');
-    pauseBtn.disabled = false;
-    pauseBtn.textContent = 'ポーズ';
-    startBtn.textContent = 'リスタート';
-    if (headerStartBtn) {
-        headerStartBtn.textContent = 'リスタート';
+    if (startBtn) {
+        startBtn.textContent = 'リスタート';
     }
+    updateHeaderPrimaryActionLabel();
     setHeaderScoreActive(true);
     setStatusMessage('新しい対局開始。囲んで捕獲しよう。');
     updateStats();
@@ -1319,8 +1313,6 @@ function endGame(reason) {
     }
     gameActive = false;
     paused = false;
-    pauseBtn.disabled = true;
-    pauseBtn.textContent = 'ポーズ';
     overlayTitle.textContent = reason;
     const formattedScore = score.toLocaleString('en-US');
     overlayDetail.textContent = `Score: ${formattedScore} | Chains: ${chain} | Captures B:${captures.black} W:${captures.white}`;
@@ -1338,10 +1330,10 @@ function endGame(reason) {
     captureHighlights.clear();
     captureLineEffects.clear();
     overlay.classList.remove('hidden');
-    startBtn.textContent = 'スタート';
-    if (headerStartBtn) {
-        headerStartBtn.textContent = 'GO!';
+    if (startBtn) {
+        startBtn.textContent = 'スタート';
     }
+    updateHeaderPrimaryActionLabel();
     setHeaderScoreActive(false);
     setStatusMessage('ゲーム終了。');
     switchBgmRole(BGM_ROLES.LOBBY);
@@ -2541,14 +2533,24 @@ function setHeaderScoreActive(active) {
     headerScore.classList.toggle('inactive', !active);
 }
 
+function updateHeaderPrimaryActionLabel() {
+    if (!headerStartBtn) {
+        return;
+    }
+    if (!gameActive) {
+        headerStartBtn.textContent = 'GO!';
+        return;
+    }
+    headerStartBtn.textContent = paused ? '再開' : '一時停止';
+}
+
 function refreshMobileControls() {
     const controls = [
         mobileLeftBtn,
         mobileRightBtn,
         mobileRotateBtn,
         mobileSoftDropBtn,
-        mobileHardDropBtn,
-        mobilePauseBtn
+        mobileHardDropBtn
     ];
     if (controls.every(btn => !btn)) {
         return;
@@ -2558,15 +2560,8 @@ function refreshMobileControls() {
         if (!btn) {
             return;
         }
-        if (btn === mobilePauseBtn) {
-            btn.disabled = !gameActive;
-        } else {
-            btn.disabled = !active;
-        }
+        btn.disabled = !active;
     });
-    if (mobilePauseBtn) {
-        mobilePauseBtn.textContent = paused ? RESUME_ICON : PAUSE_ICON;
-    }
 }
 
 function runIfPlayable(fn) {
@@ -2748,39 +2743,6 @@ function initializeMobileControls() {
     bindHoldButton(mobileRotateBtn, runIfPlayable(() => rotateCurrentPiece(1)), { repeat: false });
     bindHoldButton(mobileHardDropBtn, runIfPlayable(() => hardDrop()), { repeat: false });
 
-    if (mobilePauseBtn) {
-        const handlePauseClick = event => {
-            event.preventDefault();
-            if (!gameActive || mobilePauseBtn.disabled) {
-                return;
-            }
-            togglePause();
-        };
-
-        if (SUPPORTS_POINTER) {
-            mobilePauseBtn.addEventListener('pointerdown', event => {
-                if (mobilePauseBtn.disabled) {
-                    return;
-                }
-                event.preventDefault();
-            }, { passive: false });
-        } else {
-            mobilePauseBtn.addEventListener('touchstart', event => {
-                if (mobilePauseBtn.disabled) {
-                    return;
-                }
-                event.preventDefault();
-            }, { passive: false });
-            mobilePauseBtn.addEventListener('mousedown', event => {
-                if (mobilePauseBtn.disabled) {
-                    return;
-                }
-                event.preventDefault();
-            });
-        }
-
-        mobilePauseBtn.addEventListener('click', handlePauseClick);
-    }
 }
 function updatePreview() {
     nextCtx.clearRect(0, 0, previewWidth, previewHeight);
@@ -3251,9 +3213,9 @@ function togglePause(forceState) {
     }
     const targetState = typeof forceState === 'boolean' ? forceState : !paused;
     paused = targetState;
-    pauseBtn.textContent = paused ? '再開' : 'ポーズ';
+    updateHeaderPrimaryActionLabel();
     if (paused) {
-        setStatusMessage('一時停止中。Pキーか再開ボタンで続行。');
+        setStatusMessage('一時停止中。PキーかGOボタンで再開。');
     } else {
         setStatusMessage('再開します。');
         dropAccumulator = 0;
@@ -3266,16 +3228,27 @@ function togglePause(forceState) {
 
 document.addEventListener('keydown', handleKeyDown);
 if (headerStartBtn) {
-    const triggerStart = () => {
-        startGame();
+    let suppressNextClick = false;
+
+    const handleHeaderAction = () => {
+        if (!gameActive) {
+            startGame();
+        } else {
+            togglePause();
+        }
         headerStartBtn.blur();
         if (startBtn) {
             startBtn.blur();
         }
     };
+
     headerStartBtn.addEventListener('click', event => {
         event.preventDefault();
-        triggerStart();
+        if (suppressNextClick) {
+            suppressNextClick = false;
+            return;
+        }
+        handleHeaderAction();
     });
     headerStartBtn.addEventListener('keydown', event => {
         if (event.code === 'Space' || event.code === 'Enter') {
@@ -3286,37 +3259,40 @@ if (headerStartBtn) {
         headerStartBtn.addEventListener('pointerdown', event => {
             if (event.pointerType === 'touch') {
                 event.preventDefault();
-                triggerStart();
+                suppressNextClick = true;
+                handleHeaderAction();
             }
         }, { passive: false });
     } else {
         headerStartBtn.addEventListener('touchstart', event => {
             event.preventDefault();
-            triggerStart();
+            suppressNextClick = true;
+            handleHeaderAction();
         }, { passive: false });
     }
 }
-startBtn.addEventListener('click', event => {
-    event.preventDefault();
-    startGame();
-    startBtn.blur();
-    if (headerStartBtn) {
-        headerStartBtn.blur();
-    }
-});
-startBtn.addEventListener('keydown', event => {
-    if (event.code === 'Space' || event.code === 'Enter') {
+if (startBtn) {
+    startBtn.addEventListener('click', event => {
         event.preventDefault();
-    }
-});
-pauseBtn.addEventListener('click', () => {
-    togglePause();
-});
+        startGame();
+        startBtn.blur();
+        if (headerStartBtn) {
+            headerStartBtn.blur();
+        }
+    });
+    startBtn.addEventListener('keydown', event => {
+        if (event.code === 'Space' || event.code === 'Enter') {
+            event.preventDefault();
+        }
+    });
+}
 restartBtn.addEventListener('click', event => {
     event.preventDefault();
     startGame();
     restartBtn.blur();
-    startBtn.blur();
+    if (startBtn) {
+        startBtn.blur();
+    }
     if (headerStartBtn) {
         headerStartBtn.blur();
     }
@@ -3358,5 +3334,6 @@ refreshMobileControls();
 requestAnimationFrame(gameLoop);
 
 setHeaderScoreActive(false);
+updateHeaderPrimaryActionLabel();
 updateStats();
 updatePreview();
