@@ -20,7 +20,15 @@ const CELL_EYE_WHITE = 6;
 const MIN_PIECES_BEFORE_EYE_FRAME = 14;
 const EYE_FRAME_DROP_CHANCE = 0.12;
 const EYE_FRAME_COOLDOWN_PIECES = 6;
-const EYE_FRAME_CLEAR_THRESHOLD = 20;
+function getEyeFrameClearThreshold(currentScore) {
+    if (currentScore >= 100000) {
+        return 40;
+    } else if (currentScore >= 50000) {
+        return 30;
+    } else {
+        return 20;
+    }
+}
 
 const EYE_FRAME_CENTER_OFFSET = { row: 0, col: 0 };
 const EYE_FRAME_RING_OFFSETS = [
@@ -1466,7 +1474,7 @@ function lockPiece() {
         activeEyeFrames.push({
             centerRow: eyeFrameCenterGlobal.row,
             centerCol: eyeFrameCenterGlobal.col,
-            capturesLeft: EYE_FRAME_CLEAR_THRESHOLD
+            capturesLeft: getEyeFrameClearThreshold(score)
         });
     }
 
