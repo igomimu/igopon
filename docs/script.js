@@ -138,6 +138,7 @@ const inGameScoreValue = document.getElementById('inGameScoreValue');
 const mobileLeftBtn = document.getElementById('mobileLeftBtn');
 const mobileRightBtn = document.getElementById('mobileRightBtn');
 const mobileRotateBtn = document.getElementById('mobileRotateBtn');
+const mobileSoftDropBtn = document.getElementById('mobileSoftDropBtn');
 const mobileHardDropBtn = document.getElementById('mobileHardDropBtn');
 const headerStartBtn = document.getElementById('headerStartBtn');
 const headerScore = document.getElementById('headerScore');
@@ -2563,6 +2564,7 @@ function refreshMobileControls() {
         mobileLeftBtn,
         mobileRightBtn,
         mobileRotateBtn,
+        mobileSoftDropBtn,
         mobileHardDropBtn
     ].filter(Boolean);
     if (controls.length === 0) {
@@ -2749,6 +2751,12 @@ function initializeMobileControls() {
     }
     if (mobileRightBtn) {
         bindHoldButton(mobileRightBtn, runIfPlayable(() => movePiece(1)), { repeat: false });
+    }
+    if (mobileSoftDropBtn) {
+        bindHoldButton(mobileSoftDropBtn, runIfPlayable(() => {
+            stepDown();
+            dropAccumulator = 0;
+        }), { repeatDelay: 110 });
     }
     if (mobileRotateBtn) {
         bindHoldButton(mobileRotateBtn, runIfPlayable(() => rotateCurrentPiece(1)), { repeat: false });

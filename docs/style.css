@@ -422,7 +422,7 @@ button:not(:disabled):hover {
 .mobile-grid {
     display: grid;
     gap: 0.55rem;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(5, minmax(0, 1fr));
     grid-auto-rows: minmax(3rem, auto);
 }
 
