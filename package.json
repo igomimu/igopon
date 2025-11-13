@@ -1,0 +1,17 @@
+{
+  "name": "igopon2",
+  "version": "0.1.0",
+  "description": "Next generation Igopon puzzle client built with Vite + TypeScript.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@types/node": "^20.12.7",
+    "typescript": "^5.4.4",
+    "vite": "^5.1.6"
+  }
+}
