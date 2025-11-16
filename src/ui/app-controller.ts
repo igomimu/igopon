@@ -1,5 +1,6 @@
 import { BgmController } from '../audio/bgm';
-import type { GameSessionState } from '../game/state/session';
+import { GameEngine } from '../game/engine';
+import type { CaptureState, GameSessionState, LastResultSummary } from '../game/state/session';
 import { SessionState, loadHighScore, saveHighScore } from '../game/state/session';
 import { AppShellRefs, mountAppShell } from './components/app-shell';
 
@@ -11,18 +12,27 @@ export class AppController {
   #shell: AppShellRefs;
   #session = new SessionState();
   #bgm: BgmController;
+  #engine: GameEngine;
   #highScore = loadHighScore();
   #statusTimer: number | null = null;
+  #lastResultExtras: { chain: number; captures: CaptureState } | null = null;
 
   constructor(root: HTMLElement) {
     this.#shell = mountAppShell(root);
     this.#bgm = new BgmController(this.#shell.bgmAudio);
+    this.#engine = new GameEngine({
+      boardCanvas: this.#shell.board,
+      nextDesktopCanvas: this.#shell.nextDesktop,
+      nextMobileCanvas: this.#shell.nextMobile,
+      onStateChange: state => this.#handleStateChange(state),
+      onStatus: (message, duration) => this.#setStatus(message, duration),
+      onGameOver: summary => this.#handleGameOver(summary)
+    });
 
     this.#session.subscribe(state => {
       this.#renderStats(state);
       this.#renderOverlay(state);
       this.#updatePrimaryAction(state);
-      this.#updateBgmUI();
     });
 
     this.#wireEvents();
@@ -31,21 +41,56 @@ export class AppController {
     this.#setStatus('囲碁ポン2 へようこそ。GO! で対局開始。');
   }
 
+  #handleStateChange(state: GameSessionState): void {
+    if (state.active) {
+      this.#lastResultExtras = null;
+    }
+    this.#session.replace(state);
+    this.#syncBgmWithState(state);
+  }
+
+  #handleGameOver(summary: LastResultSummary & { captures: CaptureState; chain: number }): void {
+    if (summary.finalScore > this.#highScore) {
+      this.#highScore = summary.finalScore;
+      saveHighScore(this.#highScore);
+    }
+    this.#lastResultExtras = { chain: summary.chain, captures: summary.captures };
+    this.#bgm.setRole('lobby');
+    this.#bgm.setPaused(false);
+    this.#updateBgmUI();
+  }
+
+  #syncBgmWithState(state: GameSessionState): void {
+    if (!state.active) {
+      this.#bgm.setRole('lobby');
+      this.#bgm.setPaused(false);
+      this.#updateBgmUI();
+      return;
+    }
+    const role = state.danger ? 'danger' : 'game';
+    this.#bgm.setRole(role);
+    this.#bgm.setPaused(state.paused || document.hidden);
+    if (!state.paused) {
+      void this.#bgm.unlockViaGesture();
+    }
+    this.#updateBgmUI();
+  }
+
   #wireEvents(): void {
     const handlePrimaryAction = () => {
       const { active, paused } = this.#session.snapshot;
       if (!active) {
-        this.#startGame();
+        this.#engine.start();
       } else if (paused) {
-        this.#resumeGame();
+        this.#engine.resume();
       } else {
-        this.#pauseGame();
+        this.#engine.pause();
       }
     };
 
     this.#shell.headerStartBtn.addEventListener('click', handlePrimaryAction);
     this.#shell.startBtn.addEventListener('click', handlePrimaryAction);
-    this.#shell.overlay.restartBtn.addEventListener('click', () => this.#startGame());
+    this.#shell.overlay.restartBtn.addEventListener('click', () => this.#engine.start());
 
     this.#shell.bgmToggleBtn.addEventListener('click', () => {
       const enabled = this.#bgm.togglePreference();
@@ -56,10 +101,10 @@ export class AppController {
     });
 
     const mobileActions: Array<[HTMLElement, () => void]> = [
-      [this.#shell.mobileControls.left, () => this.#applyDemoAction('left')],
-      [this.#shell.mobileControls.right, () => this.#applyDemoAction('right')],
-      [this.#shell.mobileControls.rotate, () => this.#applyDemoAction('rotate')],
-      [this.#shell.mobileControls.hardDrop, () => this.#applyDemoAction('hardDrop')]
+      [this.#shell.mobileControls.left, () => this.#engine.moveLeft()],
+      [this.#shell.mobileControls.right, () => this.#engine.moveRight()],
+      [this.#shell.mobileControls.rotate, () => this.#engine.rotate()],
+      [this.#shell.mobileControls.hardDrop, () => this.#engine.hardDrop()]
     ];
     mobileActions.forEach(([element, handler]) => element.addEventListener('click', handler));
 
@@ -75,42 +120,33 @@ export class AppController {
   #handleKeydown = (event: KeyboardEvent): void => {
     if (event.code === 'KeyP') {
       event.preventDefault();
-      const { active, paused } = this.#session.snapshot;
-      if (!active) {
+      if (!this.#session.snapshot.active) {
         return;
       }
-      if (paused) {
-        this.#resumeGame();
-      } else {
-        this.#pauseGame();
-      }
-      return;
-    }
-
-    if (!this.#session.snapshot.active) {
+      this.#engine.togglePause();
       return;
     }
 
     switch (event.code) {
       case 'ArrowLeft':
         event.preventDefault();
-        this.#applyDemoAction('left');
+        this.#engine.moveLeft();
         break;
       case 'ArrowRight':
         event.preventDefault();
-        this.#applyDemoAction('right');
+        this.#engine.moveRight();
         break;
       case 'ArrowUp':
         event.preventDefault();
-        this.#applyDemoAction('rotate');
+        this.#engine.rotate();
         break;
       case 'ArrowDown':
         event.preventDefault();
-        this.#applyDemoAction('softDrop');
+        this.#engine.softDrop();
         break;
       case 'Space':
         event.preventDefault();
-        this.#applyDemoAction('hardDrop');
+        this.#engine.hardDrop();
         break;
       default:
         break;
@@ -119,88 +155,10 @@ export class AppController {
 
   #handleVisibilityChange = (): void => {
     if (document.hidden && this.#session.snapshot.active && !this.#session.snapshot.paused) {
-      this.#pauseGame('タブが非表示になったため一時停止しました。');
+      this.#engine.pause('タブが非表示になったため一時停止しました。');
     }
-    this.#bgm.setPaused(this.#session.snapshot.paused || document.hidden);
-    this.#updateBgmUI();
+    this.#syncBgmWithState(this.#session.snapshot);
   };
-
-  #startGame(): void {
-    this.#session.startNewGame();
-    this.#bgm.setRole('game');
-    this.#bgm.setPaused(false);
-    void this.#bgm.unlockViaGesture();
-    this.#setStatus('新しい対局開始。囲んで捕獲しよう。');
-  }
-
-  #pauseGame(reason = '一時停止中。GO! で再開。'): void {
-    if (!this.#session.snapshot.active || this.#session.snapshot.paused) {
-      return;
-    }
-    this.#session.togglePause();
-    this.#bgm.setPaused(true);
-    this.#setStatus(reason);
-  }
-
-  #resumeGame(): void {
-    if (!this.#session.snapshot.active || !this.#session.snapshot.paused) {
-      return;
-    }
-    this.#session.togglePause();
-    this.#bgm.setPaused(false);
-    this.#setStatus('再開します。');
-  }
-
-  #applyDemoAction(action: 'left' | 'right' | 'rotate' | 'hardDrop' | 'softDrop'): void {
-    if (!this.#session.snapshot.active || this.#session.snapshot.paused) {
-      return;
-    }
-    const scoreBoost = action === 'hardDrop' ? 320 : action === 'softDrop' ? 60 : 40;
-    this.#session.adjustScore(scoreBoost);
-    if (action === 'hardDrop' || action === 'softDrop') {
-      this.#session.recordCapture('black', 1);
-    }
-    this.#maybeTriggerDemoClear();
-    const actionLabel = this.#describeAction(action);
-    this.#setStatus(`${actionLabel}（デモ）`, 1500);
-  }
-
-  #maybeTriggerDemoClear(): void {
-    const { piecesPlaced, score } = this.#session.snapshot;
-    if (piecesPlaced >= 10 || score >= 4000) {
-      this.#finishGame('デモ盤面が埋まりました');
-    }
-  }
-
-  #finishGame(reason: string): void {
-    this.#session.endGame(reason);
-    const { score } = this.#session.snapshot;
-    if (score > this.#highScore) {
-      this.#highScore = score;
-      saveHighScore(score);
-    }
-    this.#bgm.setRole('lobby');
-    this.#bgm.setPaused(false);
-    this.#updateBgmUI();
-    this.#setStatus(reason, 3000);
-  }
-
-  #describeAction(action: string): string {
-    switch (action) {
-      case 'left':
-        return '左に移動';
-      case 'right':
-        return '右に移動';
-      case 'rotate':
-        return '回転';
-      case 'hardDrop':
-        return 'ハードドロップ';
-      case 'softDrop':
-        return 'ソフトドロップ';
-      default:
-        return '操作';
-    }
-  }
 
   #renderStats(state: GameSessionState): void {
     const format = (value: number) => value.toLocaleString('ja-JP');
@@ -223,9 +181,16 @@ export class AppController {
     const summary = state.lastResult;
     const finalScore = summary?.finalScore ?? 0;
     this.#shell.overlay.title.textContent = summary?.reason ?? 'スタンバイ中';
-    this.#shell.overlay.detail.textContent = summary
-      ? new Date(summary.timestamp).toLocaleString('ja-JP')
-      : 'GO! を押してゲームを開始してください。';
+    let detail = 'GO! を押してゲームを開始してください。';
+    if (summary) {
+      if (this.#lastResultExtras) {
+        const timestamp = new Date(summary.timestamp).toLocaleString('ja-JP');
+        detail = `${timestamp} / チェイン ${this.#lastResultExtras.chain} / 捕獲 B:${this.#lastResultExtras.captures.black} W:${this.#lastResultExtras.captures.white}`;
+      } else {
+        detail = new Date(summary.timestamp).toLocaleString('ja-JP');
+      }
+    }
+    this.#shell.overlay.detail.textContent = detail;
     this.#shell.overlay.finalScore.textContent = finalScore.toLocaleString('ja-JP');
     this.#shell.overlay.bestScore.textContent = this.#highScore.toLocaleString('ja-JP');
   }

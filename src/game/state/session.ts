@@ -17,6 +17,7 @@ export interface GameSessionState {
   chain: number;
   captures: CaptureState;
   piecesPlaced: number;
+  danger: boolean;
   lastResult: LastResultSummary | null;
 }
 
@@ -35,6 +36,7 @@ export function createInitialState(): GameSessionState {
     chain: 0,
     captures: createDefaultCaptures(),
     piecesPlaced: 0,
+    danger: false,
     lastResult: null
   };
 }
@@ -64,6 +66,7 @@ export class SessionState {
       chain: 0,
       captures: createDefaultCaptures(),
       piecesPlaced: 0,
+      danger: false,
       lastResult: null
     };
     this.#emit();
@@ -90,6 +93,7 @@ export class SessionState {
       score: nextScore,
       piecesPlaced,
       chain,
+      danger: this.#state.danger,
       level: levelUp ? Math.min(this.#state.level + 1, 99) : this.#state.level
     };
     this.#emit();
@@ -102,6 +106,7 @@ export class SessionState {
     const clamped = Math.max(0, amount);
     this.#state = {
       ...this.#state,
+      danger: this.#state.danger,
       captures: {
         ...this.#state.captures,
         [color]: this.#state.captures[color] + clamped
@@ -118,6 +123,7 @@ export class SessionState {
       ...this.#state,
       active: false,
       paused: false,
+      danger: false,
       lastResult: {
         reason,
         timestamp: Date.now(),
@@ -129,6 +135,11 @@ export class SessionState {
 
   #emit(): void {
     this.#listeners.forEach(listener => listener(this.#state));
+  }
+
+  replace(state: GameSessionState): void {
+    this.#state = { ...state };
+    this.#emit();
   }
 }
 

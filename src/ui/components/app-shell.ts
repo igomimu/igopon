@@ -1,3 +1,8 @@
+import { CELL_SIZE, COLS, GRID_MARGIN, ROWS } from '../../game/constants';
+
+const BOARD_CANVAS_WIDTH = COLS * CELL_SIZE + GRID_MARGIN * 2;
+const BOARD_CANVAS_HEIGHT = ROWS * CELL_SIZE + GRID_MARGIN * 2;
+
 export interface LeaderboardElements {
   dailyList: HTMLOListElement;
   weeklyList: HTMLOListElement;
@@ -70,7 +75,12 @@ const template = `
   </header>
   <main class="layout">
     <section class="board-panel">
-      <canvas id="board" width="300" height="600" aria-label="プレイフィールド"></canvas>
+      <canvas
+        id="board"
+        width="${BOARD_CANVAS_WIDTH}"
+        height="${BOARD_CANVAS_HEIGHT}"
+        aria-label="プレイフィールド"
+      ></canvas>
       <div class="board-next-mobile" aria-hidden="true">
         <span class="board-next-mobile-label">次のグループ</span>
         <canvas id="nextPieceMobile" width="75" height="75" role="img" aria-label="次のピースプレビュー（モバイル）"></canvas>
