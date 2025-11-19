@@ -42,6 +42,7 @@ export interface OverlayElements {
 
 export interface AppShellRefs {
   board: HTMLCanvasElement;
+  boardPanel: HTMLElement;
   nextDesktop: HTMLCanvasElement;
   nextMobile: HTMLCanvasElement;
   startBtn: HTMLButtonElement;
@@ -55,12 +56,13 @@ export interface AppShellRefs {
   stats: StatElements;
   overlay: OverlayElements;
   bgmAudio: HTMLAudioElement;
+  mobileControlsRoot: HTMLElement;
 }
 
 const template = `
   <header class="app-header">
     <div class="header-title">
-      <h1>囲碁ポン2</h1>
+      <h1>いごぽん2</h1>
       <button id="headerStartBtn" type="button" class="header-start-btn">GO!</button>
     </div>
     <div class="header-actions">
@@ -182,6 +184,7 @@ function requireElement<T extends HTMLElement>(root: ParentNode, selector: strin
 export function mountAppShell(target: HTMLElement): AppShellRefs {
   target.innerHTML = template;
 
+  const boardPanel = requireElement<HTMLElement>(target, '.board-panel');
   const leaderboard: LeaderboardElements = {
     dailyList: requireElement(target, '#dailyLeaderboard'),
     weeklyList: requireElement(target, '#weeklyLeaderboard'),
@@ -221,6 +224,7 @@ export function mountAppShell(target: HTMLElement): AppShellRefs {
 
   return {
     board: requireElement(target, '#board'),
+    boardPanel,
     nextDesktop: requireElement(target, '#nextPiece'),
     nextMobile: requireElement(target, '#nextPieceMobile'),
     startBtn: requireElement(target, '#startBtn'),
@@ -233,6 +237,7 @@ export function mountAppShell(target: HTMLElement): AppShellRefs {
     mobileControls,
     stats,
     overlay,
-    bgmAudio: requireElement(target, '#bgmAudio')
+    bgmAudio: requireElement(target, '#bgmAudio'),
+    mobileControlsRoot: requireElement(target, '.mobile-controls')
   };
 }

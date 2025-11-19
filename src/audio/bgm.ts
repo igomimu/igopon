@@ -7,17 +7,19 @@ interface BgmPreset {
 
 const ACTIVE_VOLUME = 0.6;
 const QUIET_VOLUME = 0.25;
+const BASE_PATH = (import.meta.env.BASE_URL ?? '/').replace(/\/$/, '');
+const withBase = (path: string) => `${BASE_PATH}${path.startsWith('/') ? path : `/${path}`}`;
 const PRESETS: Record<BgmRole, BgmPreset> = {
   lobby: {
-    src: '/audio/igopon-lobby.mp3',
+    src: withBase('/audio/igopon-lobby.mp3'),
     label: 'ロビーBGM'
   },
   game: {
-    src: '/audio/igopon-game.mp3',
+    src: withBase('/audio/igopon-game.mp3'),
     label: 'ゲームBGM'
   },
   danger: {
-    src: '/audio/igopon-game2.mp3',
+    src: withBase('/audio/igopon-game2.mp3'),
     label: 'ゲームBGM（危険）'
   }
 };

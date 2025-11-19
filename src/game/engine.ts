@@ -40,6 +40,9 @@ import type {
 } from './types';
 import type { CaptureState, GameSessionState, LastResultSummary } from './state/session';
 
+const GRID_LINE_COLOR = 'rgba(80, 58, 34, 0.65)';
+const GRID_BORDER_COLOR = 'rgba(46, 36, 20, 0.75)';
+
 export interface GameEngineOptions {
   boardCanvas: HTMLCanvasElement;
   nextDesktopCanvas?: HTMLCanvasElement | null;
@@ -225,6 +228,7 @@ export class GameEngine {
 
   #swipeActive = false;
   #swipeReferenceX = 0;
+  #displayScale = 1;
 
   #frameHandle: number | null = null;
 
@@ -247,6 +251,16 @@ export class GameEngine {
     this.#attachResizeHandlers();
     this.#startLoop();
     this.#publishState();
+  }
+
+  setDisplayScale(scale: number): void {
+    const normalized = Number.isFinite(scale) ? scale : 1;
+    const nextScale = Math.min(1, Math.max(0.25, normalized));
+    if (Math.abs(nextScale - this.#displayScale) < 0.01) {
+      return;
+    }
+    this.#displayScale = nextScale;
+    this.#configureCanvasResolution();
   }
 
   start(): void {
@@ -369,6 +383,10 @@ export class GameEngine {
     const ratio = window.devicePixelRatio || 1;
     const width = COLS * CELL_SIZE + GRID_MARGIN * 2;
     const height = ROWS * CELL_SIZE + GRID_MARGIN * 2;
+    const cssWidth = width * this.#displayScale;
+    const cssHeight = height * this.#displayScale;
+    canvas.style.width = `${cssWidth}px`;
+    canvas.style.height = `${cssHeight}px`;
     canvas.width = Math.round(width * ratio);
     canvas.height = Math.round(height * ratio);
     ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
@@ -529,10 +547,11 @@ export class GameEngine {
       return;
     }
     const delta = clientX - this.#swipeReferenceX;
-    if (delta >= CELL_SIZE) {
+    const threshold = CELL_SIZE * this.#displayScale;
+    if (delta >= threshold) {
       this.#movePiece(1);
       this.#swipeReferenceX = clientX;
-    } else if (delta <= -CELL_SIZE) {
+    } else if (delta <= -threshold) {
       this.#movePiece(-1);
       this.#swipeReferenceX = clientX;
     }
@@ -907,12 +926,12 @@ export class GameEngine {
 
   #drawBoardGrid(): void {
     const ctx = this.#boardCtx;
-    const gridWidth = COLS * CELL_SIZE;
-    const gridHeight = ROWS * CELL_SIZE;
+    const gridWidth = (COLS - 1) * CELL_SIZE;
+    const gridHeight = (ROWS - 1) * CELL_SIZE;
     ctx.save();
-    ctx.strokeStyle = 'rgba(0, 0, 0, 0.1)';
+    ctx.strokeStyle = GRID_LINE_COLOR;
     ctx.lineWidth = 1;
-    for (let row = 0; row <= ROWS; row += 1) {
+    for (let row = 0; row < ROWS; row += 1) {
       const y = GRID_MARGIN + row * CELL_SIZE + 0.5;
       ctx.beginPath();
       ctx.moveTo(GRID_MARGIN + 0.5, y);
@@ -926,6 +945,8 @@ export class GameEngine {
       ctx.lineTo(x, GRID_MARGIN + gridHeight - 0.5);
       ctx.stroke();
     }
+    ctx.strokeStyle = GRID_BORDER_COLOR;
+    ctx.lineWidth = 1.4;
     ctx.strokeRect(GRID_MARGIN + 0.5, GRID_MARGIN + 0.5, gridWidth - 1, gridHeight - 1);
     ctx.restore();
   }

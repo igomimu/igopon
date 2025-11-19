@@ -1,4 +1,5 @@
 import { BgmController } from '../audio/bgm';
+import { CELL_SIZE, COLS, GRID_MARGIN, ROWS } from '../game/constants';
 import { GameEngine } from '../game/engine';
 import type { CaptureState, GameSessionState, LastResultSummary } from '../game/state/session';
 import { SessionState, loadHighScore, saveHighScore } from '../game/state/session';
@@ -7,6 +8,8 @@ import { AppShellRefs, mountAppShell } from './components/app-shell';
 const DAILY_PLACEHOLDER_COUNT = 5;
 const WEEKLY_PLACEHOLDER_COUNT = 1;
 const MONTHLY_PLACEHOLDER_COUNT = 1;
+const BOARD_PIXEL_WIDTH = COLS * CELL_SIZE + GRID_MARGIN * 2;
+const BOARD_PIXEL_HEIGHT = ROWS * CELL_SIZE + GRID_MARGIN * 2;
 
 export class AppController {
   #shell: AppShellRefs;
@@ -16,6 +19,9 @@ export class AppController {
   #highScore = loadHighScore();
   #statusTimer: number | null = null;
   #lastResultExtras: { chain: number; captures: CaptureState } | null = null;
+  #boardResizeObserver: ResizeObserver | null = null;
+  #pendingScaleFrame: number | null = null;
+  #bgmUnlockHandlerAttached = false;
 
   constructor(root: HTMLElement) {
     this.#shell = mountAppShell(root);
@@ -38,7 +44,9 @@ export class AppController {
     this.#wireEvents();
     this.#initializeLeaderboards();
     this.#updateBgmUI();
-    this.#setStatus('囲碁ポン2 へようこそ。GO! で対局開始。');
+    this.#setStatus('いごぽん2 へようこそ。GO! で対局開始。');
+    this.#setupBoardScaling();
+    this.#setupInitialBgmUnlock();
   }
 
   #handleStateChange(state: GameSessionState): void {
@@ -159,6 +167,83 @@ export class AppController {
     }
     this.#syncBgmWithState(this.#session.snapshot);
   };
+
+  #setupBoardScaling(): void {
+    if (typeof window === 'undefined') {
+      return;
+    }
+    const scheduleScale = () => {
+      if (this.#pendingScaleFrame !== null) {
+        cancelAnimationFrame(this.#pendingScaleFrame);
+      }
+      this.#pendingScaleFrame = window.requestAnimationFrame(() => {
+        this.#pendingScaleFrame = null;
+        this.#applyBoardScale();
+      });
+    };
+
+    if (typeof ResizeObserver !== 'undefined') {
+      this.#boardResizeObserver = new ResizeObserver(() => scheduleScale());
+      this.#boardResizeObserver.observe(this.#shell.boardPanel);
+    }
+    window.addEventListener('resize', scheduleScale);
+    window.addEventListener('scroll', scheduleScale, { passive: true });
+    scheduleScale();
+  }
+
+  #setupInitialBgmUnlock(): void {
+    if (this.#bgmUnlockHandlerAttached || typeof document === 'undefined') {
+      return;
+    }
+    const unlock = () => {
+      document.removeEventListener('pointerdown', unlock, true);
+      document.removeEventListener('keydown', unlock, true);
+      this.#bgmUnlockHandlerAttached = false;
+      void this.#bgm.unlockViaGesture();
+      this.#bgm.setPaused(false);
+      this.#updateBgmUI();
+    };
+    this.#bgmUnlockHandlerAttached = true;
+    document.addEventListener('pointerdown', unlock, true);
+    document.addEventListener('keydown', unlock, true);
+  }
+
+  #applyBoardScale(): void {
+    const scale = this.#computeBoardScale();
+    this.#engine.setDisplayScale(scale);
+  }
+
+  #computeBoardScale(): number {
+    if (typeof window === 'undefined') {
+      return 1;
+    }
+    const panel = this.#shell.boardPanel;
+    const panelRect = panel.getBoundingClientRect();
+    const panelStyles = window.getComputedStyle(panel);
+    const toNumber = (value: string | null | undefined) => Number.parseFloat(value ?? '') || 0;
+    const paddingLeft = toNumber(panelStyles.paddingLeft);
+    const paddingRight = toNumber(panelStyles.paddingRight);
+    const innerWidth = Math.max(0, panel.clientWidth - paddingLeft - paddingRight);
+
+    const mobileRoot = this.#shell.mobileControlsRoot;
+    const mobileStyles = window.getComputedStyle(mobileRoot);
+    const mobileVisible = mobileStyles.display !== 'none';
+    const mobileHeight = mobileVisible ? mobileRoot.getBoundingClientRect().height : 0;
+    const reservedBottom = mobileVisible ? 40 : 64;
+
+    const panelPaddingTop = toNumber(panelStyles.paddingTop);
+    const panelPaddingBottom = toNumber(panelStyles.paddingBottom);
+    const panelTopOffset = Math.max(0, panelRect.top) + panelPaddingTop;
+    const innerHeight = Math.max(
+      0,
+      window.innerHeight - panelTopOffset - mobileHeight - reservedBottom - panelPaddingBottom
+    );
+
+    const widthScale = innerWidth > 0 ? innerWidth / BOARD_PIXEL_WIDTH : 1;
+    const heightScale = innerHeight > 0 ? innerHeight / BOARD_PIXEL_HEIGHT : 1;
+    const rawScale = Math.min(1, widthScale, heightScale);
+    return Number.isFinite(rawScale) && rawScale > 0 ? rawScale : 1;
+  }
 
   #renderStats(state: GameSessionState): void {
     const format = (value: number) => value.toLocaleString('ja-JP');
