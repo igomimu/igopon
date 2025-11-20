@@ -1,7 +1,7 @@
 import { CELL_SIZE, COLS, GRID_MARGIN, ROWS } from '../../game/constants';
 
-const BOARD_CANVAS_WIDTH = COLS * CELL_SIZE + GRID_MARGIN * 2;
-const BOARD_CANVAS_HEIGHT = ROWS * CELL_SIZE + GRID_MARGIN * 2;
+const BOARD_CANVAS_WIDTH = (COLS - 1) * CELL_SIZE + GRID_MARGIN * 2;
+const BOARD_CANVAS_HEIGHT = (ROWS - 1) * CELL_SIZE + GRID_MARGIN * 2;
 
 export interface LeaderboardElements {
   dailyList: HTMLOListElement;

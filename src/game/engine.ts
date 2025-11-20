@@ -381,8 +381,8 @@ export class GameEngine {
     const ctx = this.#boardCtx;
     const canvas = this.#boardCanvas;
     const ratio = window.devicePixelRatio || 1;
-    const width = COLS * CELL_SIZE + GRID_MARGIN * 2;
-    const height = ROWS * CELL_SIZE + GRID_MARGIN * 2;
+    const width = (COLS - 1) * CELL_SIZE + GRID_MARGIN * 2;
+    const height = (ROWS - 1) * CELL_SIZE + GRID_MARGIN * 2;
     const cssWidth = width * this.#displayScale;
     const cssHeight = height * this.#displayScale;
     canvas.style.width = `${cssWidth}px`;

@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>囲碁大会ダッシュボード</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;600;700&family=Space+Grotesk:wght@500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./igo-tournaments.css" />
+</head>
+<body>
+  <div class="bg-texture"></div>
+  <header class="hero">
+    <div class="hero__content">
+      <p class="eyebrow">Go tournament watcher</p>
+      <h1>囲碁大会ダッシュボード</h1>
+      <p class="lede">公式フィードを自動取得して、日程・大会名・URLをワンタッチコピーできる軽量ビューです。</p>
+      <div class="hero__actions">
+        <button id="reload-btn" type="button" class="ghost">最新データを読み込み</button>
+        <div class="hero__meta">
+          <span id="last-updated">最終更新: --</span>
+          <span id="source-info">取得元: --</span>
+        </div>
+      </div>
+    </div>
+  </header>
+  <main class="page">
+    <section class="controls">
+      <label class="input-wrap">
+        <span>キーワード</span>
+        <input id="search" type="search" placeholder="大会名・地域・カテゴリで絞り込み" />
+      </label>
+      <label class="input-wrap">
+        <span>並び順</span>
+        <select id="sort">
+          <option value="event">日程が近い順</option>
+          <option value="published">公開日が新しい順</option>
+        </select>
+      </label>
+      <label class="toggle">
+        <input type="checkbox" id="hide-past" />
+        <span>今日より前の日程を隠す</span>
+      </label>
+    </section>
+    <section class="list-section">
+      <div id="status" class="status">読み込み中...</div>
+      <ul id="tournament-list" class="tournament-list"></ul>
+    </section>
+    <footer class="footer-note">
+      データファイル: <code>public/tournaments.json</code>（<code>npm run fetch:tournaments</code> で更新）
+    </footer>
+  </main>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script type="module" src="./igo-tournaments.js"></script>
+</body>
+</html>

@@ -57,4 +57,12 @@ npm run preview
 - 既存 `docs/script.js` からのロジック移植の完了とテスト
 - UI アクセシビリティ (ARIA / キーボード支援) の細部調整
 - サウンドアセットの追加とロール切替アニメーション
+
+# 囲碁大会フィードのワンタッチコピー (補助ツール)
+
+日本棋院の大会・イベント Atom フィードをサーバーサイドで取得し、`public/tournaments.json` に整形した上で、`public/igo-tournaments.html` で閲覧・コピーできます。
+
+- データ更新: `npm run fetch:tournaments` (CORS を避けるために Node 経由で取得します)
+- 表示: `npm run dev` を起動し `http://localhost:5173/igo-tournaments.html` にアクセスするか、`public/igo-tournaments.html` を直接開いてください
+- カードの各ボタンから「大会名」「日付」「URL」「まとめて（大会名｜日付｜URL）」をワンクリックでコピーできます
 ```

@@ -8,8 +8,8 @@ import { AppShellRefs, mountAppShell } from './components/app-shell';
 const DAILY_PLACEHOLDER_COUNT = 5;
 const WEEKLY_PLACEHOLDER_COUNT = 1;
 const MONTHLY_PLACEHOLDER_COUNT = 1;
-const BOARD_PIXEL_WIDTH = COLS * CELL_SIZE + GRID_MARGIN * 2;
-const BOARD_PIXEL_HEIGHT = ROWS * CELL_SIZE + GRID_MARGIN * 2;
+const BOARD_PIXEL_WIDTH = (COLS - 1) * CELL_SIZE + GRID_MARGIN * 2;
+const BOARD_PIXEL_HEIGHT = (ROWS - 1) * CELL_SIZE + GRID_MARGIN * 2;
 
 export class AppController {
   #shell: AppShellRefs;
