@@ -1,5 +1,5 @@
 import { BgmController } from '../audio/bgm';
-import { CELL_SIZE, COLS, GRID_MARGIN, ROWS } from '../game/constants';
+import { CELL_SIZE, COLS, GRID_MARGIN } from '../game/constants';
 import { GameEngine } from '../game/engine';
 import type { CaptureState, GameSessionState, LastResultSummary } from '../game/state/session';
 import { SessionState, loadHighScore, saveHighScore } from '../game/state/session';
@@ -9,7 +9,7 @@ const DAILY_PLACEHOLDER_COUNT = 5;
 const WEEKLY_PLACEHOLDER_COUNT = 1;
 const MONTHLY_PLACEHOLDER_COUNT = 1;
 const BOARD_PIXEL_WIDTH = (COLS - 1) * CELL_SIZE + GRID_MARGIN * 2;
-const BOARD_PIXEL_HEIGHT = (ROWS - 1) * CELL_SIZE + GRID_MARGIN * 2;
+
 
 export class AppController {
   #shell: AppShellRefs;
@@ -218,30 +218,21 @@ export class AppController {
       return 1;
     }
     const panel = this.#shell.boardPanel;
-    const panelRect = panel.getBoundingClientRect();
     const panelStyles = window.getComputedStyle(panel);
     const toNumber = (value: string | null | undefined) => Number.parseFloat(value ?? '') || 0;
     const paddingLeft = toNumber(panelStyles.paddingLeft);
     const paddingRight = toNumber(panelStyles.paddingRight);
     const innerWidth = Math.max(0, panel.clientWidth - paddingLeft - paddingRight);
 
-    const mobileRoot = this.#shell.mobileControlsRoot;
-    const mobileStyles = window.getComputedStyle(mobileRoot);
-    const mobileVisible = mobileStyles.display !== 'none';
-    const mobileHeight = mobileVisible ? mobileRoot.getBoundingClientRect().height : 0;
-    const reservedBottom = mobileVisible ? 40 : 64;
 
-    const panelPaddingTop = toNumber(panelStyles.paddingTop);
-    const panelPaddingBottom = toNumber(panelStyles.paddingBottom);
-    const panelTopOffset = Math.max(0, panelRect.top) + panelPaddingTop;
-    const innerHeight = Math.max(
-      0,
-      window.innerHeight - panelTopOffset - mobileHeight - reservedBottom - panelPaddingBottom
-    );
+
 
     const widthScale = innerWidth > 0 ? innerWidth / BOARD_PIXEL_WIDTH : 1;
-    const heightScale = innerHeight > 0 ? innerHeight / BOARD_PIXEL_HEIGHT : 1;
-    const rawScale = Math.min(1, widthScale, heightScale);
+
+    // Match igopon1 behavior: prioritize width, allow vertical scrolling.
+    // Ignore heightScale to prevent shrinking on short screens (PC).
+    // Cap at 1 to prevent scaling up on wide screens.
+    const rawScale = Math.min(widthScale, 1);
     return Number.isFinite(rawScale) && rawScale > 0 ? rawScale : 1;
   }
 

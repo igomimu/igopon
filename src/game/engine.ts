@@ -246,7 +246,8 @@ export class GameEngine {
     this.#nextMobileCtx = this.#nextMobileCanvas ? this.#nextMobileCanvas.getContext('2d') : null;
 
     this.#configureCanvasResolution();
-    this.#applyPreviewCanvasSize({ redraw: false });
+    this.#nextPiece = this.#pullNextPiecePrototype();
+    this.#applyPreviewCanvasSize({ redraw: true });
     this.#attachPointerHandlers();
     this.#attachResizeHandlers();
     this.#startLoop();
@@ -255,7 +256,7 @@ export class GameEngine {
 
   setDisplayScale(scale: number): void {
     const normalized = Number.isFinite(scale) ? scale : 1;
-    const nextScale = Math.min(1, Math.max(0.25, normalized));
+    const nextScale = Math.max(0.25, normalized);
     if (Math.abs(nextScale - this.#displayScale) < 0.01) {
       return;
     }
@@ -387,9 +388,9 @@ export class GameEngine {
     const cssHeight = height * this.#displayScale;
     canvas.style.width = `${cssWidth}px`;
     canvas.style.height = `${cssHeight}px`;
-    canvas.width = Math.round(width * ratio);
-    canvas.height = Math.round(height * ratio);
-    ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+    canvas.width = Math.round(width * this.#displayScale * ratio);
+    canvas.height = Math.round(height * this.#displayScale * ratio);
+    ctx.setTransform(ratio * this.#displayScale, 0, 0, ratio * this.#displayScale, 0, 0);
   }
 
   #applyPreviewCanvasSize({ redraw = true }: { redraw?: boolean } = {}): void {
