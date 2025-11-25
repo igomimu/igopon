@@ -28,7 +28,8 @@ import {
   resolveCaptures,
   rotatePiece,
   evaluateGroup,
-  canPlaceStoneInEye
+  canPlaceStoneInEye,
+  isEyeCell
 } from './logic';
 
 import {
@@ -354,13 +355,7 @@ export class GameEngine {
   }
 
   hardDrop(): void {
-    if (!this.#currentPiece || !this.#gameActive || this.#paused) {
-      return;
-    }
-    while (isValidPosition(this.#board, this.#currentPiece, 1, 0)) {
-      this.#currentPiece.position.row += 1;
-    }
-    this.#lockPiece();
+    this.#hardDrop();
   }
 
   snapshot(): GameSessionState {
@@ -394,6 +389,8 @@ export class GameEngine {
     const ratio = window.devicePixelRatio || 1;
     const width = (COLS - 1) * CELL_SIZE + GRID_MARGIN * 2;
     const height = (ROWS - 1) * CELL_SIZE + GRID_MARGIN * 2;
+    const cssWidth = width * this.#displayScale;
+    const cssHeight = height * this.#displayScale;
 
     canvas.style.width = `${cssWidth} px`;
     canvas.style.height = `${cssHeight} px`;
@@ -860,32 +857,32 @@ export class GameEngine {
         }, 0);
         clearedEyeFrame = true;
       }
-
-
-      if (context.placedEyeFrame) {
-        this.#chain = 0;
-        this.#setStatus('色付き眼フレームを設置しました。');
-      } else if (clearedEyeFrame) {
-        this.#setStatus('眼フレームが崩壊しました。');
-      }
-
-      if (!this.#gameActive) {
-        this.#publishState();
-        return;
-      }
-
-      this.#updateDangerState();
-
-      if (!this.#spawnNewPiece()) {
-        this.#publishState();
-        return;
-      }
-      this.#updateDangerState();
-      this.#publishState();
     }
 
-    #maybeScheduleEyeFramePiece(): void {
-      if(!this.#gameActive) {
+    if (context.placedEyeFrame) {
+      this.#chain = 0;
+      this.#setStatus('色付き眼フレームを設置しました。');
+    } else if (clearedEyeFrame) {
+      this.#setStatus('眼フレームが崩壊しました。');
+    }
+
+    if (!this.#gameActive) {
+      this.#publishState();
+      return;
+    }
+
+    this.#updateDangerState();
+
+    if (!this.#spawnNewPiece()) {
+      this.#publishState();
+      return;
+    }
+    this.#updateDangerState();
+    this.#publishState();
+  }
+
+  #maybeScheduleEyeFramePiece(): void {
+    if (!this.#gameActive) {
       return;
     }
     if (this.#piecesPlaced < MIN_PIECES_BEFORE_EYE_FRAME) {
