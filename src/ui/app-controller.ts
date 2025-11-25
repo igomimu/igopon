@@ -261,7 +261,7 @@ export class AppController {
     const widthScale = innerWidth > 0 ? innerWidth / BOARD_PIXEL_WIDTH : 1;
 
     // Calculate height scale based on 65vh limit (matching CSS)
-    const availableHeight = window.innerHeight * 0.65;
+    const availableHeight = window.innerHeight * 0.75;
     const heightScale = availableHeight > 0 ? availableHeight / BOARD_PIXEL_HEIGHT : 1;
 
     // Use the smaller scale to ensure it fits in both dimensions while maintaining aspect ratio

@@ -160,7 +160,8 @@ body {
     display: flex;
     justify-content: center;
     padding-top: 1.5rem;
-    min-width: 160px; /* Minimum width for a vertical banner */
+    min-width: 160px;
+    /* Minimum width for a vertical banner */
     max-width: 300px;
 }
 
@@ -178,7 +179,8 @@ body {
 }
 
 .layout {
-    flex: 0 1 1180px; /* Allow shrinking, base size 1180px */
+    flex: 0 1 1180px;
+    /* Allow shrinking, base size 1180px */
     display: grid;
     grid-template-columns: 1fr;
     padding: 1.5rem;
@@ -514,7 +516,7 @@ button:not(:disabled):hover {
     #board {
         width: 100%;
         height: auto;
-        max-height: 65vh;
+        max-height: 75vh;
     }
 
     .mobile-controls {
