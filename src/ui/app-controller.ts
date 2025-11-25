@@ -3,11 +3,17 @@ import { CELL_SIZE, COLS, GRID_MARGIN, ROWS } from '../game/constants';
 import { GameEngine } from '../game/engine';
 import type { CaptureState, GameSessionState, LastResultSummary } from '../game/state/session';
 import { SessionState, loadHighScore, saveHighScore } from '../game/state/session';
+import {
+  DAILY_DISPLAY_LIMIT,
+  LeaderboardEntry,
+  MONTHLY_DISPLAY_LIMIT,
+  WEEKLY_DISPLAY_LIMIT,
+  fetchRollingEntries,
+  sanitizePlayerName,
+  submitScore
+} from '../game/leaderboard';
 import { AppShellRefs, mountAppShell } from './components/app-shell';
 
-const DAILY_PLACEHOLDER_COUNT = 5;
-const WEEKLY_PLACEHOLDER_COUNT = 1;
-const MONTHLY_PLACEHOLDER_COUNT = 1;
 const BOARD_PIXEL_WIDTH = (COLS - 1) * CELL_SIZE + GRID_MARGIN * 2;
 const BOARD_PIXEL_HEIGHT = (ROWS - 1) * CELL_SIZE + GRID_MARGIN * 2;
 
@@ -67,6 +73,17 @@ export class AppController {
     this.#bgm.setRole('lobby');
     this.#bgm.setPaused(false);
     this.#updateBgmUI();
+
+    // Submit score
+    const name = sanitizePlayerName(this.#shell.playerNameInput.value) || 'プレイヤー';
+    submitScore(name, summary.finalScore)
+      .then(() => {
+        this.#setStatus('スコアを送信しました。', 3000);
+        return this.#refreshLeaderboards();
+      })
+      .catch(() => {
+        this.#setStatus('スコア送信に失敗しました。', 3000);
+      });
   }
 
   #syncBgmWithState(state: GameSessionState): void {
@@ -304,43 +321,68 @@ export class AppController {
     this.#shell.bgmStatus.textContent = status;
   }
 
-  #initializeLeaderboards(): void {
+  async #initializeLeaderboards(): Promise<void> {
     this.#shell.leaderboard.dateLabel.textContent = this.#formatDate(new Date());
-    this.#renderLeaderboardPlaceholders(
+    await this.#refreshLeaderboards();
+  }
+
+  async #refreshLeaderboards(): Promise<void> {
+    const [daily, weekly, monthly] = await Promise.all([
+      fetchRollingEntries(1, 10),
+      fetchRollingEntries(7, 10),
+      fetchRollingEntries(30, 15)
+    ]);
+
+    this.#renderLeaderboardList(
       this.#shell.leaderboard.dailyList,
-      DAILY_PLACEHOLDER_COUNT,
+      daily,
+      DAILY_DISPLAY_LIMIT,
       this.#shell.leaderboard.dailyEmpty
     );
-    this.#renderLeaderboardPlaceholders(
+    this.#renderLeaderboardList(
       this.#shell.leaderboard.weeklyList,
-      WEEKLY_PLACEHOLDER_COUNT,
+      weekly,
+      WEEKLY_DISPLAY_LIMIT,
       this.#shell.leaderboard.weeklyEmpty
     );
-    this.#renderLeaderboardPlaceholders(
+    this.#renderLeaderboardList(
       this.#shell.leaderboard.monthlyList,
-      MONTHLY_PLACEHOLDER_COUNT,
+      monthly,
+      MONTHLY_DISPLAY_LIMIT,
       this.#shell.leaderboard.monthlyEmpty
     );
   }
 
-  #renderLeaderboardPlaceholders(target: HTMLOListElement, count: number, empty?: HTMLElement): void {
+  #renderLeaderboardList(
+    target: HTMLOListElement,
+    entries: LeaderboardEntry[],
+    limit: number,
+    empty?: HTMLElement
+  ): void {
     target.innerHTML = '';
+    if (entries.length === 0) {
+      empty?.classList.remove('hidden');
+      return;
+    }
     empty?.classList.add('hidden');
-    for (let index = 0; index < count; index += 1) {
+
+    entries.slice(0, limit).forEach((entry, index) => {
       const item = document.createElement('li');
-      item.classList.add('placeholder');
       const rank = document.createElement('span');
       rank.className = 'rank';
       rank.textContent = String(index + 1);
+
       const name = document.createElement('span');
       name.className = 'name';
-      name.textContent = '—';
+      name.textContent = entry.name || '名無し';
+
       const score = document.createElement('span');
       score.className = 'score';
-      score.textContent = '—';
+      score.textContent = Number(entry.score).toLocaleString('ja-JP');
+
       item.append(rank, name, score);
       target.appendChild(item);
-    }
+    });
   }
 
   #formatDate(date: Date): string {
