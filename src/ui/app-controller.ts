@@ -44,7 +44,7 @@ export class AppController {
     this.#wireEvents();
     this.#initializeLeaderboards();
     this.#updateBgmUI();
-    this.#setStatus('いごぽん2 へようこそ。GO! で対局開始。');
+    this.#setStatus('いごぽん へようこそ。GO! で対局開始。');
     this.#setupBoardScaling();
     this.#setupInitialBgmUnlock();
   }
@@ -136,6 +136,9 @@ export class AppController {
 
     document.addEventListener('keydown', this.#handleKeydown);
     document.addEventListener('visibilitychange', this.#handleVisibilityChange);
+    window.addEventListener('appinstalled', () => {
+      this.#setStatus('アプリがインストールされました！ホーム画面をご確認ください。', 5000);
+    });
   }
 
   #handleKeydown = (event: KeyboardEvent): void => {

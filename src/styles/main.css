@@ -515,7 +515,6 @@ button:not(:disabled):hover {
         width: 100%;
         height: auto;
         max-height: 65vh;
-        aspect-ratio: 1;
     }
 
     .mobile-controls {

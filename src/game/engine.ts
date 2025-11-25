@@ -392,8 +392,8 @@ export class GameEngine {
     const cssWidth = width * this.#displayScale;
     const cssHeight = height * this.#displayScale;
 
-    canvas.style.width = `${cssWidth} px`;
-    canvas.style.height = `${cssHeight} px`;
+    canvas.style.width = `${cssWidth}px`;
+    canvas.style.height = `${cssHeight}px`;
     canvas.width = Math.round(width * this.#displayScale * ratio);
     canvas.height = Math.round(height * this.#displayScale * ratio);
     ctx.setTransform(ratio * this.#displayScale, 0, 0, ratio * this.#displayScale, 0, 0);
