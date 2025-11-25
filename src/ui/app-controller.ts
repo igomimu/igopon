@@ -121,6 +121,19 @@ export class AppController {
       this.#setStatus(`${name || 'プレイヤー'} さん、準備OKです。`, 2000);
     });
 
+    // Feedback button handlers
+    const feedbackHandler = (e: Event) => {
+      const target = e.target as HTMLElement;
+      const feedback = target.dataset.feedback;
+      if (feedback) {
+        console.log('User feedback after game:', feedback);
+        // Placeholder: could send to server or store locally
+      }
+    };
+    this.#shell.overlay.root.querySelector('#feedbackEasy')?.addEventListener('click', feedbackHandler);
+    this.#shell.overlay.root.querySelector('#feedbackHard')?.addEventListener('click', feedbackHandler);
+    this.#shell.overlay.root.querySelector('#feedbackBoring')?.addEventListener('click', feedbackHandler);
+
     document.addEventListener('keydown', this.#handleKeydown);
     document.addEventListener('visibilitychange', this.#handleVisibilityChange);
   }
@@ -224,15 +237,9 @@ export class AppController {
     const paddingRight = toNumber(panelStyles.paddingRight);
     const innerWidth = Math.max(0, panel.clientWidth - paddingLeft - paddingRight);
 
-
-
-
     const widthScale = innerWidth > 0 ? innerWidth / BOARD_PIXEL_WIDTH : 1;
-
-    // Match igopon1 behavior: prioritize width, allow vertical scrolling.
-    // Ignore heightScale to prevent shrinking on short screens (PC).
-    // Cap at 1 to prevent scaling up on wide screens.
-    const rawScale = Math.min(widthScale, 1);
+    // Option B: no upper cap – allow the board to fill the width on mobile.
+    const rawScale = widthScale;
     return Number.isFinite(rawScale) && rawScale > 0 ? rawScale : 1;
   }
 

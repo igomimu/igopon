@@ -17,6 +17,7 @@ import {
   ROWS
 } from './constants';
 import type { CellValue } from './constants';
+
 import {
   applyGravity,
   collectCapturingStones,
@@ -25,8 +26,11 @@ import {
   isDangerZoneTriggered,
   isValidPosition,
   resolveCaptures,
-  rotatePiece
+  rotatePiece,
+  evaluateGroup,
+  canPlaceStoneInEye
 } from './logic';
+
 import {
   clonePiece,
   createEyeFramePiecePrototype,
@@ -350,7 +354,13 @@ export class GameEngine {
   }
 
   hardDrop(): void {
-    this.#hardDrop();
+    if (!this.#currentPiece || !this.#gameActive || this.#paused) {
+      return;
+    }
+    while (isValidPosition(this.#board, this.#currentPiece, 1, 0)) {
+      this.#currentPiece.position.row += 1;
+    }
+    this.#lockPiece();
   }
 
   snapshot(): GameSessionState {
@@ -384,10 +394,9 @@ export class GameEngine {
     const ratio = window.devicePixelRatio || 1;
     const width = (COLS - 1) * CELL_SIZE + GRID_MARGIN * 2;
     const height = (ROWS - 1) * CELL_SIZE + GRID_MARGIN * 2;
-    const cssWidth = width * this.#displayScale;
-    const cssHeight = height * this.#displayScale;
-    canvas.style.width = `${cssWidth}px`;
-    canvas.style.height = `${cssHeight}px`;
+
+    canvas.style.width = `${cssWidth} px`;
+    canvas.style.height = `${cssHeight} px`;
     canvas.width = Math.round(width * this.#displayScale * ratio);
     canvas.height = Math.round(height * this.#displayScale * ratio);
     ctx.setTransform(ratio * this.#displayScale, 0, 0, ratio * this.#displayScale, 0, 0);
@@ -433,8 +442,8 @@ export class GameEngine {
       canvas.width = Math.round(targetWidth * ratio);
       canvas.height = Math.round(targetHeight * ratio);
     }
-    canvas.style.width = `${targetWidth}px`;
-    canvas.style.height = `${targetHeight}px`;
+    canvas.style.width = `${targetWidth} px`;
+    canvas.style.height = `${targetHeight} px`;
     context.setTransform(ratio, 0, 0, ratio, 0, 0);
   }
 
@@ -651,9 +660,18 @@ export class GameEngine {
     }
     if (isValidPosition(this.#board, this.#currentPiece, 1, 0)) {
       this.#currentPiece.position.row += 1;
-    } else {
-      this.#lockPiece();
+      return;
     }
+
+    // Eye placement check
+    const eyeInfo = this.#checkEyePlacement(this.#currentPiece);
+    if (eyeInfo.canPlace) {
+      this.#placeStoneInEye(eyeInfo.eyePositions);
+      this.#lockPiece();
+      return;
+    }
+
+    this.#lockPiece();
   }
 
   #hardDrop(): void {
@@ -663,7 +681,49 @@ export class GameEngine {
     while (isValidPosition(this.#board, this.#currentPiece, 1, 0)) {
       this.#currentPiece.position.row += 1;
     }
+
+    // Eye placement check for hard drop
+    const eyeInfo = this.#checkEyePlacement(this.#currentPiece);
+    if (eyeInfo.canPlace) {
+      this.#placeStoneInEye(eyeInfo.eyePositions);
+    }
+
     this.#lockPiece();
+  }
+
+  // Helper: check if piece can place stone inside eye
+  #checkEyePlacement(piece: PieceInstance): { canPlace: boolean; eyePositions: Array<{ row: number; col: number }> } {
+    const eyePositions: Array<{ row: number; col: number }> = [];
+    piece.cells.forEach(cell => {
+      const boardRow = piece.position.row + cell.row;
+      const boardCol = piece.position.col + cell.col;
+      if (boardRow < 0) return;
+      const value = this.#board[boardRow][boardCol];
+      if (isEyeCell(value)) {
+        eyePositions.push({ row: boardRow, col: boardCol });
+      }
+    });
+
+    if (eyePositions.length === 0) return { canPlace: false, eyePositions: [] };
+
+    const group = evaluateGroup(
+      this.#board,
+      eyePositions[0].row,
+      eyePositions[0].col,
+      this.#board[eyePositions[0].row][eyePositions[0].col],
+      new Set()
+    );
+
+    const canPlace = canPlaceStoneInEye(this.#board, eyePositions, group.liberties, group.eyeCount);
+    return { canPlace, eyePositions };
+  }
+
+  // Helper: actually place stone(s) into eye cells using current piece's color
+  #placeStoneInEye(eyePositions: Array<{ row: number; col: number }>): void {
+    const color = this.#currentPiece?.cells[0].color ?? CELL_BLACK;
+    eyePositions.forEach(p => {
+      this.#board[p.row][p.col] = color;
+    });
   }
 
   #lockPiece(): void {
@@ -763,7 +823,7 @@ export class GameEngine {
       this.#captures.white += result.captureTotals.white;
       this.#spawnCaptureEffects(result.removedStones);
       this.#spawnScorePopup(pointsEarned, result.removedStones);
-      this.#setStatus(`${result.totalRemoved}個捕獲。チェインx${this.#chain}！`);
+      this.#setStatus(`${result.totalRemoved} 個捕獲。チェインx${this.#chain}！`);
     } else {
       this.#chain = 0;
       this.#setStatus('石を配置。捕獲なし。');
@@ -773,7 +833,7 @@ export class GameEngine {
     if (this.#piecesPlaced % 5 === 0) {
       this.#level += 1;
       this.#dropInterval = Math.max(220, BASE_DROP_INTERVAL - (this.#level - 1) * 80);
-      this.#setStatus(`レベル${this.#level}。落下間隔 ${(this.#dropInterval / 1000).toFixed(2)}秒。`);
+      this.#setStatus(`レベル${this.#level}。落下間隔 ${(this.#dropInterval / 1000).toFixed(2)} 秒。`);
     }
 
     this.#maybeScheduleEyeFramePiece();
@@ -800,32 +860,32 @@ export class GameEngine {
         }, 0);
         clearedEyeFrame = true;
       }
-    }
 
-    if (context.placedEyeFrame) {
-      this.#chain = 0;
-      this.#setStatus('色付き眼フレームを設置しました。');
-    } else if (clearedEyeFrame) {
-      this.#setStatus('眼フレームが崩壊しました。');
-    }
 
-    if (!this.#gameActive) {
+      if (context.placedEyeFrame) {
+        this.#chain = 0;
+        this.#setStatus('色付き眼フレームを設置しました。');
+      } else if (clearedEyeFrame) {
+        this.#setStatus('眼フレームが崩壊しました。');
+      }
+
+      if (!this.#gameActive) {
+        this.#publishState();
+        return;
+      }
+
+      this.#updateDangerState();
+
+      if (!this.#spawnNewPiece()) {
+        this.#publishState();
+        return;
+      }
+      this.#updateDangerState();
       this.#publishState();
-      return;
     }
 
-    this.#updateDangerState();
-
-    if (!this.#spawnNewPiece()) {
-      this.#publishState();
-      return;
-    }
-    this.#updateDangerState();
-    this.#publishState();
-  }
-
-  #maybeScheduleEyeFramePiece(): void {
-    if (!this.#gameActive) {
+    #maybeScheduleEyeFramePiece(): void {
+      if(!this.#gameActive) {
       return;
     }
     if (this.#piecesPlaced < MIN_PIECES_BEFORE_EYE_FRAME) {
@@ -1020,7 +1080,7 @@ export class GameEngine {
       this.#drawEyeStone(this.#boardCtx, cx, cy, CELL_SIZE * 0.42, value, alpha);
       return;
     }
-    const highlight = this.#captureHighlights.get(`${row},${col}`);
+    const highlight = this.#captureHighlights.get(`${row},${col} `);
     if (highlight) {
       this.#drawHighlightedStone(this.#boardCtx, cx, cy, CELL_SIZE * 0.42, value, highlight);
       return;
@@ -1245,7 +1305,7 @@ export class GameEngine {
         const fadeStart = SCORE_POPUP_FADE_START;
         const alpha = progress < fadeStart ? 1 : Math.max(1 - (progress - fadeStart) / (1 - fadeStart), 0);
         ctx.save();
-        ctx.font = `${CELL_SIZE * 0.8}px "Segoe UI", sans-serif`;
+        ctx.font = `${CELL_SIZE * 0.8}px "Segoe UI", sans - serif`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.globalAlpha = alpha;
@@ -1360,7 +1420,7 @@ export class GameEngine {
       group.groupId = groupId;
       group.startedAt = startedAt;
       group.captured.forEach(cell => {
-        this.#captureHighlights.set(`${cell.row},${cell.col}`, {
+        this.#captureHighlights.set(`${cell.row},${cell.col} `, {
           type: 'captured',
           startTime: startedAt,
           duration: CAPTURE_HIGHLIGHT_DURATION,
@@ -1374,7 +1434,7 @@ export class GameEngine {
       );
       group.capturing = captureStones;
       captureStones.forEach(cell => {
-        this.#captureHighlights.set(`${cell.row},${cell.col}`, {
+        this.#captureHighlights.set(`${cell.row},${cell.col} `, {
           type: 'capturing',
           startTime: startedAt,
           duration: CAPTURE_HIGHLIGHT_DURATION,
@@ -1394,7 +1454,7 @@ export class GameEngine {
     const seen = new Set<string>();
     group.capturing.forEach(cell => {
       const { x, y } = this.#boardToCanvasPosition(cell.row, cell.col);
-      const key = `${x.toFixed(2)},${y.toFixed(2)}`;
+      const key = `${x.toFixed(2)},${y.toFixed(2)} `;
       if (seen.has(key)) {
         return;
       }
@@ -1456,10 +1516,10 @@ export class GameEngine {
         this.#captureLineEffects.delete(group.groupId);
       }
       group.captured.forEach(cell => {
-        this.#captureHighlights.delete(`${cell.row},${cell.col}`);
+        this.#captureHighlights.delete(`${cell.row},${cell.col} `);
       });
       group.capturing.forEach(cell => {
-        this.#captureHighlights.delete(`${cell.row},${cell.col}`);
+        this.#captureHighlights.delete(`${cell.row},${cell.col} `);
       });
     });
   }
@@ -1548,7 +1608,7 @@ export class GameEngine {
     const centerX = sumX / removedStones.length;
     const safeTop = GRID_MARGIN - CELL_SIZE * 0.4;
     const startY = Math.max(safeTop, minY - CELL_SIZE * 0.9);
-    const text = `+${points.toLocaleString('en-US')}`;
+    const text = `+ ${points.toLocaleString('en-US')} `;
     this.#effects.push({
       type: 'scorePopup',
       x: centerX,

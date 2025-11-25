@@ -93,6 +93,8 @@ interface EvaluateGroupResult {
   stones: Array<{ row: number; col: number }>;
   liberties: number;
   hasEyeSupport: boolean;
+  eyeCount: number; // number of eye cells in this group
+  eyePositions: Array<{ row: number; col: number }>; // positions of eye cells
 }
 
 export function evaluateGroup(
@@ -106,6 +108,8 @@ export function evaluateGroup(
   const stones: Array<{ row: number; col: number }> = [];
   const libertySet = new Set<string>();
   let hasEyeSupport = false;
+  let eyeCount = 0;
+  const eyePositions: Array<{ row: number; col: number }> = [];
   visited.add(`${row},${col}`);
 
   while (queue.length > 0) {
@@ -125,6 +129,9 @@ export function evaluateGroup(
         if (eyeMatchesColor(space, color)) {
           hasEyeSupport = true;
         }
+        // Count eye cells belonging to this group
+        eyeCount += 1;
+        eyePositions.push({ row: nextRow, col: nextCol });
       } else if (space === color) {
         const key = `${nextRow},${nextCol}`;
         if (!visited.has(key)) {
@@ -138,7 +145,9 @@ export function evaluateGroup(
   return {
     stones,
     liberties: libertySet.size,
-    hasEyeSupport
+    hasEyeSupport,
+    eyeCount,
+    eyePositions
   };
 }
 
@@ -170,6 +179,24 @@ export function collectCapturingStones(
   return result;
 }
 
+/**
+ * 眼内部に石を置くことが許可されているか判定
+ * 条件:
+ *   - 呼吸点が 0（完全に囲まれている）
+ *   - 眼が 2 個以上連結していない（不滅条件は維持）
+ *   - 眼セル自体が空 (CELL_EMPTY) である
+ */
+export function canPlaceStoneInEye(
+  board: BoardMatrix,
+  eyePositions: Array<{ row: number; col: number }>,
+  groupLiberties: number,
+  eyeCount: number
+): boolean {
+  if (groupLiberties !== 0) return false;
+  if (eyeCount >= 2) return false;
+  return eyePositions.some(p => board[p.row][p.col] === CELL_EMPTY);
+}
+
 export function resolveCaptures(board: BoardMatrix): CaptureResolution {
   const visited = new Set<string>();
   const captureTotals = { black: 0, white: 0 };
@@ -189,7 +216,7 @@ export function resolveCaptures(board: BoardMatrix): CaptureResolution {
       }
 
       const result = evaluateGroup(board, row, col, stone, visited);
-      if (result.liberties === 0 && !result.hasEyeSupport) {
+      if (result.liberties === 0 && !result.hasEyeSupport && result.eyeCount < 2) {
         const capturingColor = stone === CELL_BLACK ? CELL_WHITE : CELL_BLACK;
         const capturedGroup = result.stones.map(cell => ({ ...cell }));
         const groupId = groups.length + 1;
