@@ -1,5 +1,5 @@
 import { BgmController } from '../audio/bgm';
-import { CELL_SIZE, COLS, GRID_MARGIN } from '../game/constants';
+import { CELL_SIZE, COLS, GRID_MARGIN, ROWS } from '../game/constants';
 import { GameEngine } from '../game/engine';
 import type { CaptureState, GameSessionState, LastResultSummary } from '../game/state/session';
 import { SessionState, loadHighScore, saveHighScore } from '../game/state/session';
@@ -9,6 +9,7 @@ const DAILY_PLACEHOLDER_COUNT = 5;
 const WEEKLY_PLACEHOLDER_COUNT = 1;
 const MONTHLY_PLACEHOLDER_COUNT = 1;
 const BOARD_PIXEL_WIDTH = (COLS - 1) * CELL_SIZE + GRID_MARGIN * 2;
+const BOARD_PIXEL_HEIGHT = (ROWS - 1) * CELL_SIZE + GRID_MARGIN * 2;
 
 
 export class AppController {
@@ -241,8 +242,13 @@ export class AppController {
     const innerWidth = Math.max(0, panel.clientWidth - paddingLeft - paddingRight);
 
     const widthScale = innerWidth > 0 ? innerWidth / BOARD_PIXEL_WIDTH : 1;
-    // Option B: no upper cap – allow the board to fill the width on mobile.
-    const rawScale = widthScale;
+
+    // Calculate height scale based on 65vh limit (matching CSS)
+    const availableHeight = window.innerHeight * 0.65;
+    const heightScale = availableHeight > 0 ? availableHeight / BOARD_PIXEL_HEIGHT : 1;
+
+    // Use the smaller scale to ensure it fits in both dimensions while maintaining aspect ratio
+    const rawScale = Math.min(widthScale, heightScale);
     return Number.isFinite(rawScale) && rawScale > 0 ? rawScale : 1;
   }
 
