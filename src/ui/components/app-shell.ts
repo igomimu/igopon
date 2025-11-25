@@ -104,7 +104,7 @@ const template = `
             <span id="bestScore" class="overlay-value">0</span>
           </div>
           <p id="overlayDetail" class="overlay-detail">GO! を押してゲームを開始してください。</p>
-          <button id="restartBtn" type="button">もう一度プレイ</button>
+          <button id="restartBtn" type="button">GO!</button>
         </div>
       </section>
       <section class="mobile-controls" aria-label="タッチ操作">
