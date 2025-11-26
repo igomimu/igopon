@@ -29,6 +29,7 @@ export class AppController {
   #boardResizeObserver: ResizeObserver | null = null;
   #pendingScaleFrame: number | null = null;
   #bgmUnlockHandlerAttached = false;
+  #deferredInstallPrompt: any = null;
 
   constructor(root: HTMLElement) {
     this.#shell = mountAppShell(root);
@@ -54,6 +55,8 @@ export class AppController {
     this.#setStatus('いごぽん へようこそ。GO! で対局開始。');
     this.#setupBoardScaling();
     this.#setupInitialBgmUnlock();
+    this.#loadPlayerName();
+    this.#setupInstallPrompt();
   }
 
   #handleStateChange(state: GameSessionState): void {
@@ -136,6 +139,7 @@ export class AppController {
 
     this.#shell.playerNameInput.addEventListener('change', () => {
       const name = this.#shell.playerNameInput.value.trim();
+      this.#savePlayerName(name);
       this.#setStatus(`${name || 'プレイヤー'} さん、準備OKです。`, 2000);
     });
 
@@ -156,6 +160,50 @@ export class AppController {
     document.addEventListener('visibilitychange', this.#handleVisibilityChange);
     window.addEventListener('appinstalled', () => {
       this.#setStatus('アプリがインストールされました！ホーム画面をご確認ください。', 5000);
+      this.#shell.installBtn.classList.add('hidden');
+      this.#deferredInstallPrompt = null;
+    });
+  }
+
+  #loadPlayerName(): void {
+    try {
+      const name = localStorage.getItem('igopon_player_name');
+      if (name) {
+        this.#shell.playerNameInput.value = name;
+      }
+    } catch (e) {
+      console.warn('Failed to load player name:', e);
+    }
+  }
+
+  #savePlayerName(name: string): void {
+    try {
+      if (name) {
+        localStorage.setItem('igopon_player_name', name);
+      } else {
+        localStorage.removeItem('igopon_player_name');
+      }
+    } catch (e) {
+      console.warn('Failed to save player name:', e);
+    }
+  }
+
+  #setupInstallPrompt(): void {
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      this.#deferredInstallPrompt = e;
+      this.#shell.installBtn.classList.remove('hidden');
+    });
+
+    this.#shell.installBtn.addEventListener('click', async () => {
+      if (!this.#deferredInstallPrompt) {
+        return;
+      }
+      this.#deferredInstallPrompt.prompt();
+      const { outcome } = await this.#deferredInstallPrompt.userChoice;
+      console.log(`User response to the install prompt: ${outcome}`);
+      this.#deferredInstallPrompt = null;
+      this.#shell.installBtn.classList.add('hidden');
     });
   }
 

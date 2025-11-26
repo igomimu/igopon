@@ -47,6 +47,7 @@ export interface AppShellRefs {
   nextMobile: HTMLCanvasElement;
   startBtn: HTMLButtonElement;
   headerStartBtn: HTMLButtonElement;
+  installBtn: HTMLButtonElement;
   bgmToggleBtn: HTMLButtonElement;
   bgmStatus: HTMLParagraphElement;
   statusMessage: HTMLDivElement;
@@ -68,6 +69,9 @@ const template = `
     <div class="header-actions">
       <button id="bgmToggleBtn" type="button" class="header-bgm-btn toggle-button" aria-pressed="true">
         BGM オン
+      </button>
+      <button id="installBtn" type="button" class="header-install-btn hidden" aria-label="アプリをインストール">
+        インストール
       </button>
       <div id="headerScore" class="header-score" aria-live="polite" aria-atomic="true">
         <span class="header-score-label">スコア</span>
@@ -240,6 +244,7 @@ export function mountAppShell(target: HTMLElement): AppShellRefs {
     nextMobile: requireElement(target, '#nextPieceMobile'),
     startBtn: requireElement(target, '#startBtn'),
     headerStartBtn: requireElement(target, '#headerStartBtn'),
+    installBtn: requireElement(target, '#installBtn'),
     bgmToggleBtn: requireElement(target, '#bgmToggleBtn'),
     bgmStatus: requireElement(target, '#bgmStatus'),
     statusMessage: requireElement(target, '#statusMessage'),
