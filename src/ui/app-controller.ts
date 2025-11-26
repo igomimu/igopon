@@ -192,7 +192,11 @@ export class AppController {
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
       this.#deferredInstallPrompt = e;
-      this.#shell.installBtn.classList.remove('hidden');
+      
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      if (isMobile) {
+        this.#shell.installBtn.classList.remove('hidden');
+      }
     });
 
     this.#shell.installBtn.addEventListener('click', async () => {

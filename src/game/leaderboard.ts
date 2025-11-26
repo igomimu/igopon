@@ -64,7 +64,19 @@ async function fetchLeaderboardEntries(params: LeaderboardParams): Promise<Leade
         }
 
         const payload = await response.json();
-        return Array.isArray(payload.entries) ? payload.entries : [];
+        console.log('[Leaderboard] Raw payload:', payload);
+        const rawEntries = Array.isArray(payload.entries) ? payload.entries : [];
+
+        return rawEntries.map((entry: any) => {
+            console.log('[Leaderboard] Processing entry:', entry);
+            const name = entry.player || entry.name || entry.playerName || '名無し';
+            return {
+                name: name,
+                score: Number(entry.score) || 0,
+                timestamp: entry.timestamp || new Date().toISOString(),
+                rank: entry.rank
+            };
+        });
     } finally {
         clearTimeout(timeoutId);
     }
