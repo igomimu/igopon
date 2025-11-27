@@ -44,7 +44,7 @@ export class SeController {
 
     #play(filename: string): void {
         try {
-            const audio = new Audio(withBase(`/audio/se/${filename}`));
+            const audio = new Audio(withBase(`/audio/se/${filename}?v=${Date.now()}`));
             audio.volume = 0.6; // Adjust volume as needed
             audio.play().catch(e => {
                 // Ignore autoplay errors or similar
