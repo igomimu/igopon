@@ -55,6 +55,8 @@ export interface GameEngineOptions {
   onStateChange: (state: GameSessionState) => void;
   onStatus: (message: string, duration?: number) => void;
   onGameOver: (summary: LastResultSummary & { captures: CaptureState; chain: number }) => void;
+  onPlayStone?: () => void;
+  onCapture?: (count: number) => void;
   onDangerChange?: (danger: boolean) => void;
 }
 
@@ -762,6 +764,7 @@ export class GameEngine {
     }
 
     this.#currentPiece = null;
+    this.#options.onPlayStone?.();
     applyGravity(this.#board, this.#locked);
 
     this.#resolveCapturesWithEffects({ placedEyeFrame });
@@ -821,6 +824,7 @@ export class GameEngine {
       this.#spawnCaptureEffects(result.removedStones);
       this.#spawnScorePopup(pointsEarned, result.removedStones);
       this.#setStatus(`${result.totalRemoved} 個捕獲。チェインx${this.#chain}！`);
+      this.#options.onCapture?.(result.totalRemoved);
     } else {
       this.#chain = 0;
       this.#setStatus('石を配置。捕獲なし。');

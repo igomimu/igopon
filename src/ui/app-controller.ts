@@ -1,4 +1,5 @@
 import { BgmController } from '../audio/bgm';
+import { SeController } from '../audio/se';
 import { CELL_SIZE, COLS, GRID_MARGIN, ROWS } from '../game/constants';
 import { GameEngine } from '../game/engine';
 import type { CaptureState, GameSessionState, LastResultSummary } from '../game/state/session';
@@ -22,6 +23,7 @@ export class AppController {
   #shell: AppShellRefs;
   #session = new SessionState();
   #bgm: BgmController;
+  #se: SeController;
   #engine: GameEngine;
   #highScore = loadHighScore();
   #statusTimer: number | null = null;
@@ -34,13 +36,16 @@ export class AppController {
   constructor(root: HTMLElement) {
     this.#shell = mountAppShell(root);
     this.#bgm = new BgmController(this.#shell.bgmAudio);
+    this.#se = new SeController();
     this.#engine = new GameEngine({
       boardCanvas: this.#shell.board,
       nextDesktopCanvas: this.#shell.nextDesktop,
       nextMobileCanvas: this.#shell.nextMobile,
       onStateChange: state => this.#handleStateChange(state),
       onStatus: (message, duration) => this.#setStatus(message, duration),
-      onGameOver: summary => this.#handleGameOver(summary)
+      onGameOver: summary => this.#handleGameOver(summary),
+      onPlayStone: () => this.#se.playStone(),
+      onCapture: (count) => this.#se.playCapture(count)
     });
 
     this.#session.subscribe(state => {
@@ -192,7 +197,7 @@ export class AppController {
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
       this.#deferredInstallPrompt = e;
-      
+
       const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
       if (isMobile) {
         this.#shell.installBtn.classList.remove('hidden');
