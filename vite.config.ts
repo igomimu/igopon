@@ -7,12 +7,16 @@ export default defineConfig({
   plugins: [
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
+      includeAssets: ['favicon.png', 'apple-touch-icon.png', 'maskable-icon-512x512.png'],
       manifest: {
         name: 'いごぽん',
         short_name: 'いごぽん',
         description: '次世代の囲碁落ち物パズル',
         theme_color: '#ffffff',
+        background_color: '#ffffff',
+        display: 'standalone',
+        start_url: '.',
+        orientation: 'portrait',
         icons: [
           {
             src: 'pwa-192x192.png',
