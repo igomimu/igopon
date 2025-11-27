@@ -21,7 +21,7 @@ export interface GameSessionState {
   lastResult: LastResultSummary | null;
 }
 
-export const HIGH_SCORE_KEY = 'igopon2.highScore';
+export const HIGH_SCORE_KEY = 'igopon.highScore';
 
 function createDefaultCaptures(): CaptureState {
   return { black: 0, white: 0 };
