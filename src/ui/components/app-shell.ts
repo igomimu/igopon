@@ -177,6 +177,7 @@ const template = `
             <li>P: 一時停止 / 再開</li>
           </ul>
           <p>黒石は攻め、白石は守り。5行連続で捕獲するとレベルが上がり、落下速度が速くなります。</p>
+          <p class="app-version">v${__APP_VERSION__}</p>
         </section>
       </aside>
     </main>
