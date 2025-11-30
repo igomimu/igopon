@@ -1009,7 +1009,7 @@ export class GameEngine {
     }
     ctx.strokeStyle = GRID_BORDER_COLOR;
     ctx.lineWidth = 1.4;
-    ctx.strokeRect(GRID_MARGIN + 0.5, GRID_MARGIN + 0.5, gridWidth - 1, gridHeight - 1);
+    ctx.strokeRect(GRID_MARGIN + 0.5, GRID_MARGIN + 0.5, gridWidth, gridHeight);
     ctx.restore();
   }
 
