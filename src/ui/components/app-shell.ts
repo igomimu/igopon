@@ -40,12 +40,25 @@ export interface OverlayElements {
   restartBtn: HTMLButtonElement;
 }
 
+export interface FeedbackElements {
+  root: HTMLDivElement;
+  textarea: HTMLTextAreaElement;
+  submitBtn: HTMLButtonElement;
+  closeBtn: HTMLButtonElement;
+  quickSubmitBtn: HTMLButtonElement;
+  commentToggleBtn: HTMLButtonElement;
+  commentSection: HTMLDivElement;
+  difficultyOptions: NodeListOf<HTMLInputElement>;
+  funOptions: NodeListOf<HTMLInputElement>;
+}
+
 export interface AppShellRefs {
   board: HTMLCanvasElement;
   boardPanel: HTMLElement;
   nextDesktop: HTMLCanvasElement;
   nextMobile: HTMLCanvasElement;
   startBtn: HTMLButtonElement;
+  feedbackBtn: HTMLButtonElement;
   headerStartBtn: HTMLButtonElement;
   installBtn: HTMLButtonElement;
   bgmToggleBtn: HTMLButtonElement;
@@ -56,6 +69,7 @@ export interface AppShellRefs {
   mobileControls: MobileControls;
   stats: StatElements;
   overlay: OverlayElements;
+  feedback: FeedbackElements;
   bgmAudio: HTMLAudioElement;
   mobileControlsRoot: HTMLElement;
 }
@@ -110,6 +124,41 @@ const template = `
           <p id="overlayDetail" class="overlay-detail">GO! を押してゲームを開始してください。</p>
           <button id="restartBtn" type="button">GO!</button>
         </div>
+        <div id="feedbackModal" class="overlay hidden" role="dialog" aria-modal="true" aria-label="フィードバック">
+          <h2>フィードバック</h2>
+          
+          <div class="feedback-section">
+            <p class="feedback-label">難易度はどうでしたか？</p>
+            <div class="rating-group" id="difficultyRating">
+              <label><input type="radio" name="difficulty" value="簡単"><span>簡単</span></label>
+              <label><input type="radio" name="difficulty" value="普通" checked><span>普通</span></label>
+              <label><input type="radio" name="difficulty" value="難しい"><span>難しい</span></label>
+            </div>
+          </div>
+
+          <div class="feedback-section">
+            <p class="feedback-label">面白かったですか？</p>
+            <div class="rating-group" id="funRating">
+              <label><input type="radio" name="fun" value="いまいち"><span>いまいち</span></label>
+              <label><input type="radio" name="fun" value="普通" checked><span>普通</span></label>
+              <label><input type="radio" name="fun" value="最高!"><span>最高!</span></label>
+            </div>
+          </div>
+
+          <div class="feedback-actions main-actions">
+            <button id="quickSubmitBtn" type="button">そのまま送る</button>
+            <button id="commentToggleBtn" type="button" class="secondary">ひと言コメント</button>
+          </div>
+
+          <div id="feedbackCommentSection" class="feedback-comment-section hidden">
+            <textarea id="feedbackText" class="feedback-textarea" placeholder="ご意見・ご感想をお聞かせください..." rows="3"></textarea>
+            <div class="feedback-actions">
+              <button id="feedbackSubmitBtn" type="button">送信</button>
+            </div>
+          </div>
+
+          <button id="feedbackCloseBtn" type="button" class="close-icon" aria-label="閉じる">×</button>
+        </div>
       </section>
       <section class="mobile-controls" aria-label="タッチ操作">
         <div class="mobile-grid">
@@ -161,6 +210,7 @@ const template = `
         </section>
         <section class="control-panel">
           <button id="startBtn" type="button">スタート</button>
+          <button id="feedbackBtn" type="button" class="secondary">フィードバック</button>
           <div class="audio-controls">
             <p id="bgmStatus" class="bgm-status">操作後にBGMを有効化できます。</p>
           </div>
@@ -231,6 +281,18 @@ export function mountAppShell(target: HTMLElement): AppShellRefs {
     restartBtn: requireElement(target, '#restartBtn')
   };
 
+  const feedback: FeedbackElements = {
+    root: requireElement(target, '#feedbackModal'),
+    textarea: requireElement(target, '#feedbackText'),
+    submitBtn: requireElement(target, '#feedbackSubmitBtn'),
+    closeBtn: requireElement(target, '#feedbackCloseBtn'),
+    quickSubmitBtn: requireElement(target, '#quickSubmitBtn'),
+    commentToggleBtn: requireElement(target, '#commentToggleBtn'),
+    commentSection: requireElement(target, '#feedbackCommentSection'),
+    difficultyOptions: target.querySelectorAll('input[name="difficulty"]'),
+    funOptions: target.querySelectorAll('input[name="fun"]')
+  };
+
   const mobileControls: MobileControls = {
     hardDrop: requireElement(target, '#mobileHardDropBtn'),
     left: requireElement(target, '#mobileLeftBtn'),
@@ -244,6 +306,7 @@ export function mountAppShell(target: HTMLElement): AppShellRefs {
     nextDesktop: requireElement(target, '#nextPiece'),
     nextMobile: requireElement(target, '#nextPieceMobile'),
     startBtn: requireElement(target, '#startBtn'),
+    feedbackBtn: requireElement(target, '#feedbackBtn'),
     headerStartBtn: requireElement(target, '#headerStartBtn'),
     installBtn: requireElement(target, '#installBtn'),
     bgmToggleBtn: requireElement(target, '#bgmToggleBtn'),
@@ -254,6 +317,7 @@ export function mountAppShell(target: HTMLElement): AppShellRefs {
     mobileControls,
     stats,
     overlay,
+    feedback,
     bgmAudio: requireElement(target, '#bgmAudio'),
     mobileControlsRoot: requireElement(target, '.mobile-controls')
   };

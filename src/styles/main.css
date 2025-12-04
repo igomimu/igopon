@@ -784,3 +784,156 @@ button:not(:disabled):hover {
 .sidebar section+section {
     margin-top: 0.8rem;
 }
+
+/* Feedback UI */
+.feedback-section {
+    margin-bottom: 1.2rem;
+    text-align: center;
+}
+
+.feedback-label {
+    margin: 0 0 0.5rem;
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.rating-group {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    background: rgba(0, 0, 0, 0.2);
+    padding: 0.25rem;
+    border-radius: 999px;
+    display: inline-flex;
+}
+
+.rating-group label {
+    cursor: pointer;
+}
+
+.rating-group input {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.rating-group span {
+    display: block;
+    padding: 0.4rem 0.8rem;
+    border-radius: 999px;
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.7);
+    transition: all 0.2s ease;
+}
+
+.rating-group input:checked+span {
+    background: var(--accent);
+    color: #fff;
+    font-weight: 600;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.rating-group input:focus-visible+span {
+    outline: 2px solid #fff;
+    outline-offset: 2px;
+}
+
+.feedback-comment-section {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.feedback-textarea {
+    width: 100%;
+    max-width: 320px;
+    padding: 0.8rem;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.3);
+    color: #fff;
+    font-size: 1rem;
+    font-family: inherit;
+    resize: vertical;
+    margin-bottom: 1rem;
+}
+
+.feedback-textarea::placeholder {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.feedback-textarea:focus {
+    outline: 2px solid var(--accent);
+    background: rgba(0, 0, 0, 0.4);
+}
+
+.feedback-actions {
+    display: flex;
+    gap: 0.8rem;
+    justify-content: center;
+    width: 100%;
+}
+
+.feedback-actions.main-actions {
+    flex-wrap: wrap;
+}
+
+button.secondary {
+    background: rgba(54, 90, 46, 0.15);
+    border: 1px solid rgba(54, 90, 46, 0.4);
+    color: var(--text-dark);
+}
+
+.overlay button.secondary {
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: #fff;
+}
+
+button.secondary:not(:disabled):hover {
+    background: rgba(54, 90, 46, 0.25);
+}
+
+.overlay button.secondary:not(:disabled):hover {
+    background: rgba(255, 255, 255, 0.25);
+}
+
+.close-icon {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 1.5rem;
+    line-height: 1;
+    border-radius: 50%;
+}
+
+.close-icon:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+}

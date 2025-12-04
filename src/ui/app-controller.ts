@@ -168,6 +168,86 @@ export class AppController {
       this.#shell.installBtn.classList.add('hidden');
       this.#deferredInstallPrompt = null;
     });
+
+    // Feedback UI Handlers
+    this.#shell.feedbackBtn.addEventListener('click', () => {
+      if (this.#session.snapshot.active && !this.#session.snapshot.paused) {
+        this.#engine.pause();
+      }
+      this.#resetFeedbackForm();
+      this.#shell.feedback.root.classList.remove('hidden');
+    });
+
+    this.#shell.feedback.closeBtn.addEventListener('click', () => {
+      this.#shell.feedback.root.classList.add('hidden');
+    });
+
+    this.#shell.feedback.commentToggleBtn.addEventListener('click', () => {
+      this.#shell.feedback.commentSection.classList.remove('hidden');
+      this.#shell.feedback.textarea.focus();
+      this.#shell.feedback.commentToggleBtn.classList.add('hidden');
+    });
+
+    this.#shell.feedback.quickSubmitBtn.addEventListener('click', () => {
+      this.#submitFeedback(false);
+    });
+
+    this.#shell.feedback.submitBtn.addEventListener('click', () => {
+      this.#submitFeedback(true);
+    });
+  }
+
+  #resetFeedbackForm(): void {
+    this.#shell.feedback.textarea.value = '';
+    this.#shell.feedback.commentSection.classList.add('hidden');
+    this.#shell.feedback.commentToggleBtn.classList.remove('hidden');
+
+    // Reset radios to default
+    const setRadio = (options: NodeListOf<HTMLInputElement>, value: string) => {
+      options.forEach(opt => {
+        opt.checked = opt.value === value;
+      });
+    };
+    setRadio(this.#shell.feedback.difficultyOptions, '普通');
+    setRadio(this.#shell.feedback.funOptions, '普通');
+  }
+
+  async #submitFeedback(withComment: boolean): Promise<void> {
+    const getRadioValue = (options: NodeListOf<HTMLInputElement>) => {
+      return Array.from(options).find(opt => opt.checked)?.value || '';
+    };
+
+    const difficulty = getRadioValue(this.#shell.feedback.difficultyOptions);
+    const fun = getRadioValue(this.#shell.feedback.funOptions);
+    const comment = withComment ? this.#shell.feedback.textarea.value.trim() : '';
+
+    // TODO: Replace with actual Google Form ID and Entry IDs provided by the user
+    // FORM_ID: 1FAIpQLSeoLdCMP7RNF0Y_kue37_gEM7tirCgWKkVoAxVL0N9pnO8sDQ
+    const GOOGLE_FORM_ID = '1FAIpQLSeoLdCMP7RNF0Y_kue37_gEM7tirCgWKkVoAxVL0N9pnO8sDQ';
+    const ENTRY_DIFFICULTY = 'entry.2090413209';
+    const ENTRY_FUN = 'entry.1675820000';
+    const ENTRY_COMMENT = 'entry.1338349506';
+
+
+
+    const formData = new FormData();
+    formData.append(ENTRY_DIFFICULTY, difficulty);
+    formData.append(ENTRY_FUN, fun);
+    formData.append(ENTRY_COMMENT, comment);
+
+    try {
+      await fetch(`https://docs.google.com/forms/d/e/${GOOGLE_FORM_ID}/formResponse`, {
+        method: 'POST',
+        mode: 'no-cors',
+        body: formData
+      });
+
+      this.#shell.feedback.root.classList.add('hidden');
+      this.#setStatus('フィードバックありがとうございます！', 4000);
+    } catch (e) {
+      console.error('Failed to submit feedback', e);
+      this.#setStatus('送信に失敗しました。', 4000);
+    }
   }
 
   #loadPlayerName(): void {
