@@ -156,28 +156,9 @@ body {
     min-height: calc(100vh - var(--header-height) - var(--footer-height));
 }
 
-.ad-slot {
-    flex: 1;
-    display: flex;
-    justify-content: center;
-    padding-top: 1.5rem;
-    min-width: 160px;
-    /* Minimum width for a vertical banner */
-    max-width: 300px;
-}
 
-.ad-placeholder {
-    width: 160px;
-    height: 600px;
-    background: rgba(0, 0, 0, 0.05);
-    border: 1px dashed rgba(0, 0, 0, 0.1);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: rgba(0, 0, 0, 0.3);
-    font-size: 0.9rem;
-    border-radius: 4px;
-}
+
+
 
 .layout {
     flex: 0 1 1180px;
@@ -191,11 +172,7 @@ body {
     /* margin: 0 auto; Removed auto margin as flex handles centering */
 }
 
-@media (max-width: 1300px) {
-    .ad-slot {
-        display: none;
-    }
-}
+
 
 .board-panel {
     position: relative;

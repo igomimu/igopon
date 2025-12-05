@@ -106,10 +106,7 @@ const template = `
   </header>
   </header>
   <div class="app-body">
-    <aside class="ad-slot left">
-      <!-- Ad Space Left -->
-      <div class="ad-placeholder">広告スペース</div>
-    </aside>
+
     <main class="layout">
       <section class="board-panel">
         <canvas
@@ -261,10 +258,7 @@ const template = `
         </section>
       </aside>
     </main>
-    <aside class="ad-slot right">
-      <!-- Ad Space Right -->
-      <div class="ad-placeholder">広告スペース</div>
-    </aside>
+
   </div>
   <audio id="bgmAudio" class="sr-only" preload="auto" loop></audio>
 `;
