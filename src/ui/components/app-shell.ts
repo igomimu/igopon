@@ -27,8 +27,6 @@ export interface StatElements {
   blackCaptures: HTMLSpanElement;
   whiteCaptures: HTMLSpanElement;
   pieces: HTMLSpanElement;
-  headerScore: HTMLDivElement;
-  headerScoreValue: HTMLSpanElement;
 }
 
 export interface OverlayElements {
@@ -72,7 +70,6 @@ export interface AppShellRefs {
   headerStartBtn: HTMLButtonElement;
   installBtn: HTMLButtonElement;
   bgmToggleBtn: HTMLButtonElement;
-  bgmStatus: HTMLParagraphElement;
   statusMessage: HTMLDivElement;
   playerNameInput: HTMLInputElement;
   leaderboard: LeaderboardElements;
@@ -98,10 +95,6 @@ const template = `
       <button id="installBtn" type="button" class="header-install-btn hidden" aria-label="アプリをインストール">
         インストール
       </button>
-      <div id="headerScore" class="header-score" aria-live="polite" aria-atomic="true">
-        <span class="header-score-label">スコア</span>
-        <span id="inGameScoreValue" class="header-score-value">0</span>
-      </div>
     </div>
   </header>
   </header>
@@ -109,32 +102,49 @@ const template = `
 
     <main class="layout">
       <aside class="info-column left">
-        <section class="next-panel">
-          <h2>次のグループ</h2>
-          <canvas id="nextPiece" width="150" height="150" aria-label="次のピースプレビュー"></canvas>
-        </section>
-        <section class="stats-panel">
-          <h2>ステータス</h2>
-          <ul class="stat-list">
-            <li>スコア: <span id="scoreValue">0</span></li>
-            <li>レベル: <span id="levelValue">1</span></li>
-            <li>チェイン: <span id="chainValue">0</span></li>
-            <li>黒の捕獲数: <span id="blackCaptureValue">0</span></li>
-            <li>白の捕獲数: <span id="whiteCaptureValue">0</span></li>
-            <li>配置したピース: <span id="piecesValue">0</span></li>
+        <section class="primary-stats-panel">
+          <div class="primary-stat-item">
+            <span class="stat-label">SCORE</span>
+            <span id="scoreValue" class="stat-value-large">0</span>
+          </div>
+          <div class="primary-stat-item">
+            <span class="stat-label">LEVEL</span>
+            <span id="levelValue" class="stat-value-large">1</span>
+          </div>
+          <!-- Hidden secondary stats for internal logic updates, or move them to a detail view if needed. 
+               For now, keeping them in DOM but hidden or smaller if user didn't ask to remove them completely.
+               Actually, the user listed "Current Score / Level" as "Always Visible". 
+               "Chain", "Captures" might be less important but "Captures" is part of the game rules (5 lines to level up).
+               I will keep them in a "sub-stats" list below or just keep them in the DOM for now.
+               Let's keep the existing IDs so logic doesn't break.
+          -->
+          <ul class="stat-list hidden-stats" style="display:none;">
+             <li>チェイン: <span id="chainValue">0</span></li>
+             <li>黒の捕獲数: <span id="blackCaptureValue">0</span></li>
+             <li>白の捕獲数: <span id="whiteCaptureValue">0</span></li>
+             <li>配置したピース: <span id="piecesValue">0</span></li>
           </ul>
         </section>
+        <section class="next-panel large-preview">
+          <h2>次のグループ</h2>
+          <div class="next-piece-container">
+             <canvas id="nextPiece" width="150" height="150" aria-label="次のピースプレビュー"></canvas>
+          </div>
+        </section>
         <section class="control-panel">
-          <button id="startBtn" type="button">スタート</button>
-          <button id="feedbackBtn" type="button" class="secondary">フィードバック</button>
+          <div class="sub-controls">
+             <button id="feedbackBtn" type="button" class="secondary">フィードバック</button>
+          </div>
           <div class="audio-controls">
-            <p id="bgmStatus" class="bgm-status">操作後にBGMを有効化できます。</p>
           </div>
           <div id="statusMessage" class="status-message" aria-live="polite"></div>
         </section>
       </aside>
 
       <section class="board-panel">
+        <div class="board-header-controls">
+           <button id="startBtn" type="button" class="primary-action-btn board-start-btn">スタート</button>
+        </div>
         <canvas
           id="board"
           width="${BOARD_CANVAS_WIDTH}"
@@ -220,6 +230,19 @@ const template = `
           <label for="playerNameInput" class="player-name-label">名前</label>
           <input type="text" id="playerNameInput" maxlength="20" placeholder="プレイヤー名" autocomplete="name">
         </section>
+        <section class="help-panel">
+          <h2>遊び方</h2>
+          <p>石を落として連結させ、囲んだ石を捕獲すると得点が入ります。</p>
+          <ul>
+            <li>&#x2190; / &#x2192;: 左右に移動</li>
+            <li>&#x2191;: 回転</li>
+            <li>&#x2193;: ソフトドロップ</li>
+            <li>スペース: ハードドロップ</li>
+            <li>P: 一時停止 / 再開</li>
+          </ul>
+          <p>5行連続で捕獲するとレベルが上がり、落下速度が速くなります。</p>
+          <p class="app-version">v${__APP_VERSION__}</p>
+        </section>
         <section class="leaderboard-panel" aria-live="polite">
           <h2>ランキング</h2>
           <div class="leaderboard-group">
@@ -238,19 +261,6 @@ const template = `
             <p id="monthlyLeaderboardEmpty" class="leaderboard-empty">まだスコアがありません。</p>
             <ol id="monthlyLeaderboard" class="leaderboard-list"></ol>
           </div>
-        </section>
-        <section class="help-panel">
-          <h2>遊び方</h2>
-          <p>石を落として連結させ、囲んだ石を捕獲すると得点が入ります。</p>
-          <ul>
-            <li>&#x2190; / &#x2192;: 左右に移動</li>
-            <li>&#x2191;: 回転</li>
-            <li>&#x2193;: ソフトドロップ</li>
-            <li>スペース: ハードドロップ</li>
-            <li>P: 一時停止 / 再開</li>
-          </ul>
-          <p>5行連続で捕獲するとレベルが上がり、落下速度が速くなります。</p>
-          <p class="app-version">v${__APP_VERSION__}</p>
         </section>
       </aside>
     </main>
@@ -287,9 +297,7 @@ export function mountAppShell(target: HTMLElement): AppShellRefs {
     chain: requireElement(target, '#chainValue'),
     blackCaptures: requireElement(target, '#blackCaptureValue'),
     whiteCaptures: requireElement(target, '#whiteCaptureValue'),
-    pieces: requireElement(target, '#piecesValue'),
-    headerScore: requireElement(target, '#headerScore'),
-    headerScoreValue: requireElement(target, '#inGameScoreValue')
+    pieces: requireElement(target, '#piecesValue')
   };
 
   const overlay: OverlayElements = {
@@ -340,7 +348,6 @@ export function mountAppShell(target: HTMLElement): AppShellRefs {
     headerStartBtn: requireElement(target, '#headerStartBtn'),
     installBtn: requireElement(target, '#installBtn'),
     bgmToggleBtn: requireElement(target, '#bgmToggleBtn'),
-    bgmStatus: requireElement(target, '#bgmStatus'),
     statusMessage: requireElement(target, '#statusMessage'),
     playerNameInput: requireElement(target, '#playerNameInput'),
     leaderboard,

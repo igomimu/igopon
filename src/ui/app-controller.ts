@@ -110,6 +110,17 @@ export class AppController {
     }
   }
 
+  #updateLayoutState(state: GameSessionState): void {
+    const rightColumn = document.querySelector('.info-column.right');
+    if (rightColumn) {
+      if (state.active) {
+        rightColumn.classList.add('collapsed');
+      } else {
+        rightColumn.classList.remove('collapsed');
+      }
+    }
+  }
+
   #syncBgmWithState(state: GameSessionState): void {
     if (!state.active) {
       this.#bgm.setRole('lobby');
@@ -485,13 +496,7 @@ export class AppController {
   #renderStats(state: GameSessionState): void {
     const format = (value: number) => value.toLocaleString('ja-JP');
     this.#shell.stats.score.textContent = format(state.score);
-    this.#shell.stats.headerScoreValue.textContent = format(state.score);
-    this.#shell.stats.level.textContent = String(state.level);
-    this.#shell.stats.chain.textContent = String(state.chain);
-    this.#shell.stats.blackCaptures.textContent = format(state.captures.black);
-    this.#shell.stats.whiteCaptures.textContent = format(state.captures.white);
     this.#shell.stats.pieces.textContent = format(state.piecesPlaced);
-    this.#shell.stats.headerScore.classList.toggle('inactive', !state.active);
   }
 
   #renderOverlay(state: GameSessionState): void {
@@ -527,11 +532,8 @@ export class AppController {
     const enabled = this.#bgm.preference;
     this.#shell.bgmToggleBtn.setAttribute('aria-pressed', enabled ? 'true' : 'false');
     this.#shell.bgmToggleBtn.textContent = enabled ? 'BGM オン' : 'BGM オフ';
-    const status = this.#bgm.getStatusMessage({
-      paused: this.#session.snapshot.paused,
-      hidden: document.hidden
-    });
-    this.#shell.bgmStatus.textContent = status;
+    this.#shell.bgmToggleBtn.setAttribute('aria-pressed', enabled ? 'true' : 'false');
+    this.#shell.bgmToggleBtn.textContent = enabled ? 'BGM オン' : 'BGM オフ';
   }
 
   async #initializeLeaderboards(): Promise<void> {
