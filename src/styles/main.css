@@ -161,14 +161,14 @@ body {
 
 
 .layout {
-    flex: 0 1 1180px;
-    /* Allow shrinking, base size 1180px */
+    flex: 0 1 1400px;
+    /* Allow shrinking, base size 1400px */
     display: grid;
     grid-template-columns: 1fr;
     padding: 1.5rem;
     gap: 1.5rem;
     width: 100%;
-    max-width: 1180px;
+    max-width: 1400px;
     /* margin: 0 auto; Removed auto margin as flex handles centering */
 }
 
@@ -247,12 +247,13 @@ body {
     display: none;
 }
 
-.sidebar {
+.info-column {
     display: grid;
     gap: 1rem;
+    align-content: start;
 }
 
-.sidebar section {
+.info-column section {
     background: rgba(248, 242, 215, 0.94);
     padding: 1rem;
     border-radius: 14px;
@@ -260,7 +261,7 @@ body {
     box-shadow: 0 12px 26px rgba(46, 36, 20, 0.18);
 }
 
-.sidebar h2 {
+.info-column h2 {
     margin-top: 0;
     font-size: 1.1rem;
     color: var(--text-muted);
@@ -354,9 +355,9 @@ button:not(:disabled):hover {
     margin-bottom: 0.4rem;
 }
 
-@media (min-width: 960px) {
+@media (min-width: 1100px) {
     .layout {
-        grid-template-columns: auto 320px;
+        grid-template-columns: 300px auto 300px;
         align-items: flex-start;
         justify-content: center;
         column-gap: 2rem;
@@ -364,10 +365,15 @@ button:not(:disabled):hover {
 
     .board-panel {
         justify-self: center;
+        order: 2;
     }
 
-    .sidebar {
-        width: 100%;
+    .info-column.left {
+        order: 1;
+    }
+
+    .info-column.right {
+        order: 3;
     }
 }
 
@@ -516,7 +522,7 @@ button:not(:disabled):hover {
         padding: 0.65rem 0;
     }
 
-    .sidebar {
+    .info-column {
         display: flex;
         flex-direction: column;
         gap: 0.9rem;
@@ -758,7 +764,7 @@ button:not(:disabled):hover {
     content: '\1f3c6';
 }
 
-.sidebar section+section {
+.info-column section+section {
     margin-top: 0.8rem;
 }
 
@@ -914,6 +920,7 @@ button.secondary:not(:disabled):hover {
     background: rgba(255, 255, 255, 0.1);
     color: #fff;
 }
+
 /* Tutorial UI */
 .tutorial-content {
     display: flex;
@@ -942,6 +949,13 @@ button.secondary:not(:disabled):hover {
 }
 
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }

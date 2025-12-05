@@ -108,6 +108,32 @@ const template = `
   <div class="app-body">
 
     <main class="layout">
+      <aside class="info-column left">
+        <section class="next-panel">
+          <h2>次のグループ</h2>
+          <canvas id="nextPiece" width="150" height="150" aria-label="次のピースプレビュー"></canvas>
+        </section>
+        <section class="stats-panel">
+          <h2>ステータス</h2>
+          <ul class="stat-list">
+            <li>スコア: <span id="scoreValue">0</span></li>
+            <li>レベル: <span id="levelValue">1</span></li>
+            <li>チェイン: <span id="chainValue">0</span></li>
+            <li>黒の捕獲数: <span id="blackCaptureValue">0</span></li>
+            <li>白の捕獲数: <span id="whiteCaptureValue">0</span></li>
+            <li>配置したピース: <span id="piecesValue">0</span></li>
+          </ul>
+        </section>
+        <section class="control-panel">
+          <button id="startBtn" type="button">スタート</button>
+          <button id="feedbackBtn" type="button" class="secondary">フィードバック</button>
+          <div class="audio-controls">
+            <p id="bgmStatus" class="bgm-status">操作後にBGMを有効化できます。</p>
+          </div>
+          <div id="statusMessage" class="status-message" aria-live="polite"></div>
+        </section>
+      </aside>
+
       <section class="board-panel">
         <canvas
           id="board"
@@ -187,19 +213,8 @@ const template = `
           <button id="feedbackCloseBtn" type="button" class="close-icon" aria-label="閉じる">×</button>
         </div>
       </section>
-      <section class="mobile-controls" aria-label="タッチ操作">
-        <div class="mobile-grid">
-          <button id="mobileHardDropBtn" type="button" class="mobile-btn" aria-label="ハードドロップ">&#x21D3;</button>
-          <button id="mobileLeftBtn" type="button" class="mobile-btn" aria-label="左に移動">&#x2190;</button>
-          <button id="mobileRightBtn" type="button" class="mobile-btn" aria-label="右に移動">&#x2192;</button>
-          <button id="mobileRotateBtn" type="button" class="mobile-btn" aria-label="回転">&#x21BB;</button>
-        </div>
-      </section>
-      <aside class="sidebar">
-        <section class="next-panel">
-          <h2>次のグループ</h2>
-          <canvas id="nextPiece" width="150" height="150" aria-label="次のピースプレビュー"></canvas>
-        </section>
+
+      <aside class="info-column right">
         <section class="player-panel">
           <h2>プレイヤー</h2>
           <label for="playerNameInput" class="player-name-label">名前</label>
@@ -223,25 +238,6 @@ const template = `
             <p id="monthlyLeaderboardEmpty" class="leaderboard-empty">まだスコアがありません。</p>
             <ol id="monthlyLeaderboard" class="leaderboard-list"></ol>
           </div>
-        </section>
-        <section class="stats-panel">
-          <h2>ステータス</h2>
-          <ul class="stat-list">
-            <li>スコア: <span id="scoreValue">0</span></li>
-            <li>レベル: <span id="levelValue">1</span></li>
-            <li>チェイン: <span id="chainValue">0</span></li>
-            <li>黒の捕獲数: <span id="blackCaptureValue">0</span></li>
-            <li>白の捕獲数: <span id="whiteCaptureValue">0</span></li>
-            <li>配置したピース: <span id="piecesValue">0</span></li>
-          </ul>
-        </section>
-        <section class="control-panel">
-          <button id="startBtn" type="button">スタート</button>
-          <button id="feedbackBtn" type="button" class="secondary">フィードバック</button>
-          <div class="audio-controls">
-            <p id="bgmStatus" class="bgm-status">操作後にBGMを有効化できます。</p>
-          </div>
-          <div id="statusMessage" class="status-message" aria-live="polite"></div>
         </section>
         <section class="help-panel">
           <h2>遊び方</h2>
