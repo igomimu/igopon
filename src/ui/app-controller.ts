@@ -92,6 +92,20 @@ export class AppController {
       .catch(() => {
         this.#setStatus('スコア送信に失敗しました。', 3000);
       });
+
+    // Auto-popup feedback for the first time
+    try {
+      const hasPrompted = localStorage.getItem('igopon_feedback_prompted');
+      if (!hasPrompted) {
+        setTimeout(() => {
+          this.#resetFeedbackForm();
+          this.#shell.feedback.root.classList.remove('hidden');
+          localStorage.setItem('igopon_feedback_prompted', 'true');
+        }, 1500); // Wait a bit for the user to see the game over screen
+      }
+    } catch (e) {
+      console.warn('Failed to access localStorage for feedback prompt:', e);
+    }
   }
 
   #syncBgmWithState(state: GameSessionState): void {
