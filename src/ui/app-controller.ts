@@ -32,6 +32,7 @@ export class AppController {
   #pendingScaleFrame: number | null = null;
   #bgmUnlockHandlerAttached = false;
   #deferredInstallPrompt: any = null;
+  #tutorialStep = 0;
 
   constructor(root: HTMLElement) {
     this.#shell = mountAppShell(root);
@@ -62,6 +63,7 @@ export class AppController {
     this.#setupInitialBgmUnlock();
     this.#loadPlayerName();
     this.#setupInstallPrompt();
+    this.#checkTutorial();
   }
 
   #handleStateChange(state: GameSessionState): void {
@@ -209,6 +211,66 @@ export class AppController {
     this.#shell.feedback.submitBtn.addEventListener('click', () => {
       this.#submitFeedback(true);
     });
+    this.#shell.feedback.submitBtn.addEventListener('click', () => {
+      this.#submitFeedback(true);
+    });
+
+    // Tutorial Handlers
+    this.#shell.tutorial.nextBtn.addEventListener('click', () => {
+      this.#advanceTutorial();
+    });
+    this.#shell.tutorial.skipBtn.addEventListener('click', () => {
+      this.#finishTutorial();
+    });
+  }
+
+  #checkTutorial(): void {
+    try {
+      const seen = localStorage.getItem('igopon_tutorial_seen');
+      if (!seen) {
+        this.#startTutorial();
+      }
+    } catch (e) {
+      console.warn('Failed to access localStorage for tutorial:', e);
+    }
+  }
+
+  #startTutorial(): void {
+    this.#tutorialStep = 1;
+    this.#shell.tutorial.root.classList.remove('hidden');
+    this.#updateTutorialUI();
+  }
+
+  #advanceTutorial(): void {
+    this.#tutorialStep += 1;
+    if (this.#tutorialStep > 3) {
+      this.#finishTutorial();
+      return;
+    }
+    this.#updateTutorialUI();
+  }
+
+  #updateTutorialUI(): void {
+    const { step1, step2, step3, nextBtn } = this.#shell.tutorial;
+    step1.classList.toggle('hidden', this.#tutorialStep !== 1);
+    step2.classList.toggle('hidden', this.#tutorialStep !== 2);
+    step3.classList.toggle('hidden', this.#tutorialStep !== 3);
+
+    if (this.#tutorialStep === 3) {
+      nextBtn.textContent = '始める';
+    } else {
+      nextBtn.textContent = '次へ';
+    }
+  }
+
+  #finishTutorial(): void {
+    this.#shell.tutorial.root.classList.add('hidden');
+    try {
+      localStorage.setItem('igopon_tutorial_seen', 'true');
+    } catch (e) {
+      // ignore
+    }
+    this.#setStatus('チュートリアル完了！ GO! でゲーム開始。', 4000);
   }
 
   #resetFeedbackForm(): void {

@@ -6,6 +6,7 @@ import { version } from './package.json';
 export default defineConfig({
   define: {
     '__APP_VERSION__': JSON.stringify(version),
+    // VITE_ prefixed variables are automatically exposed to import.meta.env
   },
   appType: 'spa',
   base: process.env.VITE_BASE_PATH || '/',

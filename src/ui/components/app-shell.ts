@@ -40,6 +40,16 @@ export interface OverlayElements {
   restartBtn: HTMLButtonElement;
 }
 
+export interface TutorialElements {
+  root: HTMLElement;
+  title: HTMLElement;
+  step1: HTMLElement;
+  step2: HTMLElement;
+  step3: HTMLElement;
+  nextBtn: HTMLButtonElement;
+  skipBtn: HTMLButtonElement;
+}
+
 export interface FeedbackElements {
   root: HTMLDivElement;
   textarea: HTMLTextAreaElement;
@@ -70,6 +80,7 @@ export interface AppShellRefs {
   stats: StatElements;
   overlay: OverlayElements;
   feedback: FeedbackElements;
+  tutorial: TutorialElements;
   bgmAudio: HTMLAudioElement;
   mobileControlsRoot: HTMLElement;
 }
@@ -123,6 +134,25 @@ const template = `
           </div>
           <p id="overlayDetail" class="overlay-detail">GO! を押してゲームを開始してください。</p>
           <button id="restartBtn" type="button">GO!</button>
+        </div>
+        <div id="tutorialOverlay" class="overlay hidden" role="dialog" aria-modal="true" aria-label="チュートリアル">
+          <h2 id="tutorialTitle">遊び方</h2>
+          <div class="tutorial-content">
+            <div id="tutorialStep1" class="tutorial-step">
+              <div class="tutorial-icon">↔️</div>
+              <p>左右キーで移動</p>
+            </div>
+            <div id="tutorialStep2" class="tutorial-step hidden">
+              <div class="tutorial-icon">🔄</div>
+              <p>上キーで回転</p>
+            </div>
+            <div id="tutorialStep3" class="tutorial-step hidden">
+              <div class="tutorial-icon">⚪⚫⚪</div>
+              <p>囲んで捕獲！</p>
+            </div>
+          </div>
+          <button id="tutorialNextBtn" type="button">次へ</button>
+          <button id="tutorialSkipBtn" type="button" class="text-button">スキップ</button>
         </div>
         <div id="feedbackModal" class="overlay hidden" role="dialog" aria-modal="true" aria-label="フィードバック">
           <h2>フィードバック</h2>
@@ -281,6 +311,16 @@ export function mountAppShell(target: HTMLElement): AppShellRefs {
     restartBtn: requireElement(target, '#restartBtn')
   };
 
+  const tutorial = {
+    root: requireElement(target, '#tutorialOverlay'),
+    title: requireElement(target, '#tutorialTitle'),
+    step1: requireElement(target, '#tutorialStep1'),
+    step2: requireElement(target, '#tutorialStep2'),
+    step3: requireElement(target, '#tutorialStep3'),
+    nextBtn: requireElement<HTMLButtonElement>(target, '#tutorialNextBtn'),
+    skipBtn: requireElement<HTMLButtonElement>(target, '#tutorialSkipBtn')
+  };
+
   const feedback: FeedbackElements = {
     root: requireElement(target, '#feedbackModal'),
     textarea: requireElement(target, '#feedbackText'),
@@ -319,6 +359,7 @@ export function mountAppShell(target: HTMLElement): AppShellRefs {
     overlay,
     feedback,
     bgmAudio: requireElement(target, '#bgmAudio'),
-    mobileControlsRoot: requireElement(target, '.mobile-controls')
+    mobileControlsRoot: requireElement(target, '.mobile-controls'),
+    tutorial
   };
 }
