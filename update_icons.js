@@ -7,6 +7,7 @@ const sourcePath = "/home/mimura/projects/igopon/public/maskable-icon-512x512.pn
 const publicDir = "/home/mimura/projects/igopon/public";
 
 const ZOOM_FACTOR = 1.5; // Adjust this to control how much we zoom in
+// const ZOOM_FACTOR = 1.5; // Adjust this to control how much we zoom in
 
 const targets = [
     { name: "pwa-192x192.png", width: 192, height: 192 },
@@ -28,9 +29,18 @@ async function processImages() {
 
         for (const target of targets) {
             const targetPath = path.join(publicDir, target.name);
-            const resized = image.clone().resize({ w: target.width, h: target.height });
-            await resized.write(targetPath);
-            console.log(`Saved ${target.name} (${target.width}x${target.height}) to ${targetPath}`);
+            try {
+                // Straight resize without zoom
+                // const resized = image.clone().resize({ w: target.width, h: target.height });
+                // Jimp resize syntax might be different in newer versions or dependent on jimp version
+                // create new image
+                const resized = image.clone().resize({ w: target.width, h: target.height });
+
+                await resized.write(targetPath);
+                console.log(`Saved ${target.name} (${target.width}x${target.height}) to ${targetPath}`);
+            } catch (err) {
+                console.error(`Error processing ${target.name}:`, err);
+            }
         }
     } catch (error) {
         console.error("An error occurred:", error);
