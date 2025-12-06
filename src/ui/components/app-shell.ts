@@ -131,8 +131,8 @@ const template = `
         </section>
         <section class="control-panel">
           <div class="sub-controls">
-             <button id="feedbackBtn" type="button" class="secondary">フィードバック</button>
              <button id="startBtn" type="button" class="primary-action-btn sidebar-start-btn">スタート</button>
+             <button id="feedbackBtn" type="button" class="secondary">フィードバック</button>
           </div>
           <div class="audio-controls">
           </div>
