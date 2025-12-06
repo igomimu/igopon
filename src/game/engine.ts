@@ -200,8 +200,8 @@ export class GameEngine {
   #nextCtx?: CanvasRenderingContext2D | null;
   #nextMobileCanvas?: HTMLCanvasElement | null;
   #nextMobileCtx?: CanvasRenderingContext2D | null;
-  #previewWidth = 150;
-  #previewHeight = 150;
+  #previewWidth = 75;
+  #previewHeight = 75;
   #mobilePreviewWidth = 0;
   #mobilePreviewHeight = 0;
   #previewMediaQuery: MediaQueryList | null = null;
@@ -405,8 +405,8 @@ export class GameEngine {
     const fallbackIsMobile = typeof window !== 'undefined' ? window.innerWidth <= 900 : false;
     const isMobile = this.#previewMediaQuery ? this.#previewMediaQuery.matches : fallbackIsMobile;
     const scale = isMobile ? 0.5 : 1;
-    const width = Math.max(1, Math.round(150 * scale));
-    const height = Math.max(1, Math.round(150 * scale));
+    const width = Math.max(1, Math.round(75 * scale));
+    const height = Math.max(1, Math.round(75 * scale));
     this.#previewWidth = width;
     this.#previewHeight = height;
     if (this.#nextCanvas && this.#nextCtx) {
