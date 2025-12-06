@@ -72,6 +72,7 @@ export class AppController {
     }
     this.#session.replace(state);
     this.#syncBgmWithState(state);
+    this.#updateLayoutState(state);
   }
 
   #handleGameOver(summary: LastResultSummary & { captures: CaptureState; chain: number }): void {
@@ -149,7 +150,6 @@ export class AppController {
       }
     };
 
-    this.#shell.headerStartBtn.addEventListener('click', handlePrimaryAction);
     this.#shell.startBtn.addEventListener('click', handlePrimaryAction);
     this.#shell.overlay.restartBtn.addEventListener('click', () => this.#engine.start());
 
@@ -523,16 +523,11 @@ export class AppController {
   }
 
   #updatePrimaryAction(state: GameSessionState): void {
-    const label = !state.active ? 'GO!' : state.paused ? '再開' : '一時停止';
-    this.#shell.headerStartBtn.textContent = label;
     this.#shell.startBtn.textContent = state.active ? 'リスタート' : 'スタート';
   }
 
   #updateBgmUI(): void {
     const enabled = this.#bgm.preference;
-    this.#shell.bgmToggleBtn.setAttribute('aria-pressed', enabled ? 'true' : 'false');
-    this.#shell.bgmToggleBtn.textContent = enabled ? 'BGM オン' : 'BGM オフ';
-    this.#shell.bgmToggleBtn.setAttribute('aria-pressed', enabled ? 'true' : 'false');
     this.#shell.bgmToggleBtn.textContent = enabled ? 'BGM オン' : 'BGM オフ';
   }
 
