@@ -612,6 +612,8 @@ button:not(:disabled):hover {
         display: flex;
         flex-direction: column;
         align-items: center;
+        order: -1;
+        /* Make sure Board is FIRST on mobile */
     }
 
     #board {
@@ -647,15 +649,13 @@ button:not(:disabled):hover {
         max-height: 100%;
     }
 
+    /* Hide the desktop next-panel on mobile */
     .next-panel {
-        display: none;
-    }
-
-    .next-panel {
-        order: 0;
+        display: none !important;
     }
 
     .control-panel {
+        /* Keep status message visible, but order it after board */
         order: 1;
     }
 
@@ -1073,6 +1073,7 @@ button.secondary:not(:disabled):hover {
         transform: translateY(0);
     }
 }
+
 /* Responsive Start Buttons */
 .board-header-controls {
     display: flex;
@@ -1089,7 +1090,8 @@ button.secondary:not(:disabled):hover {
 }
 
 #startBtnDesktop {
-    display: none; /* Default hidden on mobile */
+    display: none;
+    /* Default hidden on mobile */
 }
 
 .mobile-only {
@@ -1098,13 +1100,15 @@ button.secondary:not(:disabled):hover {
 
 @media (min-width: 1000px) {
     #startBtnDesktop {
-        display: block; /* Show on Desktop */
+        display: block;
+        /* Show on Desktop */
     }
 
     .mobile-only {
-        display: none !important; /* Hide mobile controls on desktop */
+        display: none !important;
+        /* Hide mobile controls on desktop */
     }
-    
+
     .board-header-controls {
         display: none;
     }
