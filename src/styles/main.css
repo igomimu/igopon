@@ -318,11 +318,10 @@ body {
     background: rgba(0, 0, 0, 0.2);
     /* Darker background */
     border-radius: 50%;
-    padding: 15px;
-    /* More padding */
+    padding: 10px;
+    /* Reduced padding */
     box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.3);
-    transform: scale(1.2);
-    /* Larger preview */
+    /* transform: scale(1.2); Removed scale as requested */
 }
 
 .primary-action-btn {
@@ -334,13 +333,11 @@ body {
 }
 
 .board-header-controls {
-    position: absolute;
-    top: 0;
-    right: -140px;
-    /* Move to the right side of the board */
-    width: auto;
-    height: auto;
-    margin: 0;
+    /* Position inside the panel flow instead of absolute overlapping */
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    margin-bottom: 0.5rem;
     z-index: 10;
 }
 
@@ -477,6 +474,9 @@ button:not(:disabled):hover {
     .board-panel {
         justify-self: center;
         order: 2;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
     }
 
     .info-column.left {
