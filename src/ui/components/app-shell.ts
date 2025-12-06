@@ -67,7 +67,6 @@ export interface AppShellRefs {
   nextMobile: HTMLCanvasElement;
   startBtn: HTMLButtonElement;
   feedbackBtn: HTMLButtonElement;
-  headerStartBtn: HTMLButtonElement;
   installBtn: HTMLButtonElement;
   bgmToggleBtn: HTMLButtonElement;
   statusMessage: HTMLDivElement;
@@ -86,7 +85,6 @@ const template = `
   <header class="app-header">
     <div class="header-title">
       <h1>いごぽん</h1>
-      <button id="headerStartBtn" type="button" class="header-start-btn">GO!</button>
     </div>
     <div class="header-actions">
       <button id="bgmToggleBtn" type="button" class="header-bgm-btn toggle-button" aria-pressed="true">
@@ -345,7 +343,6 @@ export function mountAppShell(target: HTMLElement): AppShellRefs {
     nextMobile: requireElement(target, '#nextPieceMobile'),
     startBtn: requireElement(target, '#startBtn'),
     feedbackBtn: requireElement(target, '#feedbackBtn'),
-    headerStartBtn: requireElement(target, '#headerStartBtn'),
     installBtn: requireElement(target, '#installBtn'),
     bgmToggleBtn: requireElement(target, '#bgmToggleBtn'),
     statusMessage: requireElement(target, '#statusMessage'),
