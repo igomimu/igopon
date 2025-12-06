@@ -126,12 +126,13 @@ const template = `
         <section class="next-panel large-preview">
           <h2>次のグループ</h2>
           <div class="next-piece-container">
-             <canvas id="nextPiece" width="150" height="150" aria-label="次のピースプレビュー"></canvas>
+             <canvas id="nextPiece" width="75" height="75" aria-label="次のピースプレビュー"></canvas>
           </div>
         </section>
         <section class="control-panel">
           <div class="sub-controls">
              <button id="feedbackBtn" type="button" class="secondary">フィードバック</button>
+             <button id="startBtn" type="button" class="primary-action-btn sidebar-start-btn">スタート</button>
           </div>
           <div class="audio-controls">
           </div>
@@ -140,9 +141,6 @@ const template = `
       </aside>
 
       <section class="board-panel">
-        <div class="board-header-controls">
-           <button id="startBtn" type="button" class="primary-action-btn board-start-btn">スタート</button>
-        </div>
         <canvas
           id="board"
           width="${BOARD_CANVAS_WIDTH}"
