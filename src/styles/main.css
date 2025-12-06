@@ -270,8 +270,7 @@ body {
 }
 
 .primary-stats-panel {
-    background: rgba(35, 29, 20, 0.85);
-    color: #fff;
+    /* bg/color removed to use default light theme */
     padding: 1.2rem;
     border-radius: 14px;
     display: flex;
