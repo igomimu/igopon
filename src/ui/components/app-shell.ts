@@ -220,7 +220,15 @@ const template = `
 
           <button id="feedbackCloseBtn" type="button" class="close-icon" aria-label="閉じる">×</button>
         </div>
-      </section>
+        <div class="mobile-controls">
+        <button id="mobileLeftBtn" class="control-btn" aria-label="左移動">←</button>
+        <div class="vertical-controls">
+          <button id="mobileRotateBtn" class="control-btn" aria-label="回転">↻</button>
+          <button id="mobileHardDropBtn" class="control-btn" aria-label="ハードドロップ">⇩</button>
+        </div>
+        <button id="mobileRightBtn" class="control-btn" aria-label="右移動">→</button>
+      </div>
+    </section>
 
       <aside class="info-column right">
         <section class="player-panel">

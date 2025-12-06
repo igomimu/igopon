@@ -2,8 +2,11 @@ import { Jimp } from 'jimp';
 import path from 'path';
 import fs from 'fs';
 
-const sourcePath = "/home/mimura/.gemini/antigravity/brain/d2bbc4c0-12fc-42bc-ab01-c9b0d7380029/igopon_var_japanese_stones_1764283378725.png";
+// Use the existing high-res icon as source since we want to modify it
+const sourcePath = "/home/mimura/projects/igopon/public/maskable-icon-512x512.png";
 const publicDir = "/home/mimura/projects/igopon/public";
+
+const ZOOM_FACTOR = 1.5; // Adjust this to control how much we zoom in
 
 const targets = [
     { name: "pwa-192x192.png", width: 192, height: 192 },
