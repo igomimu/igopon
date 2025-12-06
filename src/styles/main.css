@@ -1073,3 +1073,39 @@ button.secondary:not(:disabled):hover {
         transform: translateY(0);
     }
 }
+/* Responsive Start Buttons */
+.board-header-controls {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 1rem;
+    width: 100%;
+}
+
+.board-start-btn {
+    padding: 0.6rem 2rem;
+    font-size: 1.1rem;
+    box-shadow: 0 4px 12px rgba(54, 90, 46, 0.4);
+    border-radius: 30px;
+}
+
+#startBtnDesktop {
+    display: none; /* Default hidden on mobile */
+}
+
+.mobile-only {
+    display: flex;
+}
+
+@media (min-width: 1000px) {
+    #startBtnDesktop {
+        display: block; /* Show on Desktop */
+    }
+
+    .mobile-only {
+        display: none !important; /* Hide mobile controls on desktop */
+    }
+    
+    .board-header-controls {
+        display: none;
+    }
+}

@@ -402,11 +402,11 @@ export class GameEngine {
   }
 
   #applyPreviewCanvasSize({ redraw = true }: { redraw?: boolean } = {}): void {
-    const fallbackIsMobile = typeof window !== 'undefined' ? window.innerWidth <= 900 : false;
-    const isMobile = this.#previewMediaQuery ? this.#previewMediaQuery.matches : fallbackIsMobile;
-    const scale = isMobile ? 0.5 : 1;
-    const width = Math.max(1, Math.round(75 * scale));
-    const height = Math.max(1, Math.round(75 * scale));
+    // const fallbackIsMobile = typeof window !== 'undefined' ? window.innerWidth <= 900 : false;
+    // const isMobile = this.#previewMediaQuery ? this.#previewMediaQuery.matches : fallbackIsMobile;
+    // Always 75px as requested
+    const width = 75;
+    const height = 75;
     this.#previewWidth = width;
     this.#previewHeight = height;
     if (this.#nextCanvas && this.#nextCtx) {

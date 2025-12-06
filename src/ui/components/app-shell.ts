@@ -65,7 +65,8 @@ export interface AppShellRefs {
   boardPanel: HTMLElement;
   nextDesktop: HTMLCanvasElement;
   nextMobile: HTMLCanvasElement;
-  startBtn: HTMLButtonElement;
+  startBtnDesktop: HTMLButtonElement;
+  startBtnMobile: HTMLButtonElement;
   feedbackBtn: HTMLButtonElement;
   installBtn: HTMLButtonElement;
   bgmToggleBtn: HTMLButtonElement;
@@ -131,7 +132,7 @@ const template = `
         </section>
         <section class="control-panel">
           <div class="sub-controls">
-             <button id="startBtn" type="button" class="primary-action-btn sidebar-start-btn">スタート</button>
+             <button id="startBtnDesktop" type="button" class="primary-action-btn sidebar-start-btn">スタート</button>
              <button id="feedbackBtn" type="button" class="secondary">フィードバック</button>
           </div>
           <div class="audio-controls">
@@ -141,6 +142,9 @@ const template = `
       </aside>
 
       <section class="board-panel">
+        <div class="board-header-controls mobile-only">
+           <button id="startBtnMobile" type="button" class="primary-action-btn board-start-btn">スタート</button>
+        </div>
         <canvas
           id="board"
           width="${BOARD_CANVAS_WIDTH}"
@@ -347,7 +351,8 @@ export function mountAppShell(target: HTMLElement): AppShellRefs {
     boardPanel,
     nextDesktop: requireElement(target, '#nextPiece'),
     nextMobile: requireElement(target, '#nextPieceMobile'),
-    startBtn: requireElement(target, '#startBtn'),
+    startBtnDesktop: requireElement(target, '#startBtnDesktop'),
+    startBtnMobile: requireElement(target, '#startBtnMobile'),
     feedbackBtn: requireElement(target, '#feedbackBtn'),
     installBtn: requireElement(target, '#installBtn'),
     bgmToggleBtn: requireElement(target, '#bgmToggleBtn'),
