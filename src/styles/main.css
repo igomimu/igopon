@@ -167,6 +167,8 @@ body.game-active {
     width: 100%;
     max-width: 100%;
     min-height: calc(100vh - var(--header-height) - var(--footer-height));
+    /* Add extra padding at bottom so sticky controls dont overlap content */
+    padding-bottom: 8rem;
 }
 
 
@@ -558,11 +560,24 @@ button:not(:disabled):hover {
 
     .board-panel {
         padding: 0.8rem;
+        /* Ensure board is below other elements if needed, or just let strict grid handle it */
+        margin-top: 0.5rem;
     }
 
     #board {
         width: 100%;
         height: auto;
+    }
+
+    /* Hide the sidebar start button on mobile as we have GO! button on board */
+    .sidebar-start-btn {
+        display: none;
+    }
+
+    /* Adjust Next Piece panel to not overlap */
+    .next-panel.large-preview {
+        padding: 0.5rem;
+        margin-bottom: 0.5rem;
     }
 }
 
@@ -570,6 +585,7 @@ button:not(:disabled):hover {
     display: none;
     margin: 0 auto;
     padding: 0.5rem 1rem 0.6rem;
+    padding-bottom: calc(0.6rem + env(safe-area-inset-bottom));
     width: 100%;
     max-width: 420px;
     /* Ensure it sticks to bottom if content is long */
