@@ -3,9 +3,41 @@ const withBase = (path: string) => `${BASE_PATH}${path.startsWith('/') ? path : 
 
 export class SeController {
     #enabled = true;
+    #ctx: AudioContext | null = null;
+    #buffers = new Map<string, AudioBuffer>();
+
 
     constructor() {
-        // Preload sounds if needed, or just rely on browser cache
+        const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+        if (AudioContextClass) {
+            this.#ctx = new AudioContextClass();
+            this.#preloadAll();
+        } else {
+            console.warn('Web Audio API not supported');
+        }
+    }
+
+    async #preloadAll(): Promise<void> {
+        const sounds = [
+            'ishioto1.ogg', 'ishioto2.ogg', 'ishioto3.ogg',
+            'nuki1.ogg', 'nuki2.ogg'
+        ];
+
+        const loadFile = async (filename: string) => {
+            try {
+                const path = withBase(`/audio/se/${filename}`);
+                const response = await fetch(path);
+                const arrayBuffer = await response.arrayBuffer();
+                if (this.#ctx) {
+                    const audioBuffer = await this.#ctx.decodeAudioData(arrayBuffer);
+                    this.#buffers.set(filename, audioBuffer);
+                }
+            } catch (e) {
+                console.warn(`Failed to load SE: ${filename}`, e);
+            }
+        };
+
+        await Promise.all(sounds.map(loadFile));
     }
 
     get enabled(): boolean {
@@ -16,25 +48,20 @@ export class SeController {
         this.#enabled = value;
     }
 
+    unlock(): void {
+        if (this.#ctx && this.#ctx.state === 'suspended') {
+            void this.#ctx.resume();
+        }
+    }
+
     playStone(): void {
         if (!this.#enabled) return;
-        const index = Math.floor(Math.random() * 3) + 1; // 1, 2, or 3
+        const index = Math.floor(Math.random() * 3) + 1;
         this.#play(`ishioto${index}.ogg`);
     }
 
     playCapture(count: number): void {
         if (!this.#enabled) return;
-        // nuki1: 5+ stones, nuki2: 10+ stones
-        // If less than 5, maybe no sound or just nuki1? 
-        // User specified: "1 is for 5+, 2 is for 10+". 
-        // Implies: <5: no special sound? Or maybe nuki1 is default?
-        // Let's assume nuki1 for any capture for now, but prioritize nuki2 for 10+.
-        // Actually, let's follow the instruction strictly: 
-        // If count >= 10 -> nuki2
-        // Else if count >= 5 -> nuki1
-        // Else -> maybe no sound? Or nuki1 as fallback?
-        // Given it's a game, feedback is good. I'll use nuki1 for any capture, but nuki2 for big ones.
-
         if (count >= 10) {
             this.#play('nuki2.ogg');
         } else {
@@ -43,15 +70,22 @@ export class SeController {
     }
 
     #play(filename: string): void {
+        if (!this.#ctx || !this.#buffers.has(filename)) return;
+
         try {
-            const audio = new Audio(withBase(`/audio/se/${filename}?v=${Date.now()}`));
-            audio.volume = 0.6; // Adjust volume as needed
-            audio.play().catch(e => {
-                // Ignore autoplay errors or similar
-                console.warn('Failed to play SE:', e);
-            });
+            const source = this.#ctx.createBufferSource();
+            source.buffer = this.#buffers.get(filename)!;
+
+            // Gain node for volume control if needed, 0.6 to match previous
+            const gain = this.#ctx.createGain();
+            gain.gain.value = 0.6;
+
+            source.connect(gain);
+            gain.connect(this.#ctx.destination);
+
+            source.start(0);
         } catch (e) {
-            console.warn('Error creating Audio:', e);
+            console.warn('Failed to play sound buffer:', e);
         }
     }
 }

@@ -60,6 +60,8 @@ export interface FeedbackElements {
   funOptions: NodeListOf<HTMLInputElement>;
 }
 
+
+
 export interface AppShellRefs {
   board: HTMLCanvasElement;
   boardPanel: HTMLElement;
@@ -67,6 +69,7 @@ export interface AppShellRefs {
   nextMobile: HTMLCanvasElement;
   startBtnDesktop: HTMLButtonElement;
   startBtnMobile: HTMLButtonElement;
+
   feedbackBtn: HTMLButtonElement;
   installBtn: HTMLButtonElement;
   bgmToggleBtn: HTMLButtonElement;
@@ -77,6 +80,7 @@ export interface AppShellRefs {
   stats: StatElements;
   overlay: OverlayElements;
   feedback: FeedbackElements;
+
   tutorial: TutorialElements;
   bgmAudio: HTMLAudioElement;
   mobileControlsRoot: HTMLElement;
@@ -91,6 +95,7 @@ const template = `
       <button id="bgmToggleBtn" type="button" class="header-bgm-btn toggle-button" aria-pressed="true">
         BGM オン
       </button>
+
       <button id="installBtn" type="button" class="header-install-btn hidden" aria-label="アプリをインストール">
         インストール
       </button>
@@ -222,6 +227,7 @@ const template = `
 
           <button id="feedbackCloseBtn" type="button" class="close-icon" aria-label="閉じる">×</button>
         </div>
+
         <div class="mobile-controls">
         <button id="mobileLeftBtn" class="control-btn" aria-label="左移動">←</button>
         <div class="vertical-controls">
@@ -339,6 +345,8 @@ export function mountAppShell(target: HTMLElement): AppShellRefs {
     funOptions: target.querySelectorAll('input[name="fun"]')
   };
 
+
+
   const mobileControls: MobileControls = {
     hardDrop: requireElement(target, '#mobileHardDropBtn'),
     left: requireElement(target, '#mobileLeftBtn'),
@@ -356,6 +364,7 @@ export function mountAppShell(target: HTMLElement): AppShellRefs {
     feedbackBtn: requireElement(target, '#feedbackBtn'),
     installBtn: requireElement(target, '#installBtn'),
     bgmToggleBtn: requireElement(target, '#bgmToggleBtn'),
+
     statusMessage: requireElement(target, '#statusMessage'),
     playerNameInput: requireElement(target, '#playerNameInput'),
     leaderboard,
@@ -363,6 +372,7 @@ export function mountAppShell(target: HTMLElement): AppShellRefs {
     stats,
     overlay,
     feedback,
+
     bgmAudio: requireElement(target, '#bgmAudio'),
     mobileControlsRoot: requireElement(target, '.mobile-controls'),
     tutorial

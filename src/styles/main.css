@@ -37,6 +37,11 @@ body {
     overscroll-behavior: none;
 }
 
+body.game-active {
+    overflow: hidden;
+    touch-action: none;
+}
+
 .app-header {
     display: flex;
     justify-content: space-between;
@@ -186,9 +191,7 @@ body {
     border: 1px solid rgba(104, 82, 45, 0.3);
     padding: 1.4rem;
     box-shadow: 0 18px 38px rgba(46, 36, 20, 0.2);
-    touch-action: none;
-    user-select: none;
-    -webkit-user-select: none;
+    box-shadow: 0 18px 38px rgba(46, 36, 20, 0.2);
 }
 
 #board {
@@ -196,7 +199,7 @@ body {
     background: radial-gradient(circle at 20% 20%, rgba(253, 242, 211, 0.9), var(--bg-secondary));
     border-radius: 12px;
     border: 4px solid rgba(92, 67, 36, 0.4);
-
+    touch-action: none;
 }
 
 .overlay-score {
@@ -558,9 +561,17 @@ button:not(:disabled):hover {
 .mobile-controls {
     display: none;
     margin: 0 auto;
-    padding: 0.5rem 0 0.4rem;
+    padding: 0.5rem 1rem 0.6rem;
     width: 100%;
     max-width: 420px;
+    /* Ensure it sticks to bottom if content is long */
+    position: sticky;
+    bottom: 0;
+    z-index: 50;
+    background: rgba(231, 216, 161, 0.95);
+    /* Match bg-primary with opacity */
+    backdrop-filter: blur(4px);
+    border-top: 1px solid rgba(89, 69, 36, 0.15);
 }
 
 .mobile-grid {
@@ -643,9 +654,8 @@ button:not(:disabled):hover {
         gap: 0.9rem;
         width: min(100%, 520px);
         margin: 0 auto;
-        overflow-y: auto;
+        margin: 0 auto;
         padding-right: 0.5rem;
-        max-height: 100%;
     }
 
     /* Hide the desktop next-panel on mobile */

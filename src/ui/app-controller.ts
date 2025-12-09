@@ -116,8 +116,10 @@ export class AppController {
     if (rightColumn) {
       if (state.active) {
         rightColumn.classList.add('collapsed');
+        document.body.classList.add('game-active');
       } else {
         rightColumn.classList.remove('collapsed');
+        document.body.classList.remove('game-active');
       }
     }
   }
@@ -209,6 +211,8 @@ export class AppController {
     this.#shell.feedback.closeBtn.addEventListener('click', () => {
       this.#shell.feedback.root.classList.add('hidden');
     });
+
+
 
     this.#shell.feedback.commentToggleBtn.addEventListener('click', () => {
       this.#shell.feedback.commentSection.classList.remove('hidden');
@@ -459,6 +463,7 @@ export class AppController {
       document.removeEventListener('keydown', unlock, true);
       this.#bgmUnlockHandlerAttached = false;
       void this.#bgm.unlockViaGesture();
+      this.#se.unlock();
       this.#bgm.setPaused(false);
       this.#updateBgmUI();
     };
