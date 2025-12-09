@@ -1,17 +1,20 @@
 import './styles/main.css';
 import { AppController } from './ui/app-controller';
-// import * as Sentry from '@sentry/browser';
+import { registerSW } from 'virtual:pwa-register';
 
-// Sentry.init({
-//   dsn: import.meta.env.VITE_SENTRY_DSN,
-//   integrations: [
-//     Sentry.browserTracingIntegration(),
-//     Sentry.replayIntegration(),
-//   ],
-//   tracesSampleRate: 1.0,
-//   replaysSessionSampleRate: 0.1,
-//   replaysOnErrorSampleRate: 1.0,
-// });
+// Auto-update the Service Worker when a new version is found
+registerSW({
+  immediate: true,
+  onNeedRefresh() {
+    console.log('New content available, reloading...');
+    // Force reload to apply updates
+    window.location.reload();
+  },
+  onOfflineReady() {
+    console.log('App ready to work offline');
+  },
+});
+
 console.log(`Igopon v${__APP_VERSION__} started in ${import.meta.env.MODE} mode`);
 
 const root = document.querySelector<HTMLDivElement>('#app');

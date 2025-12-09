@@ -2,7 +2,11 @@
   "compilerOptions": {
     "target": "ES2020",
     "useDefineForClassFields": true,
-    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "lib": [
+      "ES2020",
+      "DOM",
+      "DOM.Iterable"
+    ],
     "module": "ESNext",
     "skipLibCheck": true,
     "isolatedModules": true,
@@ -14,7 +18,12 @@
     "noUnusedParameters": false,
     "noImplicitReturns": true,
     "allowJs": false,
-    "types": ["vite/client"]
+    "types": [
+      "vite/client",
+      "vite-plugin-pwa/client"
+    ]
   },
-  "include": ["src"]
+  "include": [
+    "src"
+  ]
 }
