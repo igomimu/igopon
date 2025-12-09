@@ -19,6 +19,11 @@
     box-sizing: border-box;
 }
 
+html,
+body {
+    overflow-y: auto;
+}
+
 body {
     margin: 0;
     font-family: "Segoe UI", Tahoma, sans-serif;
@@ -31,15 +36,18 @@ body {
     background-position: 0 0, 24px 24px;
     background-attachment: fixed;
     min-height: 100vh;
+    min-height: 100dvh;
     display: flex;
     flex-direction: column;
     padding-bottom: calc(var(--footer-height) + 1.5rem);
-    overscroll-behavior: none;
+    /* overscroll-behavior removed to allow native scrolling in lobby */
 }
 
 body.game-active {
     overflow: hidden;
     touch-action: none;
+    overscroll-behavior: none;
+    /* Lock bouncy scroll only during game */
 }
 
 .app-header {
