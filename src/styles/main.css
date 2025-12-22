@@ -74,9 +74,11 @@ body.game-active {
 }
 
 .app-header h1 {
-    margin: 0;
-    font-size: 1.8rem;
-    letter-spacing: 0.05em;
+    h1 {
+        margin: 0;
+        font-size: 1.8rem;
+        letter-spacing: 0.05em;
+    }
 }
 
 .header-title {

@@ -1077,17 +1077,19 @@ export class GameEngine {
       this.#drawObstacleBlock(this.#boardCtx, cx, cy, value, alpha);
       return;
     }
+    const highlight = this.#captureHighlights.get(`${row},${col} `);
     if (value === CELL_EYE_BLACK || value === CELL_EYE_WHITE) {
       this.#drawEyeStone(this.#boardCtx, cx, cy, CELL_SIZE * 0.42, value, alpha);
       return;
     }
-    const highlight = this.#captureHighlights.get(`${row},${col} `);
     if (highlight) {
       this.#drawHighlightedStone(this.#boardCtx, cx, cy, CELL_SIZE * 0.42, value, highlight);
-      return;
+    } else {
+      this.#drawStone(this.#boardCtx, cx, cy, CELL_SIZE * 0.42, value, alpha);
     }
-    this.#drawStone(this.#boardCtx, cx, cy, CELL_SIZE * 0.42, value, alpha);
   }
+
+
 
   #drawStone(
     context: CanvasRenderingContext2D,
@@ -1804,4 +1806,5 @@ export class GameEngine {
   dispose(): void {
     this.#stopLoop();
   }
+
 }

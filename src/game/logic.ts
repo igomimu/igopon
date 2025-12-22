@@ -250,7 +250,10 @@ export function resolveCaptures(board: BoardMatrix): CaptureResolution {
   };
 }
 
-export function applyGravity(board: BoardMatrix, locked: boolean[][]): void {
+export function applyGravity(
+  board: BoardMatrix,
+  locked: boolean[][]
+): void {
   for (let col = 0; col < COLS; col += 1) {
     const newColumn = new Array(ROWS).fill(CELL_EMPTY);
     const newLocked = new Array(ROWS).fill(false);

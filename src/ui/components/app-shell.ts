@@ -91,7 +91,6 @@ const template = `
     <div class="header-title">
       <h1>いごぽん</h1>
     </div>
-    <div class="header-actions">
       <button id="bgmToggleBtn" type="button" class="header-bgm-btn toggle-button" aria-pressed="true">
         BGM オン
       </button>
@@ -231,9 +230,9 @@ const template = `
         <div class="mobile-controls">
           <div class="mobile-grid">
             <button id="mobileLeftBtn" class="mobile-btn" aria-label="左移動">←</button>
+            <button id="mobileRightBtn" class="mobile-btn" aria-label="右移動">→</button>
             <button id="mobileRotateBtn" class="mobile-btn" aria-label="回転">↻</button>
             <button id="mobileHardDropBtn" class="mobile-btn" aria-label="ハードドロップ">⇩</button>
-            <button id="mobileRightBtn" class="mobile-btn" aria-label="右移動">→</button>
           </div>
         </div>
     </section>
@@ -364,7 +363,6 @@ export function mountAppShell(target: HTMLElement): AppShellRefs {
     feedbackBtn: requireElement(target, '#feedbackBtn'),
     installBtn: requireElement(target, '#installBtn'),
     bgmToggleBtn: requireElement(target, '#bgmToggleBtn'),
-
     statusMessage: requireElement(target, '#statusMessage'),
     playerNameInput: requireElement(target, '#playerNameInput'),
     leaderboard,

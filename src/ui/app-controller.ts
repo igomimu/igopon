@@ -12,7 +12,9 @@ import {
   fetchRollingEntries,
   sanitizePlayerName,
   submitScore
-} from '../game/leaderboard';
+} from '../api/leaderboard';
+import { submitFeedback } from '../api/feedback';
+import { sendEvent } from '../api/analytics';
 import { AppShellRefs, mountAppShell } from './components/app-shell';
 
 const BOARD_PIXEL_WIDTH = (COLS - 1) * CELL_SIZE + GRID_MARGIN * 2;
@@ -33,6 +35,7 @@ export class AppController {
   #bgmUnlockHandlerAttached = false;
   #deferredInstallPrompt: any = null;
   #tutorialStep = 0;
+
 
   constructor(root: HTMLElement) {
     this.#shell = mountAppShell(root);
@@ -76,6 +79,11 @@ export class AppController {
   }
 
   #handleGameOver(summary: LastResultSummary & { captures: CaptureState; chain: number }): void {
+    sendEvent('game_over', {
+      score: summary.finalScore,
+      level: this.#session.snapshot.level,
+      chain: summary.chain
+    });
     if (summary.finalScore > this.#highScore) {
       this.#highScore = summary.finalScore;
       saveHighScore(this.#highScore);
@@ -154,7 +162,10 @@ export class AppController {
 
     this.#shell.startBtnDesktop.addEventListener('click', handlePrimaryAction);
     this.#shell.startBtnMobile.addEventListener('click', handlePrimaryAction);
-    this.#shell.overlay.restartBtn.addEventListener('click', () => this.#engine.start());
+    this.#shell.overlay.restartBtn.addEventListener('click', () => {
+      sendEvent('game_start', { retry: true });
+      this.#engine.start();
+    });
 
     this.#shell.bgmToggleBtn.addEventListener('click', () => {
       const enabled = this.#bgm.togglePreference();
@@ -163,6 +174,8 @@ export class AppController {
       }
       this.#updateBgmUI();
     });
+
+
 
     const mobileActions: Array<[HTMLElement, () => void]> = [
       [this.#shell.mobileControls.left, () => this.#engine.moveLeft()],
@@ -204,6 +217,7 @@ export class AppController {
       if (this.#session.snapshot.active && !this.#session.snapshot.paused) {
         this.#engine.pause();
       }
+      sendEvent('feedback_open');
       this.#resetFeedbackForm();
       this.#shell.feedback.root.classList.remove('hidden');
     });
@@ -224,9 +238,6 @@ export class AppController {
       this.#submitFeedback(false);
     });
 
-    this.#shell.feedback.submitBtn.addEventListener('click', () => {
-      this.#submitFeedback(true);
-    });
     this.#shell.feedback.submitBtn.addEventListener('click', () => {
       this.#submitFeedback(true);
     });
@@ -252,6 +263,7 @@ export class AppController {
   }
 
   #startTutorial(): void {
+    sendEvent('tutorial_start');
     this.#tutorialStep = 1;
     this.#shell.tutorial.root.classList.remove('hidden');
     this.#updateTutorialUI();
@@ -280,6 +292,7 @@ export class AppController {
   }
 
   #finishTutorial(): void {
+    sendEvent('tutorial_complete');
     this.#shell.tutorial.root.classList.add('hidden');
     try {
       localStorage.setItem('igopon_tutorial_seen', 'true');
@@ -313,27 +326,13 @@ export class AppController {
     const fun = getRadioValue(this.#shell.feedback.funOptions);
     const comment = withComment ? this.#shell.feedback.textarea.value.trim() : '';
 
-    // TODO: Replace with actual Google Form ID and Entry IDs provided by the user
-    // FORM_ID: 1FAIpQLSeoLdCMP7RNF0Y_kue37_gEM7tirCgWKkVoAxVL0N9pnO8sDQ
-    const GOOGLE_FORM_ID = '1FAIpQLSeoLdCMP7RNF0Y_kue37_gEM7tirCgWKkVoAxVL0N9pnO8sDQ';
-    const ENTRY_DIFFICULTY = 'entry.2090413209';
-    const ENTRY_FUN = 'entry.1675820000';
-    const ENTRY_COMMENT = 'entry.1338349506';
-
-
-
-    const formData = new FormData();
-    formData.append(ENTRY_DIFFICULTY, difficulty);
-    formData.append(ENTRY_FUN, fun);
-    formData.append(ENTRY_COMMENT, comment);
+    if (!difficulty || !fun) {
+      this.#setStatus('評価を選択してください。', 3000);
+      return;
+    }
 
     try {
-      await fetch(`https://docs.google.com/forms/d/e/${GOOGLE_FORM_ID}/formResponse`, {
-        method: 'POST',
-        mode: 'no-cors',
-        body: formData
-      });
-
+      await submitFeedback({ difficulty, fun, comment });
       this.#shell.feedback.root.classList.add('hidden');
       this.#setStatus('フィードバックありがとうございます！', 4000);
     } catch (e) {
@@ -382,7 +381,7 @@ export class AppController {
       }
       this.#deferredInstallPrompt.prompt();
       const { outcome } = await this.#deferredInstallPrompt.userChoice;
-      console.log(`User response to the install prompt: ${outcome}`);
+      console.log(`User response to the install prompt: ${outcome} `);
       this.#deferredInstallPrompt = null;
       this.#shell.installBtn.classList.add('hidden');
     });
@@ -518,7 +517,7 @@ export class AppController {
     if (summary) {
       if (this.#lastResultExtras) {
         const timestamp = new Date(summary.timestamp).toLocaleString('ja-JP');
-        detail = `${timestamp} / チェイン ${this.#lastResultExtras.chain} / 捕獲 B:${this.#lastResultExtras.captures.black} W:${this.#lastResultExtras.captures.white}`;
+        detail = `${timestamp} / チェイン ${this.#lastResultExtras.chain} / 捕獲 B:${this.#lastResultExtras.captures.black} W:${this.#lastResultExtras.captures.white} `;
       } else {
         detail = new Date(summary.timestamp).toLocaleString('ja-JP');
       }
@@ -607,7 +606,7 @@ export class AppController {
     const year = date.getFullYear();
     const month = date.getMonth() + 1;
     const day = date.getDate();
-    return `${year}年${month}月${day}日`;
+    return `${year}年${month}月${day} 日`;
   }
 
   #setStatus(message: string, duration = 3500): void {
@@ -622,4 +621,7 @@ export class AppController {
       }, duration);
     }
   }
+
+
+
 }

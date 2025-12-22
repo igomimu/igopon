@@ -2,14 +2,22 @@ import { describe, expect, it } from 'vitest';
 
 import {
   CELL_BLACK,
+  CELL_EMPTY,
+  CELL_EYE_BLACK,
+  CELL_EYE_WHITE,
   CELL_WHITE,
   COLS,
+  DANGER_FILL_THRESHOLD,
   ROWS
 } from './constants';
 import {
   applyGravity,
+  canPlaceStoneInEye,
   createBoard,
   createLockedGrid,
+  eyeMatchesColor,
+  isDangerZoneTriggered,
+  isEyeCell,
   isValidPosition,
   resolveCaptures
 } from './logic';
@@ -85,5 +93,68 @@ describe('isValidPosition', () => {
     const board = createBoard();
     board[1][1] = CELL_BLACK;
     expect(isValidPosition(board, piece, 1, 0)).toBe(false);
+  });
+});
+
+describe('Eye Logic', () => {
+  it('correctly identifies eye cells', () => {
+    expect(isEyeCell(CELL_EYE_BLACK)).toBe(true);
+    expect(isEyeCell(CELL_EYE_WHITE)).toBe(true);
+    expect(isEyeCell(CELL_BLACK)).toBe(false);
+    expect(isEyeCell(CELL_EMPTY)).toBe(false);
+  });
+
+  it('matches eyes to stone colors', () => {
+    expect(eyeMatchesColor(CELL_EYE_BLACK, CELL_BLACK)).toBe(true);
+    expect(eyeMatchesColor(CELL_EYE_WHITE, CELL_WHITE)).toBe(true);
+    expect(eyeMatchesColor(CELL_EYE_BLACK, CELL_WHITE)).toBe(false);
+  });
+
+  it('validates stone placement in eyes', () => {
+    const board = createBoard();
+    const eyePositions = [{ row: 10, col: 5 }];
+
+    // Valid: 0 liberties (surrounded), single eye, target is empty
+    board[10][5] = CELL_EMPTY;
+    expect(canPlaceStoneInEye(board, eyePositions, 0, 1)).toBe(true);
+
+    // Invalid: Has liberties (not surrounded)
+    expect(canPlaceStoneInEye(board, eyePositions, 1, 1)).toBe(false);
+
+    // Invalid: Connecting two eyes (suicide/immortality rule)
+    expect(canPlaceStoneInEye(board, eyePositions, 0, 2)).toBe(false);
+
+    // Invalid: Target is already occupied
+    board[10][5] = CELL_BLACK;
+    expect(canPlaceStoneInEye(board, eyePositions, 0, 1)).toBe(false);
+  });
+});
+
+describe('Danger Zone Logic', () => {
+  it('triggers when total occupied cells exceed threshold', () => {
+    const board = createBoard();
+    const lockedCount = DANGER_FILL_THRESHOLD + 1;
+
+    // Mock robust board fill
+    let filled = 0;
+    for (let r = ROWS - 1; r >= 0 && filled < lockedCount; r--) {
+      for (let c = 0; c < COLS && filled < lockedCount; c++) {
+        board[r][c] = CELL_BLACK;
+        filled++;
+      }
+    }
+
+    expect(isDangerZoneTriggered(board, null)).toBe(true);
+  });
+
+  it('triggers when stones reach high row cutoff', () => {
+    const board = createBoard();
+    // Place a stone above the cutoff (e.g., row 0)
+    board[0][5] = CELL_BLACK;
+    expect(isDangerZoneTriggered(board, null)).toBe(true);
+
+    // Should not trigger if board is clear at top
+    board[0][5] = CELL_EMPTY;
+    expect(isDangerZoneTriggered(board, null)).toBe(false);
   });
 });
