@@ -10,7 +10,6 @@ import {
   CELL_WHITE,
   COLS,
   EYE_FRAME_COOLDOWN_PIECES,
-  EYE_FRAME_DROP_CHANCE,
   EYE_FRAME_RING_OFFSETS,
   GRID_MARGIN,
   MIN_PIECES_BEFORE_EYE_FRAME,
@@ -237,6 +236,8 @@ export class GameEngine {
   #swipeReferenceX = 0;
   #displayScale = 1;
 
+  #gameTime = 0; // Added for time-based difficulty
+
   #frameHandle: number | null = null;
 
   constructor(options: GameEngineOptions) {
@@ -288,7 +289,8 @@ export class GameEngine {
     this.#chain = 0;
     this.#captures = { black: 0, white: 0 };
     this.#piecesPlaced = 0;
-    this.#dropInterval = BASE_DROP_INTERVAL;
+    this.#gameTime = 0;
+    this.#dropInterval = 900;
     this.#dropAccumulator = 0;
     this.#lastFrameTime = null;
     this.#danger = false;
@@ -831,11 +833,7 @@ export class GameEngine {
     }
 
     this.#piecesPlaced += 1;
-    if (this.#piecesPlaced % 5 === 0) {
-      this.#level += 1;
-      this.#dropInterval = Math.max(220, BASE_DROP_INTERVAL - (this.#level - 1) * 80);
-      this.#setStatus(`レベル${this.#level}。落下間隔 ${(this.#dropInterval / 1000).toFixed(2)} 秒。`);
-    }
+    // Level up logic is now handled in #update based on time
 
     this.#maybeScheduleEyeFramePiece();
 
@@ -909,7 +907,12 @@ export class GameEngine {
       this.#eyeFrameCooldown = EYE_FRAME_COOLDOWN_PIECES;
       return;
     }
-    if (Math.random() > EYE_FRAME_DROP_CHANCE) {
+    const baseChance = 0.12;
+    // Increase chance by 0.01 every 30 seconds, max 0.25
+    const timeFactor = Math.min(Math.floor(this.#gameTime / 30000) * 0.01, 0.13);
+    const currentChance = baseChance + timeFactor;
+
+    if (Math.random() > currentChance) {
       return;
     }
     const randomColor = (Math.random() < 0.5 ? CELL_BLACK : CELL_WHITE) as CellValue;
@@ -933,6 +936,42 @@ export class GameEngine {
     }
     const delta = timestamp - this.#lastFrameTime;
     this.#lastFrameTime = timestamp;
+
+    if (this.#gameActive && !this.#paused) {
+      this.#gameTime += delta;
+
+      // Calculate Level (1 minute = 1 level up approximately for display)
+      const newLevel = Math.floor(this.#gameTime / 60000) + 1;
+      if (newLevel > this.#level) {
+        this.#level = newLevel;
+        this.#setStatus(`レベル${this.#level} (経過 ${(this.#gameTime / 60000).toFixed(1)}分) `);
+      }
+
+      // Dynamic Difficulty: Speed
+      // 0s: 900ms
+      // 60s: 750ms
+      // 120s: 550ms
+      // 180s: 350ms
+      // >180s: Linear decrease to 150ms at 300s (5 mins)
+      const t = this.#gameTime;
+      if (t < 60000) {
+        // 900 -> 750
+        const p = t / 60000;
+        this.#dropInterval = 900 - p * 150;
+      } else if (t < 120000) {
+        // 750 -> 550
+        const p = (t - 60000) / 60000;
+        this.#dropInterval = 750 - p * 200;
+      } else if (t < 180000) {
+        // 550 -> 350
+        const p = (t - 120000) / 60000;
+        this.#dropInterval = 550 - p * 200;
+      } else {
+        // 350 -> 150 (over next 2 mins)
+        const p = Math.min((t - 180000) / 120000, 1);
+        this.#dropInterval = 350 - p * 200;
+      }
+    }
 
     if (this.#gameActive && !this.#paused && this.#currentPiece) {
       this.#dropAccumulator += delta;
