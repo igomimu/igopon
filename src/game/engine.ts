@@ -393,9 +393,10 @@ export class GameEngine {
   }
 
   #configureCanvasResolution(): void {
-    const ctx = this.#boardCtx;
-    const canvas = this.#boardCanvas;
-    const ratio = window.devicePixelRatio || 1;
+    const dpr = window.devicePixelRatio || 1;
+    // Force at least 2.0 for HiDPI-like crispness on all screens
+    const ratio = Math.max(dpr, 2.0);
+
     const width = (COLS - 1) * CELL_SIZE + GRID_MARGIN * 2;
     const height = (ROWS - 1) * CELL_SIZE + GRID_MARGIN * 2;
     const cssWidth = width * this.#displayScale;
@@ -405,8 +406,18 @@ export class GameEngine {
     canvas.style.height = `${cssHeight}px`;
     canvas.width = Math.round(width * this.#displayScale * ratio);
     canvas.height = Math.round(height * this.#displayScale * ratio);
+
+    // Scale context to match the high-res coordinate system
     ctx.setTransform(ratio * this.#displayScale, 0, 0, ratio * this.#displayScale, 0, 0);
+
+    // Store for debug
+    (this as any)._lastRatio = ratio;
   }
+
+  getRatio(): number {
+    return (this as any)._lastRatio || 0;
+  }
+
 
   #applyPreviewCanvasSize({ redraw = true }: { redraw?: boolean } = {}): void {
     // const fallbackIsMobile = typeof window !== 'undefined' ? window.innerWidth <= 900 : false;

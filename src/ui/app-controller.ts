@@ -626,8 +626,9 @@ export class AppController {
   // Debug helper
   #updateDebugInfo(): void {
     const scale = this.#engine.getScale?.() ?? 1;
+    const ratio = this.#engine.getRatio?.() ?? 0;
     const canvas = this.#shell.board;
-    const info = `v0.2.16 | Scale: ${scale.toFixed(2)} | Canvas: ${canvas.width}x${canvas.height} | Style: ${canvas.style.width}x${canvas.style.height}`;
+    const info = `v0.2.17 | Scale: ${scale.toFixed(2)} | Ratio: ${ratio.toFixed(1)} | Canvas: ${canvas.width}x${canvas.height}`;
 
     let debugEl = document.getElementById('debug-info');
     if (!debugEl) {
