@@ -441,6 +441,7 @@ export class AppController {
       this.#pendingScaleFrame = window.requestAnimationFrame(() => {
         this.#pendingScaleFrame = null;
         this.#applyBoardScale();
+        this.#updateDebugInfo();
       });
     };
 
@@ -621,6 +622,31 @@ export class AppController {
       }, duration);
     }
   }
+
+  // Debug helper
+  #updateDebugInfo(): void {
+    const scale = this.#engine.getScale?.() ?? 1;
+    const canvas = this.#shell.board;
+    const info = `v0.2.16 | Scale: ${scale.toFixed(2)} | Canvas: ${canvas.width}x${canvas.height} | Style: ${canvas.style.width}x${canvas.style.height}`;
+
+    let debugEl = document.getElementById('debug-info');
+    if (!debugEl) {
+      debugEl = document.createElement('div');
+      debugEl.id = 'debug-info';
+      debugEl.style.position = 'fixed';
+      debugEl.style.bottom = '0';
+      debugEl.style.right = '0';
+      debugEl.style.background = 'rgba(0,0,0,0.8)';
+      debugEl.style.color = 'lime';
+      debugEl.style.padding = '4px 8px';
+      debugEl.style.fontSize = '12px';
+      debugEl.style.zIndex = '9999';
+      debugEl.style.pointerEvents = 'none';
+      document.body.appendChild(debugEl);
+    }
+    debugEl.textContent = info;
+  }
+
 
 
 

@@ -273,6 +273,10 @@ export class GameEngine {
     this.#configureCanvasResolution();
   }
 
+  getScale(): number {
+    return this.#displayScale;
+  }
+
   start(): void {
     if (this.#gameActive) {
       this.restart();
