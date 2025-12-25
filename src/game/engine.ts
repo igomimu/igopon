@@ -269,12 +269,7 @@ export class GameEngine {
       return;
     }
     this.#displayScale = nextScale;
-    console.log(`[Igopon] Scale updated: ${nextScale.toFixed(2)}x (${JSON.stringify(this.#boardCanvas.style.width)})`);
     this.#configureCanvasResolution();
-  }
-
-  getScale(): number {
-    return this.#displayScale;
   }
 
   start(): void {
@@ -411,13 +406,6 @@ export class GameEngine {
 
     // Scale context to match the high-res coordinate system
     ctx.setTransform(ratio * this.#displayScale, 0, 0, ratio * this.#displayScale, 0, 0);
-
-    // Store for debug
-    (this as any)._lastRatio = ratio;
-  }
-
-  getRatio(): number {
-    return (this as any)._lastRatio || 0;
   }
 
 
