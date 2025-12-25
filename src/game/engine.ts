@@ -269,6 +269,7 @@ export class GameEngine {
       return;
     }
     this.#displayScale = nextScale;
+    console.log(`[Igopon] Scale updated: ${nextScale.toFixed(2)}x (${JSON.stringify(this.#boardCanvas.style.width)})`);
     this.#configureCanvasResolution();
   }
 

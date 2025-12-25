@@ -1,6 +1,5 @@
 {
-  "name": "igopon",
-  "version": "0.2.14",
+  "version": "0.2.15",
   "description": "Next generation Igopon puzzle client built with Vite + TypeScript.",
   "type": "module",
   "scripts": {
