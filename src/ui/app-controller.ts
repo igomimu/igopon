@@ -438,185 +438,187 @@ export class AppController {
       if (this.#pendingScaleFrame !== null) {
         cancelAnimationFrame(this.#pendingScaleFrame);
       }
-      this.#applyBoardScale();
+      this.#pendingScaleFrame = window.requestAnimationFrame(() => {
+        this.#pendingScaleFrame = null;
+        this.#applyBoardScale();
+      });
+    };
+
+    if (typeof ResizeObserver !== 'undefined') {
+      this.#boardResizeObserver = new ResizeObserver(() => scheduleScale());
+      this.#boardResizeObserver.observe(this.#shell.boardPanel);
+    }
+    window.addEventListener('resize', scheduleScale);
+    window.addEventListener('scroll', scheduleScale, { passive: true });
+    scheduleScale();
+  }
+
+  #setupInitialBgmUnlock(): void {
+    if (this.#bgmUnlockHandlerAttached || typeof document === 'undefined') {
+      return;
+    }
+    const unlock = () => {
+      document.removeEventListener('pointerdown', unlock, true);
+      document.removeEventListener('keydown', unlock, true);
+      this.#bgmUnlockHandlerAttached = false;
+      void this.#bgm.unlockViaGesture();
+      this.#se.unlock();
+      this.#bgm.setPaused(false);
+      this.#updateBgmUI();
+    };
+    this.#bgmUnlockHandlerAttached = true;
+    document.addEventListener('pointerdown', unlock, true);
+    document.addEventListener('keydown', unlock, true);
+  }
+
+  #applyBoardScale(): void {
+    const scale = this.#computeBoardScale();
+    this.#engine.setDisplayScale(scale);
+  }
+
+  #computeBoardScale(): number {
+    if (typeof window === 'undefined') {
+      return 1;
+    }
+    const panel = this.#shell.boardPanel;
+    const panelStyles = window.getComputedStyle(panel);
+    const toNumber = (value: string | null | undefined) => Number.parseFloat(value ?? '') || 0;
+    const paddingLeft = toNumber(panelStyles.paddingLeft);
+    const paddingRight = toNumber(panelStyles.paddingRight);
+    const innerWidth = Math.max(0, panel.clientWidth - paddingLeft - paddingRight);
+
+    const widthScale = innerWidth > 0 ? innerWidth / BOARD_PIXEL_WIDTH : 1;
+
+    // Calculate height scale based on 65vh limit (matching CSS)
+    const availableHeight = window.innerHeight * 0.75;
+    const heightScale = availableHeight > 0 ? availableHeight / BOARD_PIXEL_HEIGHT : 1;
+
+    // Use the smaller scale to ensure it fits in both dimensions while maintaining aspect ratio
+    const rawScale = Math.min(widthScale, heightScale);
+    return Number.isFinite(rawScale) && rawScale > 0 ? rawScale : 1;
+  }
+
+  #renderStats(state: GameSessionState): void {
+    const format = (value: number) => value.toLocaleString('ja-JP');
+    this.#shell.stats.score.textContent = format(state.score);
+    this.#shell.stats.pieces.textContent = format(state.piecesPlaced);
+  }
+
+  #renderOverlay(state: GameSessionState): void {
+    if (state.active) {
+      this.#shell.overlay.root.classList.add('hidden');
+      return;
+    }
+    this.#shell.overlay.root.classList.remove('hidden');
+    const summary = state.lastResult;
+    const finalScore = summary?.finalScore ?? 0;
+    this.#shell.overlay.title.textContent = summary?.reason ?? 'スタンバイ中';
+    let detail = 'GO! を押してゲームを開始してください。';
+    if (summary) {
+      if (this.#lastResultExtras) {
+        const timestamp = new Date(summary.timestamp).toLocaleString('ja-JP');
+        detail = `${timestamp} / チェイン ${this.#lastResultExtras.chain} / 捕獲 B:${this.#lastResultExtras.captures.black} W:${this.#lastResultExtras.captures.white} `;
+      } else {
+        detail = new Date(summary.timestamp).toLocaleString('ja-JP');
+      }
+    }
+    this.#shell.overlay.detail.textContent = detail;
+    this.#shell.overlay.finalScore.textContent = finalScore.toLocaleString('ja-JP');
+    this.#shell.overlay.bestScore.textContent = this.#highScore.toLocaleString('ja-JP');
+  }
+
+  #updatePrimaryAction(state: GameSessionState): void {
+    const label = state.active ? 'リスタート' : 'スタート';
+    this.#shell.startBtnDesktop.textContent = label;
+    this.#shell.startBtnMobile.textContent = label;
+  }
+
+  #updateBgmUI(): void {
+    const enabled = this.#bgm.preference;
+    this.#shell.bgmToggleBtn.textContent = enabled ? 'BGM オン' : 'BGM オフ';
+  }
+
+  async #initializeLeaderboards(): Promise<void> {
+    this.#shell.leaderboard.dateLabel.textContent = this.#formatDate(new Date());
+    await this.#refreshLeaderboards();
+  }
+
+  async #refreshLeaderboards(): Promise<void> {
+    const [daily, weekly, monthly] = await Promise.all([
+      fetchRollingEntries(1, 10),
+      fetchRollingEntries(7, 10),
+      fetchRollingEntries(30, 15)
+    ]);
+
+    this.#renderLeaderboardList(
+      this.#shell.leaderboard.dailyList,
+      daily,
+      DAILY_DISPLAY_LIMIT,
+      this.#shell.leaderboard.dailyEmpty
+    );
+    this.#renderLeaderboardList(
+      this.#shell.leaderboard.weeklyList,
+      weekly,
+      WEEKLY_DISPLAY_LIMIT,
+      this.#shell.leaderboard.weeklyEmpty
+    );
+    this.#renderLeaderboardList(
+      this.#shell.leaderboard.monthlyList,
+      monthly,
+      MONTHLY_DISPLAY_LIMIT,
+      this.#shell.leaderboard.monthlyEmpty
+    );
+  }
+
+  #renderLeaderboardList(
+    target: HTMLOListElement,
+    entries: LeaderboardEntry[],
+    limit: number,
+    empty?: HTMLElement
+  ): void {
+    target.innerHTML = '';
+    if (entries.length === 0) {
+      empty?.classList.remove('hidden');
+      return;
+    }
+    empty?.classList.add('hidden');
+
+    entries.slice(0, limit).forEach((entry, index) => {
+      const item = document.createElement('li');
+      const rank = document.createElement('span');
+      rank.className = 'rank';
+      rank.textContent = String(index + 1);
+
+      const name = document.createElement('span');
+      name.className = 'name';
+      name.textContent = entry.name || '名無し';
+
+      const score = document.createElement('span');
+      score.className = 'score';
+      score.textContent = Number(entry.score).toLocaleString('ja-JP');
+
+      item.append(rank, name, score);
+      target.appendChild(item);
     });
-  };
-
-  if(typeof ResizeObserver !== 'undefined') {
-  this.#boardResizeObserver = new ResizeObserver(() => scheduleScale());
-  this.#boardResizeObserver.observe(this.#shell.boardPanel);
-}
-window.addEventListener('resize', scheduleScale);
-window.addEventListener('scroll', scheduleScale, { passive: true });
-scheduleScale();
   }
 
-#setupInitialBgmUnlock(): void {
-  if(this.#bgmUnlockHandlerAttached || typeof document === 'undefined') {
-  return;
-}
-const unlock = () => {
-  document.removeEventListener('pointerdown', unlock, true);
-  document.removeEventListener('keydown', unlock, true);
-  this.#bgmUnlockHandlerAttached = false;
-  void this.#bgm.unlockViaGesture();
-  this.#se.unlock();
-  this.#bgm.setPaused(false);
-  this.#updateBgmUI();
-};
-this.#bgmUnlockHandlerAttached = true;
-document.addEventListener('pointerdown', unlock, true);
-document.addEventListener('keydown', unlock, true);
+  #formatDate(date: Date): string {
+    const year = date.getFullYear();
+    const month = date.getMonth() + 1;
+    const day = date.getDate();
+    return `${year}年${month}月${day} 日`;
   }
 
-#applyBoardScale(): void {
-  const scale = this.#computeBoardScale();
-  this.#engine.setDisplayScale(scale);
-}
-
-#computeBoardScale(): number {
-  if (typeof window === 'undefined') {
-    return 1;
-  }
-  const panel = this.#shell.boardPanel;
-  const panelStyles = window.getComputedStyle(panel);
-  const toNumber = (value: string | null | undefined) => Number.parseFloat(value ?? '') || 0;
-  const paddingLeft = toNumber(panelStyles.paddingLeft);
-  const paddingRight = toNumber(panelStyles.paddingRight);
-  const innerWidth = Math.max(0, panel.clientWidth - paddingLeft - paddingRight);
-
-  const widthScale = innerWidth > 0 ? innerWidth / BOARD_PIXEL_WIDTH : 1;
-
-  // Calculate height scale based on 65vh limit (matching CSS)
-  const availableHeight = window.innerHeight * 0.75;
-  const heightScale = availableHeight > 0 ? availableHeight / BOARD_PIXEL_HEIGHT : 1;
-
-  // Use the smaller scale to ensure it fits in both dimensions while maintaining aspect ratio
-  const rawScale = Math.min(widthScale, heightScale);
-  return Number.isFinite(rawScale) && rawScale > 0 ? rawScale : 1;
-}
-
-#renderStats(state: GameSessionState): void {
-  const format = (value: number) => value.toLocaleString('ja-JP');
-  this.#shell.stats.score.textContent = format(state.score);
-  this.#shell.stats.pieces.textContent = format(state.piecesPlaced);
-}
-
-#renderOverlay(state: GameSessionState): void {
-  if(state.active) {
-  this.#shell.overlay.root.classList.add('hidden');
-  return;
-}
-this.#shell.overlay.root.classList.remove('hidden');
-const summary = state.lastResult;
-const finalScore = summary?.finalScore ?? 0;
-this.#shell.overlay.title.textContent = summary?.reason ?? 'スタンバイ中';
-let detail = 'GO! を押してゲームを開始してください。';
-if (summary) {
-  if (this.#lastResultExtras) {
-    const timestamp = new Date(summary.timestamp).toLocaleString('ja-JP');
-    detail = `${timestamp} / チェイン ${this.#lastResultExtras.chain} / 捕獲 B:${this.#lastResultExtras.captures.black} W:${this.#lastResultExtras.captures.white} `;
-  } else {
-    detail = new Date(summary.timestamp).toLocaleString('ja-JP');
-  }
-}
-this.#shell.overlay.detail.textContent = detail;
-this.#shell.overlay.finalScore.textContent = finalScore.toLocaleString('ja-JP');
-this.#shell.overlay.bestScore.textContent = this.#highScore.toLocaleString('ja-JP');
-  }
-
-#updatePrimaryAction(state: GameSessionState): void {
-  const label = state.active ? 'リスタート' : 'スタート';
-  this.#shell.startBtnDesktop.textContent = label;
-  this.#shell.startBtnMobile.textContent = label;
-}
-
-#updateBgmUI(): void {
-  const enabled = this.#bgm.preference;
-  this.#shell.bgmToggleBtn.textContent = enabled ? 'BGM オン' : 'BGM オフ';
-}
-
-  async #initializeLeaderboards(): Promise < void> {
-  this.#shell.leaderboard.dateLabel.textContent = this.#formatDate(new Date());
-  await this.#refreshLeaderboards();
-}
-
-  async #refreshLeaderboards(): Promise < void> {
-  const [daily, weekly, monthly] = await Promise.all([
-    fetchRollingEntries(1, 10),
-    fetchRollingEntries(7, 10),
-    fetchRollingEntries(30, 15)
-  ]);
-
-  this.#renderLeaderboardList(
-    this.#shell.leaderboard.dailyList,
-    daily,
-    DAILY_DISPLAY_LIMIT,
-    this.#shell.leaderboard.dailyEmpty
-  );
-  this.#renderLeaderboardList(
-    this.#shell.leaderboard.weeklyList,
-    weekly,
-    WEEKLY_DISPLAY_LIMIT,
-    this.#shell.leaderboard.weeklyEmpty
-  );
-  this.#renderLeaderboardList(
-    this.#shell.leaderboard.monthlyList,
-    monthly,
-    MONTHLY_DISPLAY_LIMIT,
-    this.#shell.leaderboard.monthlyEmpty
-  );
-}
-
-#renderLeaderboardList(
-  target: HTMLOListElement,
-  entries: LeaderboardEntry[],
-  limit: number,
-  empty ?: HTMLElement
-): void {
-  target.innerHTML = '';
-  if(entries.length === 0) {
-  empty?.classList.remove('hidden');
-  return;
-}
-empty?.classList.add('hidden');
-
-entries.slice(0, limit).forEach((entry, index) => {
-  const item = document.createElement('li');
-  const rank = document.createElement('span');
-  rank.className = 'rank';
-  rank.textContent = String(index + 1);
-
-  const name = document.createElement('span');
-  name.className = 'name';
-  name.textContent = entry.name || '名無し';
-
-  const score = document.createElement('span');
-  score.className = 'score';
-  score.textContent = Number(entry.score).toLocaleString('ja-JP');
-
-  item.append(rank, name, score);
-  target.appendChild(item);
-});
-  }
-
-#formatDate(date: Date): string {
-  const year = date.getFullYear();
-  const month = date.getMonth() + 1;
-  const day = date.getDate();
-  return `${year}年${month}月${day} 日`;
-}
-
-#setStatus(message: string, duration = 3500): void {
-  this.#shell.statusMessage.textContent = message;
-  if(this.#statusTimer !== null) {
-  window.clearTimeout(this.#statusTimer);
-}
-if (duration > 0) {
-  this.#statusTimer = window.setTimeout(() => {
-    this.#shell.statusMessage.textContent = '';
-    this.#statusTimer = null;
-  }, duration);
-}
+  #setStatus(message: string, duration = 3500): void {
+    this.#shell.statusMessage.textContent = message;
+    if (this.#statusTimer !== null) {
+      window.clearTimeout(this.#statusTimer);
+    }
+    if (duration > 0) {
+      this.#statusTimer = window.setTimeout(() => {
+        this.#shell.statusMessage.textContent = '';
+        this.#statusTimer = null;
+      }, duration);
+    }
   }
 }
