@@ -393,6 +393,8 @@ export class GameEngine {
   }
 
   #configureCanvasResolution(): void {
+    const ctx = this.#boardCtx;
+    const canvas = this.#boardCanvas;
     const dpr = window.devicePixelRatio || 1;
     // Force at least 2.0 for HiDPI-like crispness on all screens
     const ratio = Math.max(dpr, 2.0);
