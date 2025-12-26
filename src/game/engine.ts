@@ -625,7 +625,7 @@ export class GameEngine {
 
     if (!isValidPosition(this.#board, this.#currentPiece, 0, 0)) {
       this.#currentPiece = null;
-      this.#endGame('盤面が埋まりました');
+      this.#endGame('終局となりました');
       return false;
     }
     return true;
@@ -758,7 +758,7 @@ export class GameEngine {
     });
 
     if (overflow) {
-      this.#endGame('盤面が埋まりました');
+      this.#endGame('終局となりました');
       return;
     }
 
