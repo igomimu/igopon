@@ -625,7 +625,7 @@ export class GameEngine {
 
     if (!isValidPosition(this.#board, this.#currentPiece, 0, 0)) {
       this.#currentPiece = null;
-      this.#endGame('終局となりました');
+      this.#endGame(`${this.#piecesPlaced} 手で終局となりました`);
       return false;
     }
     return true;
@@ -758,7 +758,7 @@ export class GameEngine {
     });
 
     if (overflow) {
-      this.#endGame('終局となりました');
+      this.#endGame(`${this.#piecesPlaced} 手で終局となりました`);
       return;
     }
 
