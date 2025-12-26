@@ -196,7 +196,6 @@ export class AppController {
       const target = e.target as HTMLElement;
       const feedback = target.dataset.feedback;
       if (feedback) {
-        console.log('User feedback after game:', feedback);
         // Placeholder: could send to server or store locally
       }
     };
@@ -380,8 +379,8 @@ export class AppController {
         return;
       }
       this.#deferredInstallPrompt.prompt();
-      const { outcome } = await this.#deferredInstallPrompt.userChoice;
-      console.log(`User response to the install prompt: ${outcome} `);
+      await this.#deferredInstallPrompt.userChoice;
+
       this.#deferredInstallPrompt = null;
       this.#shell.installBtn.classList.add('hidden');
     });

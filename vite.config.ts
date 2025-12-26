@@ -9,7 +9,7 @@ export default defineConfig({
     // VITE_ prefixed variables are automatically exposed to import.meta.env
   },
   appType: 'spa',
-  base: process.env.VITE_BASE_PATH || '/',
+  base: process.env.VITE_BASE_PATH || '/igopon/',
   plugins: [
     VitePWA({
       registerType: 'autoUpdate',

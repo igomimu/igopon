@@ -64,11 +64,9 @@ async function fetchLeaderboardEntries(params: LeaderboardParams): Promise<Leade
         }
 
         const payload = await response.json();
-        console.log('[Leaderboard] Raw payload:', payload);
         const rawEntries = Array.isArray(payload.entries) ? payload.entries : [];
 
         return rawEntries.map((entry: any) => {
-            console.log('[Leaderboard] Processing entry:', entry);
             const name = entry.player || entry.name || entry.playerName || '名無し';
             return {
                 name: name,
