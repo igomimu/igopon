@@ -651,7 +651,8 @@ button:not(:disabled):hover {
         grid-template-rows: auto auto 1fr;
         min-height: calc(100vh - var(--header-height) - var(--footer-height));
         padding: 1rem;
-        padding-bottom: 1.25rem;
+        /* Increase bottom padding to account for fixed controls (approx 180px) */
+        padding-bottom: 200px;
     }
 
     .board-panel {
@@ -668,10 +669,9 @@ button:not(:disabled):hover {
     #board {
         width: 100%;
         height: auto;
-        width: 100%;
-        height: auto;
         /* prevent board from pushing controls off screen */
-        max-height: calc(100dvh - 200px);
+        /* Header (~60) + Controls (~180) + Margins (~20) = ~260 */
+        max-height: calc(100dvh - 280px);
     }
 
     .mobile-controls {
