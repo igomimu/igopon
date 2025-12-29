@@ -592,13 +592,19 @@ button:not(:disabled):hover {
         width: 100%;
         max-width: 420px;
         /* Ensure it sticks to bottom if content is long */
-        position: sticky;
+        width: 100%;
+        max-width: 420px;
+        /* Ensure it sticks to bottom if content is long */
+        position: fixed;
         bottom: 0;
-        z-index: 50;
-        background: rgba(231, 216, 161, 0.95);
-        /* Match bg-primary with opacity */
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 1000;
+        background: rgba(231, 216, 161, 0.98);
+        /* match theme */
         backdrop-filter: blur(4px);
         border-top: 1px solid rgba(89, 69, 36, 0.15);
+        box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1);
     }
 
     .mobile-grid {
@@ -662,7 +668,10 @@ button:not(:disabled):hover {
     #board {
         width: 100%;
         height: auto;
-        max-height: 75vh;
+        width: 100%;
+        height: auto;
+        /* prevent board from pushing controls off screen */
+        max-height: calc(100dvh - 200px);
     }
 
     .mobile-controls {
