@@ -5,7 +5,8 @@ export type AnalyticsEvent =
     | 'submit_score'
     | 'feedback_open'
     | 'tutorial_start'
-    | 'tutorial_complete';
+    | 'tutorial_complete'
+    | 'privacy_policy_view';
 
 declare global {
     interface Window {

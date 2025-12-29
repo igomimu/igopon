@@ -175,6 +175,21 @@ export class AppController {
       this.#updateBgmUI();
     });
 
+    // Privacy Policy Handlers
+    const togglePrivacy = (show: boolean) => {
+      this.#shell.privacy.root.classList.toggle('hidden', !show);
+      if (show) {
+        sendEvent('privacy_policy_view');
+        // Pause game if active
+        if (this.#session.snapshot.active && !this.#session.snapshot.paused) {
+          this.#engine.pause();
+        }
+      }
+    };
+
+    document.getElementById('privacyOpenBtn')?.addEventListener('click', () => togglePrivacy(true));
+    this.#shell.privacy.closeBtn.addEventListener('click', () => togglePrivacy(false));
+
 
 
     const mobileActions: Array<[HTMLElement, () => void]> = [

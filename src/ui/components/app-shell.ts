@@ -1,4 +1,5 @@
 import { CELL_SIZE, COLS, GRID_MARGIN, ROWS } from '../../game/constants';
+import { PRIVACY_POLICY_HTML } from './privacy-policy';
 
 const BOARD_CANVAS_WIDTH = (COLS - 1) * CELL_SIZE + GRID_MARGIN * 2;
 const BOARD_CANVAS_HEIGHT = (ROWS - 1) * CELL_SIZE + GRID_MARGIN * 2;
@@ -60,6 +61,11 @@ export interface FeedbackElements {
   funOptions: NodeListOf<HTMLInputElement>;
 }
 
+export interface PrivacyElements {
+  root: HTMLElement;
+  closeBtn: HTMLButtonElement;
+}
+
 
 
 export interface AppShellRefs {
@@ -79,7 +85,9 @@ export interface AppShellRefs {
   mobileControls: MobileControls;
   stats: StatElements;
   overlay: OverlayElements;
+
   feedback: FeedbackElements;
+  privacy: PrivacyElements;
 
   tutorial: TutorialElements;
   bgmAudio: HTMLAudioElement;
@@ -95,6 +103,9 @@ const template = `
         BGM オン
       </button>
 
+      <button id="installBtn" type="button" class="header-install-btn hidden" aria-label="アプリをインストール">
+        インストール
+      </button>
       <button id="installBtn" type="button" class="header-install-btn hidden" aria-label="アプリをインストール">
         インストール
       </button>
@@ -236,6 +247,8 @@ const template = `
           </div>
         </div>
     </section>
+    
+    ${PRIVACY_POLICY_HTML}
 
       <aside class="info-column right">
         <section class="player-panel">
@@ -254,7 +267,12 @@ const template = `
             <li>P: 一時停止 / 再開</li>
           </ul>
           <p>5行連続で捕獲するとレベルが上がり、落下速度が速くなります。</p>
-          <p class="app-version">v${__APP_VERSION__}</p>
+          <p class="app-version">
+            v${__APP_VERSION__} / 
+            <button id="privacyOpenBtn" type="button" class="text-link-btn" style="background:none; border:none; padding:0; color:inherit; text-decoration:underline; cursor:pointer; font-size:inherit;">
+              規約・ポリシー
+            </button>
+          </p>
         </section>
         <section class="leaderboard-panel" aria-live="polite">
           <h2>ランキング</h2>
@@ -344,6 +362,11 @@ export function mountAppShell(target: HTMLElement): AppShellRefs {
     funOptions: target.querySelectorAll('input[name="fun"]')
   };
 
+  const privacy: PrivacyElements = {
+    root: requireElement(target, '#privacyPolicyModal'),
+    closeBtn: requireElement(target, '#privacyCloseBtn')
+  };
+
 
 
   const mobileControls: MobileControls = {
@@ -370,6 +393,7 @@ export function mountAppShell(target: HTMLElement): AppShellRefs {
     stats,
     overlay,
     feedback,
+    privacy,
 
     bgmAudio: requireElement(target, '#bgmAudio'),
     mobileControlsRoot: requireElement(target, '.mobile-controls'),
