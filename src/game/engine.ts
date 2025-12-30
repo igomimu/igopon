@@ -896,6 +896,10 @@ export class GameEngine {
     if (this.#piecesPlaced < MIN_PIECES_BEFORE_EYE_FRAME) {
       return;
     }
+    // Difficulty Tuning: Don't spawn Eye Frames until score reaches 10,000
+    if (this.#score < 10000) {
+      return;
+    }
     if (this.#nextPiece && this.#nextPiece.isEyeFrame) {
       return;
     }
