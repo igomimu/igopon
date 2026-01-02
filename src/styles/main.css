@@ -794,7 +794,7 @@ button:not(:disabled):hover {
 
     /* 1. Board */
     .board-panel {
-        order: 1;
+        order: -10;
         align-self: center;
         margin: 0 auto 0.5rem;
         width: min(100%, 420px);
@@ -805,7 +805,7 @@ button:not(:disabled):hover {
 
     /* 2. Player Booth */
     .player-panel {
-        order: 2;
+        order: -9;
         width: 100%;
         max-width: 420px;
         margin: 0 auto 0.5rem;
@@ -841,7 +841,7 @@ button:not(:disabled):hover {
 
     /* 3. Feedback Booth (Previously Control Panel) */
     .control-panel {
-        order: 3;
+        order: -8;
         width: 100%;
         max-width: 420px;
         margin: 0 auto 1rem;
@@ -857,7 +857,7 @@ button:not(:disabled):hover {
 
     /* 4. Ranking */
     .leaderboard-panel {
-        order: 4;
+        order: -7;
         width: 100%;
         max-width: 420px;
         margin: 0 auto 2rem;
@@ -865,7 +865,7 @@ button:not(:disabled):hover {
 
     /* 5. How to Play */
     .help-panel {
-        order: 5;
+        order: -6;
         width: 100%;
         max-width: 420px;
         margin: 0 auto 2rem;
