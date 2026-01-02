@@ -22,6 +22,7 @@ export interface MobileControls {
 }
 
 export interface StatElements {
+  headerScore: HTMLSpanElement; // New
   score: HTMLSpanElement;
   level: HTMLSpanElement;
   chain: HTMLSpanElement;
@@ -109,11 +110,19 @@ const template = `
   <header class="app-header">
     <div class="header-title">
       <h1>いごぽん</h1>
+      <div class="header-score" aria-label="現在のスコア">
+        <span class="header-score-label">SCORE</span>
+        <span id="headerScoreValue" class="header-score-value">0</span>
+      </div>
     </div>
 
     <div class="header-actions">
       <button id="menuBtn" type="button" class="header-menu-btn" aria-label="メニュー">
-        <span class="menu-icon">≡</span>
+        <svg class="menu-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="3" y1="12" x2="21" y2="12"></line>
+          <line x1="3" y1="6" x2="21" y2="6"></line>
+          <line x1="3" y1="18" x2="21" y2="18"></line>
+        </svg>
       </button>
 
       <button id="installBtn" type="button" class="header-install-btn hidden" aria-label="アプリをインストール">
@@ -343,6 +352,7 @@ export function mountAppShell(target: HTMLElement): AppShellRefs {
   };
 
   const stats: StatElements = {
+    headerScore: requireElement(target, '#headerScoreValue'),
     score: requireElement(target, '#scoreValue'),
     level: requireElement(target, '#levelValue'),
     chain: requireElement(target, '#chainValue'),

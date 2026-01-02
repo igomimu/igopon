@@ -540,6 +540,7 @@ export class AppController {
   #renderStats(state: GameSessionState): void {
     const format = (value: number) => value.toLocaleString('ja-JP');
     this.#shell.stats.score.textContent = format(state.score);
+    this.#shell.stats.headerScore.textContent = format(state.score); // Sync header
     this.#shell.stats.pieces.textContent = format(state.piecesPlaced);
   }
 

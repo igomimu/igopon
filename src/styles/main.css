@@ -180,9 +180,38 @@ body.game-active {
     color: var(--accent);
 }
 
-.header-menu-btn .menu-icon {
-    font-size: 2rem;
-    line-height: 1;
+.header-menu-btn .menu-icon-svg {
+    width: 28px;
+    height: 28px;
+    color: var(--text-dark);
+}
+
+.header-score {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.45rem;
+    padding: 0.4rem 0.85rem;
+    border-radius: 999px;
+    background: rgba(35, 29, 20, 0.78);
+    color: #fff;
+    font-variant-numeric: tabular-nums;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    min-width: 100px;
+    justify-content: center;
+    margin-left: 1rem;
+    /* Spacing from title */
+}
+
+.header-score-label {
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    opacity: 0.8;
+}
+
+.header-score-value {
+    font-size: 1.4rem;
+    font-weight: 700;
 }
 
 #gameMenuModal {
@@ -647,20 +676,20 @@ button:not(:disabled):hover {
     }
 
     .header-score {
-        flex: 0 1 auto;
-        min-width: 0;
-        padding: 0.35rem 0.6rem;
-        font-size: 0.8rem;
+        padding: 0.25rem 0.6rem;
         gap: 0.35rem;
+        min-width: auto;
+        margin-left: 0.5rem;
     }
 
     .header-score-label {
-        font-size: 0.7rem;
-        letter-spacing: 0.14em;
+        font-size: 0.6rem;
+        display: none;
+        /* Hide label on very small screens if needed, or keep smaller */
     }
 
     .header-score-value {
-        font-size: 1.3rem;
+        font-size: 1.2rem;
     }
 
     .board-panel {
