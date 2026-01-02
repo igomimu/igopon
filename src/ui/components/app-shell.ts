@@ -131,8 +131,7 @@ const template = `
   <div class="app-body">
 
     <main class="layout">
-      <aside class="info-column left">
-        <section class="primary-stats-panel">
+      <section class="primary-stats-panel">
           <div class="primary-stat-item stat-item-score">
             <span class="stat-label">SCORE</span>
             <span id="scoreValue" class="stat-value-large">0</span>
@@ -141,13 +140,6 @@ const template = `
             <span class="stat-label">LEVEL</span>
             <span id="levelValue" class="stat-value-large">1</span>
           </div>
-          <!-- Hidden secondary stats for internal logic updates, or move them to a detail view if needed. 
-               For now, keeping them in DOM but hidden or smaller if user didn't ask to remove them completely.
-               Actually, the user listed "Current Score / Level" as "Always Visible". 
-               "Chain", "Captures" might be less important but "Captures" is part of the game rules (5 lines to level up).
-               I will keep them in a "sub-stats" list below or just keep them in the DOM for now.
-               Let's keep the existing IDs so logic doesn't break.
-          -->
           <ul class="stat-list hidden-stats" style="display:none;">
              <li>チェイン: <span id="chainValue">0</span></li>
              <li>黒の捕獲数: <span id="blackCaptureValue">0</span></li>
@@ -170,7 +162,6 @@ const template = `
           </div>
           <div id="statusMessage" class="status-message" aria-live="polite"></div>
         </section>
-      </aside>
 
       <section class="board-panel">
         <canvas
@@ -274,7 +265,6 @@ const template = `
       </div>
     </div>
 
-      <aside class="info-column right">
         <section class="player-panel">
           <div class="player-input-row">
             <svg class="player-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -320,7 +310,6 @@ const template = `
             <ol id="monthlyLeaderboard" class="leaderboard-list"></ol>
           </div>
         </section>
-      </aside>
     </main>
 
   </div>

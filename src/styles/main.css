@@ -395,20 +395,31 @@ body.game-active .board-header-controls {
 }
 
 .info-column {
-    display: grid;
-    gap: 1rem;
-    align-content: start;
+    /* Removed: Using direct grid placement now */
+    display: none;
 }
 
-.info-column section {
+/* Sections that were in info-column */
+.primary-stats-panel,
+.control-panel,
+.next-panel,
+.player-panel,
+.help-panel,
+.leaderboard-panel {
     background: rgba(248, 242, 215, 0.94);
     padding: 1rem;
     border-radius: 14px;
     border: 1px solid rgba(104, 82, 45, 0.24);
     box-shadow: 0 12px 26px rgba(46, 36, 20, 0.18);
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
 }
 
-.info-column h2 {
+.info-column h2,
+.player-panel h2,
+.help-panel h2,
+.leaderboard-panel h2 {
     margin-top: 0;
     font-size: 0.9rem;
     color: var(--text-muted);
@@ -512,17 +523,9 @@ body.game-active .board-header-controls {
     padding: 0.5rem 1rem;
 }
 
-/* Right Column Dimming */
-.info-column.right {
-    transition: opacity 0.5s ease, filter 0.5s ease;
-}
-
-.info-column.right.dimmed {
-    opacity: 0.3;
-    filter: grayscale(0.5);
-    pointer-events: none;
-    /* Prevent interaction when dimmed */
-}
+/* Dimming logic updated for grid items if needed, or remove */
+/* .info-column.right.dimmed { ... } */
+/* Keeping simple: just dim specific elements if needed later */
 
 .stat-list {
     list-style: none;
@@ -614,26 +617,49 @@ button:not(:disabled):hover {
 
 @media (min-width: 1000px) {
     .layout {
-        grid-template-columns: 300px auto 300px;
+        display: grid;
+        grid-template-columns: 320px auto 320px;
+        grid-template-areas:
+            "stats board player"
+            "next board help"
+            "controls board leaderboard"
+            ". board .";
         align-items: flex-start;
         justify-content: center;
         column-gap: 2rem;
+        row-gap: 1rem;
     }
 
     .board-panel {
+        grid-area: board;
         justify-self: center;
-        order: 2;
         display: flex;
         flex-direction: column;
         align-items: center;
     }
 
-    .info-column.left {
-        order: 1;
+    .primary-stats-panel {
+        grid-area: stats;
     }
 
-    .info-column.right {
-        order: 3;
+    .next-panel {
+        grid-area: next;
+    }
+
+    .control-panel {
+        grid-area: controls;
+    }
+
+    .player-panel {
+        grid-area: player;
+    }
+
+    .help-panel {
+        grid-area: help;
+    }
+
+    .leaderboard-panel {
+        grid-area: leaderboard;
     }
 }
 
@@ -787,10 +813,8 @@ button:not(:disabled):hover {
         padding-bottom: 200px;
     }
 
-    /* Unlock wrappers to allow reordering children */
-    .info-column {
-        display: contents;
-    }
+    /* Unlock wrappers removed - direct reordering now possible */
+    /* .info-column { display: contents; } */
 
     /* 1. Board */
     .board-panel {
@@ -926,26 +950,7 @@ button:not(:disabled):hover {
     display: none !important;
 }
 
-.control-panel {
-    /* Keep status message visible, but order it after board */
-    order: 1;
-}
 
-.leaderboard-panel {
-    order: 2;
-}
-
-.player-panel {
-    order: 3;
-}
-
-.stats-panel {
-    order: 4;
-}
-
-.help-panel {
-    order: 5;
-}
 }
 
 .board-next-mobile {
