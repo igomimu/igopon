@@ -804,7 +804,9 @@ button:not(:disabled):hover {
         height: auto;
         /* prevent board from pushing controls off screen */
         /* Header (~60) + Controls (~180) + Margins (~20) = ~260 */
-        max-height: calc(100dvh - 280px);
+        /* Updated: Stats removed (~50px), so allow more height */
+        /* Header (~50-60) + Mobile Controls (~120-140) + Padding => ~200? */
+        max-height: calc(100dvh - 210px);
         aspect-ratio: 1 / 2;
         /* Exact ratio: 300px / 600px */
     }
@@ -840,8 +842,8 @@ button:not(:disabled):hover {
         display: none !important;
     }
 
-    /* Hide redundant score in bottom panel on mobile (shown in header) */
-    .stat-item-score {
+    /* Hide redundant score/level in bottom panel on mobile */
+    .primary-stats-panel {
         display: none !important;
     }
 

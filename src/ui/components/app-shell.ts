@@ -116,11 +116,10 @@ const template = `
     </div>
 
     <div class="header-actions">
-      <button id="menuBtn" type="button" class="header-menu-btn" aria-label="メニュー">
+      <button id="menuBtn" type="button" class="header-menu-btn" aria-label="一時停止 / メニュー">
         <svg class="menu-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="3" y1="12" x2="21" y2="12"></line>
-          <line x1="3" y1="6" x2="21" y2="6"></line>
-          <line x1="3" y1="18" x2="21" y2="18"></line>
+          <rect x="6" y="4" width="4" height="16" rx="1"></rect>
+          <rect x="14" y="4" width="4" height="16" rx="1"></rect>
         </svg>
       </button>
 
@@ -138,7 +137,7 @@ const template = `
             <span class="stat-label">SCORE</span>
             <span id="scoreValue" class="stat-value-large">0</span>
           </div>
-          <div class="primary-stat-item">
+          <div class="primary-stat-item stat-item-level">
             <span class="stat-label">LEVEL</span>
             <span id="levelValue" class="stat-value-large">1</span>
           </div>
