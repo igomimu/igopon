@@ -85,7 +85,6 @@ export interface AppShellRefs {
   nextDesktop: HTMLCanvasElement;
   nextMobile: HTMLCanvasElement;
   startBtnDesktop: HTMLButtonElement;
-  startBtnMobile: HTMLButtonElement;
 
   feedbackBtn: HTMLButtonElement;
   installBtn: HTMLButtonElement;
@@ -135,7 +134,7 @@ const template = `
     <main class="layout">
       <aside class="info-column left">
         <section class="primary-stats-panel">
-          <div class="primary-stat-item">
+          <div class="primary-stat-item stat-item-score">
             <span class="stat-label">SCORE</span>
             <span id="scoreValue" class="stat-value-large">0</span>
           </div>
@@ -175,9 +174,6 @@ const template = `
       </aside>
 
       <section class="board-panel">
-        <div class="board-header-controls mobile-only">
-           <button id="startBtnMobile" type="button" class="primary-action-btn board-start-btn">スタート</button>
-        </div>
         <canvas
           id="board"
           width="${BOARD_CANVAS_WIDTH}"
@@ -422,7 +418,6 @@ export function mountAppShell(target: HTMLElement): AppShellRefs {
     nextDesktop: requireElement(target, '#nextPiece'),
     nextMobile: requireElement(target, '#nextPieceMobile'),
     startBtnDesktop: requireElement(target, '#startBtnDesktop'),
-    startBtnMobile: requireElement(target, '#startBtnMobile'),
     feedbackBtn: requireElement(target, '#feedbackBtn'), // Keep desktop feedback btn ref
     installBtn: requireElement(target, '#installBtn'),
     bgmToggleBtn: menu.bgmToggleBtn, // Alias to the one in menu for compatibility

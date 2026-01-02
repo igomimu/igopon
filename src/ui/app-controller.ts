@@ -161,7 +161,6 @@ export class AppController {
     };
 
     this.#shell.startBtnDesktop.addEventListener('click', handlePrimaryAction);
-    this.#shell.startBtnMobile.addEventListener('click', handlePrimaryAction);
     this.#shell.overlay.restartBtn.addEventListener('click', () => {
       sendEvent('game_start', { retry: true });
       this.#engine.start();
@@ -570,7 +569,6 @@ export class AppController {
   #updatePrimaryAction(state: GameSessionState): void {
     const label = state.active ? 'リスタート' : 'スタート';
     this.#shell.startBtnDesktop.textContent = label;
-    this.#shell.startBtnMobile.textContent = label;
   }
 
   #updateBgmUI(): void {

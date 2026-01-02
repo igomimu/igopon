@@ -840,6 +840,11 @@ button:not(:disabled):hover {
         display: none !important;
     }
 
+    /* Hide redundant score in bottom panel on mobile (shown in header) */
+    .stat-item-score {
+        display: none !important;
+    }
+
     .control-panel {
         /* Keep status message visible, but order it after board */
         order: 1;
@@ -882,7 +887,7 @@ button:not(:disabled):hover {
     }
 
     .board-next-mobile {
-        display: flex;
+        display: none;
         position: absolute;
         top: 0.65rem;
         right: 0.65rem;
@@ -894,6 +899,13 @@ button:not(:disabled):hover {
         border-radius: 10px;
         padding: 0.35rem 0.4rem 0.45rem;
         box-shadow: 0 6px 14px rgba(46, 36, 20, 0.18);
+        animation: fadeIn 0.3s ease;
+        z-index: 10;
+    }
+
+    /* Show only when game is active */
+    body.game-active .board-next-mobile {
+        display: flex;
     }
 
     .board-next-mobile-label {
