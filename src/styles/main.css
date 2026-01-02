@@ -863,10 +863,17 @@ button:not(:disabled):hover {
         margin: 0 auto 2rem;
     }
 
-    /* Hide others or push to bottom */
-    .next-panel,
+    /* 5. How to Play */
     .help-panel {
-        order: 99;
+        order: 5;
+        width: 100%;
+        max-width: 420px;
+        margin: 0 auto 2rem;
+    }
+
+    /* Hide redundant desktop next-panel on mobile (we use board overlay) */
+    .next-panel {
+        display: none !important;
     }
 }
 
