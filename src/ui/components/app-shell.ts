@@ -66,6 +66,16 @@ export interface PrivacyElements {
   closeBtn: HTMLButtonElement;
 }
 
+export interface MenuElements {
+  root: HTMLElement;
+  openBtn: HTMLButtonElement;
+  resumeBtn: HTMLButtonElement;
+  restartBtn: HTMLButtonElement;
+  bgmToggleBtn: HTMLButtonElement;
+  feedbackBtn: HTMLButtonElement;
+  closeBtn: HTMLButtonElement;
+}
+
 
 
 export interface AppShellRefs {
@@ -88,6 +98,7 @@ export interface AppShellRefs {
 
   feedback: FeedbackElements;
   privacy: PrivacyElements;
+  menu: MenuElements;
 
   tutorial: TutorialElements;
   bgmAudio: HTMLAudioElement;
@@ -99,18 +110,16 @@ const template = `
     <div class="header-title">
       <h1>いごぽん</h1>
     </div>
-      <button id="bgmToggleBtn" type="button" class="header-bgm-btn toggle-button" aria-pressed="true">
-        BGM オン
+
+    <div class="header-actions">
+      <button id="menuBtn" type="button" class="header-menu-btn" aria-label="メニュー">
+        <span class="menu-icon">≡</span>
       </button>
 
       <button id="installBtn" type="button" class="header-install-btn hidden" aria-label="アプリをインストール">
         インストール
       </button>
-      <button id="installBtn" type="button" class="header-install-btn hidden" aria-label="アプリをインストール">
-        インストール
-      </button>
     </div>
-  </header>
   </header>
   <div class="app-body">
 
@@ -250,6 +259,17 @@ const template = `
     
     ${PRIVACY_POLICY_HTML}
 
+    <div id="gameMenuModal" class="overlay hidden" role="dialog" aria-modal="true" aria-label="ゲームメニュー">
+      <h2>メニュー</h2>
+      <div class="menu-list">
+        <button id="menuResumeBtn" type="button" class="menu-btn primary">ゲームに戻る</button>
+        <button id="menuRestartBtn" type="button" class="menu-btn danger">最初からやり直す</button>
+        <button id="menuBgmToggleBtn" type="button" class="menu-btn toggle" aria-pressed="true">BGM オン</button>
+        <button id="menuFeedbackBtn" type="button" class="menu-btn secondary">フィードバック</button>
+        <button id="menuCloseBtn" type="button" class="menu-btn close">閉じる</button>
+      </div>
+    </div>
+
       <aside class="info-column right">
         <section class="player-panel">
           <h2>プレイヤー</h2>
@@ -376,6 +396,16 @@ export function mountAppShell(target: HTMLElement): AppShellRefs {
     rotate: requireElement(target, '#mobileRotateBtn')
   };
 
+  const menu: MenuElements = {
+    root: requireElement(target, '#gameMenuModal'),
+    openBtn: requireElement(target, '#menuBtn'),
+    resumeBtn: requireElement(target, '#menuResumeBtn'),
+    restartBtn: requireElement(target, '#menuRestartBtn'),
+    bgmToggleBtn: requireElement(target, '#menuBgmToggleBtn'),
+    feedbackBtn: requireElement(target, '#menuFeedbackBtn'),
+    closeBtn: requireElement(target, '#menuCloseBtn')
+  };
+
   return {
     board: requireElement(target, '#board'),
     boardPanel,
@@ -383,9 +413,9 @@ export function mountAppShell(target: HTMLElement): AppShellRefs {
     nextMobile: requireElement(target, '#nextPieceMobile'),
     startBtnDesktop: requireElement(target, '#startBtnDesktop'),
     startBtnMobile: requireElement(target, '#startBtnMobile'),
-    feedbackBtn: requireElement(target, '#feedbackBtn'),
+    feedbackBtn: requireElement(target, '#feedbackBtn'), // Keep desktop feedback btn ref
     installBtn: requireElement(target, '#installBtn'),
-    bgmToggleBtn: requireElement(target, '#bgmToggleBtn'),
+    bgmToggleBtn: menu.bgmToggleBtn, // Alias to the one in menu for compatibility
     statusMessage: requireElement(target, '#statusMessage'),
     playerNameInput: requireElement(target, '#playerNameInput'),
     leaderboard,
@@ -394,6 +424,7 @@ export function mountAppShell(target: HTMLElement): AppShellRefs {
     overlay,
     feedback,
     privacy,
+    menu,
 
     bgmAudio: requireElement(target, '#bgmAudio'),
     mobileControlsRoot: requireElement(target, '.mobile-controls'),

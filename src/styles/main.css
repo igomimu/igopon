@@ -160,6 +160,109 @@ body.game-active {
     box-shadow: none;
 }
 
+.header-menu-btn {
+    border: none;
+    background: transparent;
+    font-size: 1.8rem;
+    color: var(--text-dark);
+    padding: 0.2rem 0.6rem;
+    cursor: pointer;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    transition: background 0.1s;
+}
+
+.header-menu-btn:hover {
+    background: rgba(0, 0, 0, 0.05);
+    color: var(--accent);
+}
+
+.header-menu-btn .menu-icon {
+    font-size: 2rem;
+    line-height: 1;
+}
+
+#gameMenuModal {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    background: rgba(35, 29, 20, 0.95);
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+#gameMenuModal h2 {
+    color: #fff;
+    margin-bottom: 2rem;
+    font-size: 1.5rem;
+    letter-spacing: 0.1em;
+}
+
+.menu-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    width: 100%;
+    max-width: 280px;
+}
+
+.menu-btn {
+    width: 100%;
+    padding: 1rem;
+    font-size: 1.1rem;
+    border-radius: 12px;
+}
+
+.menu-btn.primary {
+    background: var(--accent);
+    color: #fff;
+    font-weight: 700;
+    font-size: 1.2rem;
+    padding: 1.2rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.menu-btn.danger {
+    background: #e74c3c;
+    color: #fff;
+}
+
+.menu-btn.toggle {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.menu-btn.toggle[aria-pressed="true"] {
+    background: var(--accent);
+    border-color: var(--accent);
+}
+
+.menu-btn.secondary {
+    background: transparent;
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+.menu-btn.close {
+    margin-top: 1.5rem;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.6);
+    border: none;
+    font-size: 0.9rem;
+}
+
+/* Hide board controls when game is active */
+body.game-active .board-header-controls {
+    display: none !important;
+}
+
 
 
 .app-body {
@@ -667,11 +770,14 @@ button:not(:disabled):hover {
     }
 
     #board {
-        width: 100%;
+        width: auto;
+        max-width: 100%;
         height: auto;
         /* prevent board from pushing controls off screen */
         /* Header (~60) + Controls (~180) + Margins (~20) = ~260 */
         max-height: calc(100dvh - 280px);
+        aspect-ratio: 1 / 2;
+        /* Exact ratio: 300px / 600px */
     }
 
     .mobile-controls {

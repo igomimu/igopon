@@ -167,6 +167,31 @@ export class AppController {
       this.#engine.start();
     });
 
+
+    this.#shell.menu.openBtn.addEventListener('click', () => {
+      this.#openMenu();
+    });
+
+    this.#shell.menu.closeBtn.addEventListener('click', () => {
+      this.#closeMenu();
+    });
+
+    this.#shell.menu.resumeBtn.addEventListener('click', () => {
+      this.#closeMenu();
+    });
+
+    this.#shell.menu.restartBtn.addEventListener('click', () => {
+      this.#closeMenu();
+      sendEvent('game_start', { retry: true });
+      this.#engine.start();
+    });
+
+    this.#shell.menu.feedbackBtn.addEventListener('click', () => {
+      this.#closeMenu();
+      this.#shell.feedbackBtn.click();
+    });
+
+    // Reusing the existing toggle Logic but via the menu button ref (aliased in shell)
     this.#shell.bgmToggleBtn.addEventListener('click', () => {
       const enabled = this.#bgm.togglePreference();
       if (enabled) {
@@ -549,7 +574,10 @@ export class AppController {
 
   #updateBgmUI(): void {
     const enabled = this.#bgm.preference;
-    this.#shell.bgmToggleBtn.textContent = enabled ? 'BGM オン' : 'BGM オフ';
+    // Update both the toggle button text/state
+    const label = enabled ? 'BGM オン' : 'BGM オフ';
+    this.#shell.bgmToggleBtn.textContent = label;
+    this.#shell.bgmToggleBtn.setAttribute('aria-pressed', String(enabled));
   }
 
   async #initializeLeaderboards(): Promise<void> {
@@ -633,6 +661,31 @@ export class AppController {
         this.#shell.statusMessage.textContent = '';
         this.#statusTimer = null;
       }, duration);
+    }
+  }
+
+  #openMenu(): void {
+    const { active, paused } = this.#session.snapshot;
+
+    // Toggle button visibility based on state
+    this.#shell.menu.resumeBtn.classList.toggle('hidden', !active);
+    this.#shell.menu.restartBtn.classList.toggle('hidden', !active);
+
+    this.#shell.menu.root.classList.remove('hidden');
+
+    // Auto-pause if active
+    if (active && !paused) {
+      this.#engine.pause('メニューを開いています');
+    }
+  }
+
+  #closeMenu(): void {
+    this.#shell.menu.root.classList.add('hidden');
+
+    // Auto-resume if active
+    const { active, paused } = this.#session.snapshot;
+    if (active && paused) {
+      this.#engine.resume();
     }
   }
 }
