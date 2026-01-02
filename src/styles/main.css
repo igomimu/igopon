@@ -780,93 +780,165 @@ button:not(:disabled):hover {
 
 @media (max-width: 900px) {
     .layout {
-        grid-template-rows: auto auto 1fr;
+        display: flex;
+        flex-direction: column;
         min-height: calc(100vh - var(--header-height) - var(--footer-height));
-        padding: 1rem;
-        /* Increase bottom padding to account for fixed controls (approx 180px) */
+        padding: 0.5rem;
         padding-bottom: 200px;
     }
 
+    /* Unlock wrappers to allow reordering children */
+    .info-column {
+        display: contents;
+    }
+
+    /* 1. Board */
     .board-panel {
+        order: 1;
         align-self: center;
-        margin: 0 auto;
+        margin: 0 auto 0.5rem;
         width: min(100%, 420px);
         display: flex;
         flex-direction: column;
         align-items: center;
-        order: -1;
-        /* Make sure Board is FIRST on mobile */
     }
 
-    #board {
-        width: auto;
-        max-width: 100%;
-        height: auto;
-        /* prevent board from pushing controls off screen */
-        /* Header (~60) + Controls (~180) + Margins (~20) = ~260 */
-        /* Updated: Stats removed (~50px), so allow more height */
-        /* Header (~50-60) + Mobile Controls (~120-140) + Padding => ~200? */
-        max-height: calc(100dvh - 210px);
-        aspect-ratio: 1 / 2;
-        /* Exact ratio: 300px / 600px */
-    }
-
-    .mobile-controls {
-        display: block;
-        width: min(100%, 460px);
-        margin: 0.25rem auto 0.35rem;
-    }
-
-    .mobile-grid {
-        gap: 0.5rem;
-        grid-auto-rows: minmax(2.9rem, auto);
-    }
-
-    .mobile-btn {
-        font-size: 1.15rem;
-        padding: 0.65rem 0;
-    }
-
-    .info-column {
-        display: flex;
-        flex-direction: column;
-        gap: 0.9rem;
-        width: min(100%, 520px);
-        margin: 0 auto;
-        margin: 0 auto;
-        padding-right: 0.5rem;
-    }
-
-    /* Hide the desktop next-panel on mobile */
-    .next-panel {
-        display: none !important;
-    }
-
-    /* Hide redundant score/level in bottom panel on mobile */
-    .primary-stats-panel {
-        display: none !important;
-    }
-
-    .control-panel {
-        /* Keep status message visible, but order it after board */
-        order: 1;
-    }
-
-    .leaderboard-panel {
-        order: 2;
-    }
-
+    /* 2. Player Booth */
     .player-panel {
+        order: 2;
+        width: 100%;
+        max-width: 420px;
+        margin: 0 auto 0.5rem;
+        background: rgba(255, 255, 255, 0.6);
+        border: 1px solid rgba(104, 82, 45, 0.2);
+        border-radius: 8px;
+        padding: 0.5rem;
+    }
+
+    .player-input-row {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .player-icon {
+        width: 24px;
+        height: 24px;
+        color: var(--text-dark);
+        flex-shrink: 0;
+    }
+
+    #playerNameInput {
+        flex: 1;
+        width: 100%;
+        margin: 0;
+        padding: 0.4rem;
+        font-size: 1rem;
+        background: rgba(255, 255, 255, 0.8);
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        border-radius: 4px;
+    }
+
+    /* 3. Feedback Booth (Previously Control Panel) */
+    .control-panel {
         order: 3;
+        width: 100%;
+        max-width: 420px;
+        margin: 0 auto 1rem;
+        display: flex;
+        justify-content: center;
     }
 
-    .stats-panel {
+    .sub-controls {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+    }
+
+    /* 4. Ranking */
+    .leaderboard-panel {
         order: 4;
+        width: 100%;
+        max-width: 420px;
+        margin: 0 auto 2rem;
     }
 
+    /* Hide others or push to bottom */
+    .next-panel,
     .help-panel {
-        order: 5;
+        order: 99;
     }
+}
+
+#board {
+    width: auto;
+    max-width: 100%;
+    height: auto;
+    /* prevent board from pushing controls off screen */
+    /* Header (~60) + Controls (~180) + Margins (~20) = ~260 */
+    /* Updated: Stats removed (~50px), so allow more height */
+    /* Header (~50-60) + Mobile Controls (~120-140) + Padding => ~200? */
+    max-height: calc(100dvh - 210px);
+    aspect-ratio: 1 / 2;
+    /* Exact ratio: 300px / 600px */
+}
+
+.mobile-controls {
+    display: block;
+    width: min(100%, 460px);
+    margin: 0.25rem auto 0.35rem;
+}
+
+.mobile-grid {
+    gap: 0.5rem;
+    grid-auto-rows: minmax(2.9rem, auto);
+}
+
+.mobile-btn {
+    font-size: 1.15rem;
+    padding: 0.65rem 0;
+}
+
+.info-column {
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+    width: min(100%, 520px);
+    margin: 0 auto;
+    margin: 0 auto;
+    padding-right: 0.5rem;
+}
+
+/* Hide the desktop next-panel on mobile */
+.next-panel {
+    display: none !important;
+}
+
+/* Hide redundant score/level in bottom panel on mobile */
+.primary-stats-panel {
+    display: none !important;
+}
+
+.control-panel {
+    /* Keep status message visible, but order it after board */
+    order: 1;
+}
+
+.leaderboard-panel {
+    order: 2;
+}
+
+.player-panel {
+    order: 3;
+}
+
+.stats-panel {
+    order: 4;
+}
+
+.help-panel {
+    order: 5;
+}
 }
 
 .board-next-mobile {

@@ -276,9 +276,13 @@ const template = `
 
       <aside class="info-column right">
         <section class="player-panel">
-          <h2>プレイヤー</h2>
-          <label for="playerNameInput" class="player-name-label">名前</label>
-          <input type="text" id="playerNameInput" maxlength="20" placeholder="プレイヤー名" autocomplete="name">
+          <div class="player-input-row">
+            <svg class="player-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+            <input type="text" id="playerNameInput" maxlength="20" placeholder="プレイヤー名" autocomplete="name" aria-label="プレイヤー名">
+          </div>
         </section>
         <section class="help-panel">
           <h2>遊び方</h2>
