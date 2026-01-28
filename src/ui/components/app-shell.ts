@@ -244,10 +244,31 @@ const template = `
 
         <div class="mobile-controls">
           <div class="mobile-grid">
-            <button id="mobileLeftBtn" class="mobile-btn" aria-label="左移動">←</button>
-            <button id="mobileRightBtn" class="mobile-btn" aria-label="右移動">→</button>
-            <button id="mobileRotateBtn" class="mobile-btn" aria-label="回転">↻</button>
-            <button id="mobileHardDropBtn" class="mobile-btn" aria-label="ハードドロップ">⇩</button>
+            <button id="mobileLeftBtn" class="mobile-btn" aria-label="左移動">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M19 12H5"></path>
+                <path d="M12 19l-7-7 7-7"></path>
+              </svg>
+            </button>
+            <button id="mobileRightBtn" class="mobile-btn" aria-label="右移動">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M5 12h14"></path>
+                <path d="M12 5l7 7-7 7"></path>
+              </svg>
+            </button>
+            <button id="mobileRotateBtn" class="mobile-btn" aria-label="回転">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21.5 2v6h-6"></path>
+                <path d="M21.34 15.57a10 10 0 1 1-.57-8.38L21.5 8"></path>
+              </svg>
+            </button>
+            <button id="mobileHardDropBtn" class="mobile-btn" aria-label="ハードドロップ">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 3v14"></path>
+                <path d="M19 10l-7 7-7-7"></path>
+                <line x1="5" y1="21" x2="19" y2="21"></line>
+              </svg>
+            </button>
           </div>
         </div>
     </section>

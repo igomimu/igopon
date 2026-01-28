@@ -234,6 +234,9 @@ export class GameEngine {
 
   #swipeActive = false;
   #swipeReferenceX = 0;
+  #swipeReferenceY = 0;
+  #swipeStartTime = 0;
+  #hasMovedPiece = false;
   #displayScale = 1;
 
   #gameTime = 0; // Added for time-based difficulty
@@ -551,32 +554,57 @@ export class GameEngine {
     }
   }
 
-  #handleSwipeStart(clientX: number): void {
+  #handleSwipeStart(clientX: number, clientY?: number): void {
     if (!this.#gameActive || this.#paused || !this.#currentPiece) {
       return;
     }
     this.#swipeActive = true;
     this.#swipeReferenceX = clientX;
+    this.#swipeReferenceY = clientY ?? 0;
+    this.#swipeStartTime = Date.now();
+    this.#hasMovedPiece = false;
   }
 
-  #handleSwipeMove(clientX: number): void {
+  #handleSwipeMove(clientX: number, clientY?: number): void {
     if (!this.#swipeActive || !this.#gameActive || this.#paused || !this.#currentPiece) {
       return;
     }
-    const delta = clientX - this.#swipeReferenceX;
+    const deltaX = clientX - this.#swipeReferenceX;
+    const deltaY = (clientY ?? 0) - this.#swipeReferenceY;
     const threshold = CELL_SIZE * this.#displayScale;
-    if (delta >= threshold) {
-      this.#movePiece(1);
-      this.#swipeReferenceX = clientX;
-    } else if (delta <= -threshold) {
-      this.#movePiece(-1);
-      this.#swipeReferenceX = clientX;
+
+    // Horizontal Move
+    if (Math.abs(deltaX) >= threshold) {
+      if (deltaX > 0) {
+        this.#movePiece(1);
+      } else {
+        this.#movePiece(-1);
+      }
+      this.#swipeReferenceX = clientX; // Reset ref to allow continuous movement
+      this.#hasMovedPiece = true;
+      return;
+    }
+
+    // Vertical Move (Hard Drop) - Higher threshold to prevent accidental drops
+    if (deltaY > threshold * 2.5) {
+      this.#hardDrop();
+      this.#swipeActive = false; // Stop processing further moves for this touch
+      this.#hasMovedPiece = true;
     }
   }
 
   #handleSwipeEnd(): void {
+    if (!this.#swipeActive) {
+      return;
+    }
+    // Tap detection (Short duration, minimal movement)
+    const duration = Date.now() - this.#swipeStartTime;
+    if (!this.#hasMovedPiece && duration < 250) {
+      this.#rotateCurrentPiece(1);
+    }
     this.#swipeActive = false;
     this.#swipeReferenceX = 0;
+    this.#swipeReferenceY = 0;
   }
 
   #pullNextPiecePrototype(): PieceInstance {

@@ -742,8 +742,8 @@ button:not(:disabled):hover {
 
     /* Mobile Controls Styles (Scoped to mobile) */
     .mobile-controls {
-        display: block;
-        /* Force show on mobile */
+        display: none;
+        /* Hidden as we now use full gesture controls */
         margin: 0 auto;
         padding: 0.5rem 1rem 0.6rem;
         padding-bottom: calc(0.6rem + env(safe-area-inset-bottom));
@@ -906,18 +906,14 @@ button:not(:disabled):hover {
     max-width: 100%;
     height: auto;
     /* prevent board from pushing controls off screen */
-    /* Header (~60) + Controls (~180) + Margins (~20) = ~260 */
-    /* Updated: Stats removed (~50px), so allow more height */
-    /* Header (~50-60) + Mobile Controls (~120-140) + Padding => ~200? */
-    max-height: calc(100dvh - 210px);
+    /* Header (~60) + Margins (~20) = ~80 | Removed 130px for controls */
+    max-height: calc(100dvh - 84px);
     aspect-ratio: 1 / 2;
     /* Exact ratio: 300px / 600px */
 }
 
 .mobile-controls {
-    display: block;
-    width: min(100%, 460px);
-    margin: 0.25rem auto 0.35rem;
+    display: none !important;
 }
 
 .mobile-grid {
@@ -951,7 +947,8 @@ button:not(:disabled):hover {
 }
 
 
-}
+
+
 
 .board-next-mobile {
     display: none;
@@ -1390,4 +1387,9 @@ button.secondary:not(:disabled):hover {
     .board-header-controls {
         display: none;
     }
+}
+
+/* Force hide mobile controls globally - overrule any media query leaks */
+.mobile-controls {
+    display: none !important;
 }
