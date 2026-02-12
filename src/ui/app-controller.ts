@@ -16,6 +16,7 @@ import {
 import { submitFeedback } from '../api/feedback';
 import { sendEvent } from '../api/analytics';
 import { AppShellRefs, mountAppShell } from './components/app-shell';
+import { logger } from '../utils/logger';
 
 const BOARD_PIXEL_WIDTH = (COLS - 1) * CELL_SIZE + GRID_MARGIN * 2;
 const BOARD_PIXEL_HEIGHT = (ROWS - 1) * CELL_SIZE + GRID_MARGIN * 2;
@@ -67,6 +68,16 @@ export class AppController {
     this.#loadPlayerName();
     this.#setupInstallPrompt();
     this.#checkTutorial();
+
+    // VibeLogger: アプリ初期化完了
+    logger.info('app_initialize', 'いごぽんアプリ初期化完了', {
+      context: {
+        version: '0.2.17',
+        highScore: this.#highScore,
+        environment: { userAgent: navigator.userAgent }
+      },
+      human_note: 'AppController初期化時のログ'
+    });
   }
 
   #handleStateChange(state: GameSessionState): void {
@@ -84,6 +95,22 @@ export class AppController {
       level: this.#session.snapshot.level,
       chain: summary.chain
     });
+
+    // VibeLogger: ゲームオーバー
+    logger.info('game_over', 'ゲーム終了', {
+      context: {
+        game: {
+          finalScore: summary.finalScore,
+          level: this.#session.snapshot.level,
+          chain: summary.chain,
+          reason: summary.reason
+        },
+        captures: summary.captures,
+        isHighScore: summary.finalScore > this.#highScore
+      },
+      human_note: 'ゲームオーバー時の詳細情報'
+    });
+
     if (summary.finalScore > this.#highScore) {
       this.#highScore = summary.finalScore;
       saveHighScore(this.#highScore);
@@ -97,10 +124,17 @@ export class AppController {
     const name = sanitizePlayerName(this.#shell.playerNameInput.value) || 'プレイヤー';
     submitScore(name, summary.finalScore)
       .then(() => {
+        logger.info('score_submit_success', 'スコア送信成功', {
+          context: { player: name, score: summary.finalScore }
+        });
         this.#setStatus('スコアを送信しました。', 3000);
         return this.#refreshLeaderboards();
       })
-      .catch(() => {
+      .catch((error) => {
+        logger.error('score_submit_failed', 'スコア送信失敗', {
+          context: { player: name, score: summary.finalScore, error: String(error) },
+          ai_todo: 'ネットワークエラーの原因を調査してください'
+        });
         this.#setStatus('スコア送信に失敗しました。', 3000);
       });
 
@@ -152,6 +186,13 @@ export class AppController {
     const handlePrimaryAction = () => {
       const { active, paused } = this.#session.snapshot;
       if (!active) {
+        // VibeLogger: ゲーム開始
+        logger.info('game_start', 'ゲーム開始', {
+          context: {
+            player: sanitizePlayerName(this.#shell.playerNameInput.value) || 'プレイヤー',
+            highScore: this.#highScore
+          }
+        });
         this.#engine.start();
       } else if (paused) {
         this.#engine.resume();
@@ -371,9 +412,16 @@ export class AppController {
 
     try {
       await submitFeedback({ difficulty, fun, comment });
+      logger.info('feedback_submit_success', 'フィードバック送信成功', {
+        context: { difficulty, fun, hasComment: comment.length > 0 }
+      });
       this.#shell.feedback.root.classList.add('hidden');
       this.#setStatus('フィードバックありがとうございます！', 4000);
     } catch (e) {
+      logger.error('feedback_submit_failed', 'フィードバック送信失敗', {
+        context: { error: String(e) },
+        ai_todo: 'フィードバック送信APIのエラーを確認してください'
+      });
       console.error('Failed to submit feedback', e);
       this.#setStatus('送信に失敗しました。', 4000);
     }
