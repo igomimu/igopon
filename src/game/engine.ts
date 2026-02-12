@@ -43,6 +43,7 @@ import type {
   RemovedStone
 } from './types';
 import type { CaptureState, GameSessionState, LastResultSummary } from './state/session';
+import { t as i18n } from '../i18n';
 
 const GRID_LINE_COLOR = 'rgba(80, 58, 34, 0.65)';
 const GRID_BORDER_COLOR = 'rgba(46, 36, 20, 0.75)';
@@ -307,7 +308,7 @@ export class GameEngine {
     this.#captureLineEffects.clear();
     this.#currentPiece = null;
     this.#nextPiece = this.#pullNextPiecePrototype();
-    this.#setStatus('新しい対局開始。囲んで捕獲しよう。');
+    this.#setStatus(i18n('engine.newGame'));
     this.#spawnNewPiece();
     this.#publishState();
     this.#updateDangerState();
@@ -318,7 +319,7 @@ export class GameEngine {
       return;
     }
     this.#paused = true;
-    this.#setStatus(reason ?? '一時停止中。PキーかGOボタンで再開。');
+    this.#setStatus(reason ?? i18n('engine.paused'));
     this.#publishState();
   }
 
@@ -327,7 +328,7 @@ export class GameEngine {
       return;
     }
     this.#paused = false;
-    this.#setStatus('再開します。');
+    this.#setStatus(i18n('engine.resumed'));
     this.#dropAccumulator = 0;
     this.#lastFrameTime = null;
     this.#publishState();
@@ -653,7 +654,7 @@ export class GameEngine {
 
     if (!isValidPosition(this.#board, this.#currentPiece, 0, 0)) {
       this.#currentPiece = null;
-      this.#endGame(`${this.#piecesPlaced} 手で終局となりました`);
+      this.#endGame(i18n('engine.gameEndMoves', { count: this.#piecesPlaced }));
       return false;
     }
     return true;
@@ -786,7 +787,7 @@ export class GameEngine {
     });
 
     if (overflow) {
-      this.#endGame(`${this.#piecesPlaced} 手で終局となりました`);
+      this.#endGame(i18n('engine.gameEndMoves', { count: this.#piecesPlaced }));
       return;
     }
 
@@ -859,11 +860,11 @@ export class GameEngine {
       this.#captures.white += result.captureTotals.white;
       this.#spawnCaptureEffects(result.removedStones);
       this.#spawnScorePopup(pointsEarned, result.removedStones);
-      this.#setStatus(`${result.totalRemoved} 個捕獲。チェインx${this.#chain}！`);
+      this.#setStatus(i18n('engine.captured', { count: result.totalRemoved, chain: this.#chain }));
       this.#options.onCapture?.(result.totalRemoved);
     } else {
       this.#chain = 0;
-      this.#setStatus('石を配置。捕獲なし。');
+      this.#setStatus(i18n('engine.noCapture'));
     }
 
     this.#piecesPlaced += 1;
@@ -897,9 +898,9 @@ export class GameEngine {
 
     if (context.placedEyeFrame) {
       this.#chain = 0;
-      this.#setStatus('色付き眼フレームを設置しました。');
+      this.#setStatus(i18n('engine.eyeFramePlaced'));
     } else if (clearedEyeFrame) {
-      this.#setStatus('眼フレームが崩壊しました。');
+      this.#setStatus(i18n('engine.eyeFrameCollapsed'));
     }
 
     if (!this.#gameActive) {
@@ -982,7 +983,7 @@ export class GameEngine {
       const newLevel = Math.floor(this.#gameTime / 60000) + 1;
       if (newLevel > this.#level) {
         this.#level = newLevel;
-        this.#setStatus(`レベル${this.#level} (経過 ${(this.#gameTime / 60000).toFixed(1)}分) `);
+        this.#setStatus(i18n('engine.levelUp', { level: this.#level, minutes: (this.#gameTime / 60000).toFixed(1) }));
       }
 
       // Dynamic Difficulty: Speed
@@ -1858,7 +1859,7 @@ export class GameEngine {
     };
     this.#options.onGameOver(summary);
     this.#lastResult = { reason, timestamp: summary.timestamp, finalScore: this.#score };
-    this.#setStatus('ゲーム終了。');
+    this.#setStatus(i18n('engine.gameOver'));
     this.#publishState({ active: false, paused: false, lastResult: this.#lastResult });
   }
 

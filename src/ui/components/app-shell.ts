@@ -1,5 +1,6 @@
 import { CELL_SIZE, COLS, GRID_MARGIN, ROWS } from '../../game/constants';
-import { PRIVACY_POLICY_HTML } from './privacy-policy';
+import { t } from '../../i18n';
+import { buildPrivacyPolicyHtml } from './privacy-policy';
 
 const BOARD_CANVAS_WIDTH = (COLS - 1) * CELL_SIZE + GRID_MARGIN * 2;
 const BOARD_CANVAS_HEIGHT = (ROWS - 1) * CELL_SIZE + GRID_MARGIN * 2;
@@ -105,26 +106,27 @@ export interface AppShellRefs {
   mobileControlsRoot: HTMLElement;
 }
 
-const template = `
+function buildTemplate(): string {
+  return `
   <header class="app-header">
     <div class="header-title">
-      <h1>いごぽん</h1>
-      <div class="header-score" aria-label="現在のスコア">
+      <h1>${t('app.title')}</h1>
+      <div class="header-score" aria-label="${t('header.scoreLabel')}">
         <span class="header-score-label">SCORE</span>
         <span id="headerScoreValue" class="header-score-value">0</span>
       </div>
     </div>
 
     <div class="header-actions">
-      <button id="menuBtn" type="button" class="header-menu-btn" aria-label="一時停止 / メニュー">
+      <button id="menuBtn" type="button" class="header-menu-btn" aria-label="${t('header.menuLabel')}">
         <svg class="menu-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
           <rect x="6" y="4" width="4" height="16" rx="1"></rect>
           <rect x="14" y="4" width="4" height="16" rx="1"></rect>
         </svg>
       </button>
 
-      <button id="installBtn" type="button" class="header-install-btn hidden" aria-label="アプリをインストール">
-        インストール
+      <button id="installBtn" type="button" class="header-install-btn hidden" aria-label="${t('header.installLabel')}">
+        ${t('header.installText')}
       </button>
     </div>
   </header>
@@ -141,22 +143,22 @@ const template = `
             <span id="levelValue" class="stat-value-large">1</span>
           </div>
           <ul class="stat-list hidden-stats" style="display:none;">
-             <li>チェイン: <span id="chainValue">0</span></li>
-             <li>黒の捕獲数: <span id="blackCaptureValue">0</span></li>
-             <li>白の捕獲数: <span id="whiteCaptureValue">0</span></li>
-             <li>配置したピース: <span id="piecesValue">0</span></li>
+             <li>${t('stats.chain')} <span id="chainValue">0</span></li>
+             <li>${t('stats.blackCaptures')} <span id="blackCaptureValue">0</span></li>
+             <li>${t('stats.whiteCaptures')} <span id="whiteCaptureValue">0</span></li>
+             <li>${t('stats.piecesPlaced')} <span id="piecesValue">0</span></li>
           </ul>
         </section>
         <section class="next-panel large-preview">
-          <h2>次のグループ</h2>
+          <h2>${t('next.title')}</h2>
           <div class="next-piece-container">
-             <canvas id="nextPiece" width="75" height="75" aria-label="次のピースプレビュー"></canvas>
+             <canvas id="nextPiece" width="75" height="75" aria-label="${t('next.previewLabel')}"></canvas>
           </div>
         </section>
         <section class="control-panel">
           <div class="sub-controls">
-             <button id="startBtnDesktop" type="button" class="primary-action-btn sidebar-start-btn">スタート</button>
-             <button id="feedbackBtn" type="button" class="secondary">フィードバック</button>
+             <button id="startBtnDesktop" type="button" class="primary-action-btn sidebar-start-btn">${t('button.start')}</button>
+             <button id="feedbackBtn" type="button" class="secondary">${t('button.feedback')}</button>
           </div>
           <div class="audio-controls">
           </div>
@@ -168,101 +170,101 @@ const template = `
           id="board"
           width="${BOARD_CANVAS_WIDTH}"
           height="${BOARD_CANVAS_HEIGHT}"
-          aria-label="プレイフィールド"
+          aria-label="${t('board.label')}"
         ></canvas>
         <div class="board-next-mobile" aria-hidden="true">
-          <span class="board-next-mobile-label">次のグループ</span>
-          <canvas id="nextPieceMobile" width="75" height="75" role="img" aria-label="次のピースプレビュー（モバイル）"></canvas>
+          <span class="board-next-mobile-label">${t('next.title')}</span>
+          <canvas id="nextPieceMobile" width="75" height="75" role="img" aria-label="${t('next.previewMobileLabel')}"></canvas>
         </div>
         <div id="overlay" class="overlay hidden" role="status" aria-live="polite">
-          <h2 id="overlayTitle">スタンバイ中</h2>
+          <h2 id="overlayTitle">${t('overlay.standby')}</h2>
           <div class="overlay-score">
-            <span class="overlay-label">今回のハイスコア</span>
+            <span class="overlay-label">${t('overlay.thisScore')}</span>
             <span id="finalScore" class="overlay-value">0</span>
           </div>
           <div class="overlay-score secondary">
-            <span class="overlay-label">自己最高スコア</span>
+            <span class="overlay-label">${t('overlay.bestScore')}</span>
             <span id="bestScore" class="overlay-value">0</span>
           </div>
-          <p id="overlayDetail" class="overlay-detail">GO! を押してゲームを開始してください。</p>
-          <button id="restartBtn" type="button">GO!</button>
+          <p id="overlayDetail" class="overlay-detail">${t('overlay.instruction')}</p>
+          <button id="restartBtn" type="button">${t('button.go')}</button>
         </div>
-        <div id="tutorialOverlay" class="overlay hidden" role="dialog" aria-modal="true" aria-label="チュートリアル">
-          <h2 id="tutorialTitle">遊び方</h2>
+        <div id="tutorialOverlay" class="overlay hidden" role="dialog" aria-modal="true" aria-label="${t('tutorial.label')}">
+          <h2 id="tutorialTitle">${t('tutorial.title')}</h2>
           <div class="tutorial-content">
             <div id="tutorialStep1" class="tutorial-step">
               <div class="tutorial-icon">↔️</div>
-              <p>左右キーで移動</p>
+              <p>${t('tutorial.step1')}</p>
             </div>
             <div id="tutorialStep2" class="tutorial-step hidden">
               <div class="tutorial-icon">🔄</div>
-              <p>上キーで回転</p>
+              <p>${t('tutorial.step2')}</p>
             </div>
             <div id="tutorialStep3" class="tutorial-step hidden">
               <div class="tutorial-icon">⚪⚫⚪</div>
-              <p>囲んで捕獲！</p>
+              <p>${t('tutorial.step3')}</p>
             </div>
           </div>
-          <button id="tutorialNextBtn" type="button">次へ</button>
-          <button id="tutorialSkipBtn" type="button" class="text-button">スキップ</button>
+          <button id="tutorialNextBtn" type="button">${t('button.next')}</button>
+          <button id="tutorialSkipBtn" type="button" class="text-button">${t('button.skip')}</button>
         </div>
-        <div id="feedbackModal" class="overlay hidden" role="dialog" aria-modal="true" aria-label="フィードバック">
-          <h2>フィードバック</h2>
-          
+        <div id="feedbackModal" class="overlay hidden" role="dialog" aria-modal="true" aria-label="${t('feedback.title')}">
+          <h2>${t('feedback.title')}</h2>
+
           <div class="feedback-section">
-            <p class="feedback-label">難易度はどうでしたか？</p>
+            <p class="feedback-label">${t('feedback.difficultyQuestion')}</p>
             <div class="rating-group" id="difficultyRating">
-              <label><input type="radio" name="difficulty" value="簡単"><span>簡単</span></label>
-              <label><input type="radio" name="difficulty" value="普通" checked><span>普通</span></label>
-              <label><input type="radio" name="difficulty" value="難しい"><span>難しい</span></label>
+              <label><input type="radio" name="difficulty" value="easy"><span>${t('feedback.easy')}</span></label>
+              <label><input type="radio" name="difficulty" value="normal" checked><span>${t('feedback.normal')}</span></label>
+              <label><input type="radio" name="difficulty" value="hard"><span>${t('feedback.hard')}</span></label>
             </div>
           </div>
 
           <div class="feedback-section">
-            <p class="feedback-label">面白かったですか？</p>
+            <p class="feedback-label">${t('feedback.funQuestion')}</p>
             <div class="rating-group" id="funRating">
-              <label><input type="radio" name="fun" value="いまいち"><span>いまいち</span></label>
-              <label><input type="radio" name="fun" value="普通" checked><span>普通</span></label>
-              <label><input type="radio" name="fun" value="最高!"><span>最高!</span></label>
+              <label><input type="radio" name="fun" value="not_fun"><span>${t('feedback.notFun')}</span></label>
+              <label><input type="radio" name="fun" value="normal" checked><span>${t('feedback.normal')}</span></label>
+              <label><input type="radio" name="fun" value="awesome"><span>${t('feedback.awesome')}</span></label>
             </div>
           </div>
 
           <div class="feedback-actions main-actions">
-            <button id="quickSubmitBtn" type="button">そのまま送る</button>
-            <button id="commentToggleBtn" type="button" class="secondary">ひと言コメント</button>
+            <button id="quickSubmitBtn" type="button">${t('button.sendAsIs')}</button>
+            <button id="commentToggleBtn" type="button" class="secondary">${t('button.addComment')}</button>
           </div>
 
           <div id="feedbackCommentSection" class="feedback-comment-section hidden">
-            <textarea id="feedbackText" class="feedback-textarea" placeholder="ご意見・ご感想をお聞かせください..." rows="3"></textarea>
+            <textarea id="feedbackText" class="feedback-textarea" placeholder="${t('feedback.placeholder')}" rows="3"></textarea>
             <div class="feedback-actions">
-              <button id="feedbackSubmitBtn" type="button">送信</button>
+              <button id="feedbackSubmitBtn" type="button">${t('button.send')}</button>
             </div>
           </div>
 
-          <button id="feedbackCloseBtn" type="button" class="close-icon" aria-label="閉じる">×</button>
+          <button id="feedbackCloseBtn" type="button" class="close-icon" aria-label="${t('button.close')}">×</button>
         </div>
 
         <div class="mobile-controls">
           <div class="mobile-grid">
-            <button id="mobileLeftBtn" class="mobile-btn" aria-label="左移動">
+            <button id="mobileLeftBtn" class="mobile-btn" aria-label="${t('mobile.left')}">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M19 12H5"></path>
                 <path d="M12 19l-7-7 7-7"></path>
               </svg>
             </button>
-            <button id="mobileRightBtn" class="mobile-btn" aria-label="右移動">
+            <button id="mobileRightBtn" class="mobile-btn" aria-label="${t('mobile.right')}">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M5 12h14"></path>
                 <path d="M12 5l7 7-7 7"></path>
               </svg>
             </button>
-            <button id="mobileRotateBtn" class="mobile-btn" aria-label="回転">
+            <button id="mobileRotateBtn" class="mobile-btn" aria-label="${t('mobile.rotate')}">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M21.5 2v6h-6"></path>
                 <path d="M21.34 15.57a10 10 0 1 1-.57-8.38L21.5 8"></path>
               </svg>
             </button>
-            <button id="mobileHardDropBtn" class="mobile-btn" aria-label="ハードドロップ">
+            <button id="mobileHardDropBtn" class="mobile-btn" aria-label="${t('mobile.hardDrop')}">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M12 3v14"></path>
                 <path d="M19 10l-7 7-7-7"></path>
@@ -272,17 +274,17 @@ const template = `
           </div>
         </div>
     </section>
-    
-    ${PRIVACY_POLICY_HTML}
 
-    <div id="gameMenuModal" class="overlay hidden" role="dialog" aria-modal="true" aria-label="ゲームメニュー">
-      <h2>メニュー</h2>
+    ${buildPrivacyPolicyHtml()}
+
+    <div id="gameMenuModal" class="overlay hidden" role="dialog" aria-modal="true" aria-label="${t('menu.label')}">
+      <h2>${t('menu.title')}</h2>
       <div class="menu-list">
-        <button id="menuResumeBtn" type="button" class="menu-btn primary">ゲームに戻る</button>
-        <button id="menuRestartBtn" type="button" class="menu-btn danger">最初からやり直す</button>
-        <button id="menuBgmToggleBtn" type="button" class="menu-btn toggle" aria-pressed="true">BGM オン</button>
-        <button id="menuFeedbackBtn" type="button" class="menu-btn secondary">フィードバック</button>
-        <button id="menuCloseBtn" type="button" class="menu-btn close">閉じる</button>
+        <button id="menuResumeBtn" type="button" class="menu-btn primary">${t('menu.resume')}</button>
+        <button id="menuRestartBtn" type="button" class="menu-btn danger">${t('menu.restart')}</button>
+        <button id="menuBgmToggleBtn" type="button" class="menu-btn toggle" aria-pressed="true">${t('menu.bgmOn')}</button>
+        <button id="menuFeedbackBtn" type="button" class="menu-btn secondary">${t('button.feedback')}</button>
+        <button id="menuCloseBtn" type="button" class="menu-btn close">${t('button.close')}</button>
       </div>
     </div>
 
@@ -292,42 +294,42 @@ const template = `
               <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
               <circle cx="12" cy="7" r="4"></circle>
             </svg>
-            <input type="text" id="playerNameInput" maxlength="20" placeholder="プレイヤー名" autocomplete="name" aria-label="プレイヤー名">
+            <input type="text" id="playerNameInput" maxlength="20" placeholder="${t('player.placeholder')}" autocomplete="name" aria-label="${t('player.placeholder')}">
           </div>
         </section>
         <section class="help-panel">
-          <h2>遊び方</h2>
-          <p>石を落として連結させ、囲んだ石を捕獲すると得点が入ります。</p>
+          <h2>${t('help.title')}</h2>
+          <p>${t('help.description')}</p>
           <ul>
-            <li>&#x2190; / &#x2192;: 左右に移動</li>
-            <li>&#x2191;: 回転</li>
-            <li>スペース: ハードドロップ</li>
-            <li>P: 一時停止 / 再開</li>
+            <li>&#x2190; / &#x2192;: ${t('help.moveLeftRight')}</li>
+            <li>&#x2191;: ${t('help.rotate')}</li>
+            <li>Space: ${t('help.hardDrop')}</li>
+            <li>P: ${t('help.pauseResume')}</li>
           </ul>
-          <p>5行連続で捕獲するとレベルが上がり、落下速度が速くなります。</p>
+          <p>${t('help.levelUp')}</p>
           <p class="app-version">
-            v${__APP_VERSION__} / 
+            v\${__APP_VERSION__} /
             <button id="privacyOpenBtn" type="button" class="text-link-btn" style="background:none; border:none; padding:0; color:inherit; text-decoration:underline; cursor:pointer; font-size:inherit;">
-              規約・ポリシー
+              ${t('help.policy')}
             </button>
           </p>
         </section>
         <section class="leaderboard-panel" aria-live="polite">
-          <h2>ランキング</h2>
+          <h2>${t('leaderboard.title')}</h2>
           <div class="leaderboard-group">
-            <h3>本日のベストスコア</h3>
+            <h3>${t('leaderboard.daily')}</h3>
             <p id="leaderboardDate" class="leaderboard-date"></p>
-            <p id="leaderboardEmpty" class="leaderboard-empty">まだスコアがありません。</p>
+            <p id="leaderboardEmpty" class="leaderboard-empty">${t('leaderboard.empty')}</p>
             <ol id="dailyLeaderboard" class="leaderboard-list"></ol>
           </div>
           <div class="leaderboard-group">
-            <h3>今週のベストスコア</h3>
-            <p id="weeklyLeaderboardEmpty" class="leaderboard-empty">まだスコアがありません。</p>
+            <h3>${t('leaderboard.weekly')}</h3>
+            <p id="weeklyLeaderboardEmpty" class="leaderboard-empty">${t('leaderboard.empty')}</p>
             <ol id="weeklyLeaderboard" class="leaderboard-list"></ol>
           </div>
           <div class="leaderboard-group">
-            <h3>今月のベストスコア</h3>
-            <p id="monthlyLeaderboardEmpty" class="leaderboard-empty">まだスコアがありません。</p>
+            <h3>${t('leaderboard.monthly')}</h3>
+            <p id="monthlyLeaderboardEmpty" class="leaderboard-empty">${t('leaderboard.empty')}</p>
             <ol id="monthlyLeaderboard" class="leaderboard-list"></ol>
           </div>
         </section>
@@ -336,6 +338,7 @@ const template = `
   </div>
   <audio id="bgmAudio" class="sr-only" preload="auto" loop></audio>
 `;
+}
 
 function requireElement<T extends HTMLElement>(root: ParentNode, selector: string): T {
   const element = root.querySelector<T>(selector);
@@ -346,7 +349,7 @@ function requireElement<T extends HTMLElement>(root: ParentNode, selector: strin
 }
 
 export function mountAppShell(target: HTMLElement): AppShellRefs {
-  target.innerHTML = template;
+  target.innerHTML = buildTemplate();
 
   const boardPanel = requireElement<HTMLElement>(target, '.board-panel');
   const leaderboard: LeaderboardElements = {

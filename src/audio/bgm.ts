@@ -1,8 +1,10 @@
+import { t } from '../i18n';
+
 export type BgmRole = 'lobby' | 'game' | 'danger';
 
 interface BgmPreset {
   src: string;
-  label: string;
+  labelKey: 'bgm.lobby' | 'bgm.game' | 'bgm.danger';
 }
 
 const ACTIVE_VOLUME = 0.6;
@@ -12,15 +14,15 @@ const withBase = (path: string) => `${BASE_PATH}${path.startsWith('/') ? path : 
 const PRESETS: Record<BgmRole, BgmPreset> = {
   lobby: {
     src: withBase('/audio/igopon-lobby.mp3'),
-    label: 'ロビーBGM'
+    labelKey: 'bgm.lobby'
   },
   game: {
     src: withBase('/audio/igopon-game.mp3'),
-    label: 'ゲームBGM'
+    labelKey: 'bgm.game'
   },
   danger: {
     src: withBase('/audio/igopon-game2.mp3'),
-    label: 'ゲームBGM（危険）'
+    labelKey: 'bgm.danger'
   }
 };
 
@@ -85,18 +87,18 @@ export class BgmController {
   }
 
   getStatusMessage(context: BgmStatusContext): string {
-    const label = PRESETS[this.#role].label;
+    const label = t(PRESETS[this.#role].labelKey);
     const suffix = label ? ` (${label})` : '';
     if (!this.#preference) {
-      return `BGMはオフになっています。${suffix}`.trim();
+      return `${t('bgm.off')}${suffix}`.trim();
     }
     if (this.#audio.paused && !this.#unlocked) {
-      return `操作後にBGMを有効化できます。${suffix}`.trim();
+      return `${t('bgm.pendingUnlock')}${suffix}`.trim();
     }
     if (context.hidden || context.paused) {
-      return `BGM再生中 (静音モード)${suffix}`;
+      return `${t('bgm.playingMute')}${suffix}`;
     }
-    return `BGM再生中${suffix}`;
+    return `${t('bgm.playing')}${suffix}`;
   }
 
   async unlockViaGesture(): Promise<void> {

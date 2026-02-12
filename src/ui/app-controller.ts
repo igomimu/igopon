@@ -17,6 +17,7 @@ import { submitFeedback } from '../api/feedback';
 import { sendEvent } from '../api/analytics';
 import { AppShellRefs, mountAppShell } from './components/app-shell';
 import { logger } from '../utils/logger';
+import { t, formatDate, formatNumber, setLocale, getLocale } from '../i18n';
 
 const BOARD_PIXEL_WIDTH = (COLS - 1) * CELL_SIZE + GRID_MARGIN * 2;
 const BOARD_PIXEL_HEIGHT = (ROWS - 1) * CELL_SIZE + GRID_MARGIN * 2;
@@ -62,7 +63,8 @@ export class AppController {
     this.#wireEvents();
     this.#initializeLeaderboards();
     this.#updateBgmUI();
-    this.#setStatus('いごぽん へようこそ。GO! で対局開始。');
+    setLocale(getLocale());
+    this.#setStatus(t('status.welcome'));
     this.#setupBoardScaling();
     this.#setupInitialBgmUnlock();
     this.#loadPlayerName();
@@ -70,7 +72,7 @@ export class AppController {
     this.#checkTutorial();
 
     // VibeLogger: アプリ初期化完了
-    logger.info('app_initialize', 'いごぽんアプリ初期化完了', {
+    logger.info('app_initialize', 'App initialized', {
       context: {
         version: '0.2.17',
         highScore: this.#highScore,
@@ -97,7 +99,7 @@ export class AppController {
     });
 
     // VibeLogger: ゲームオーバー
-    logger.info('game_over', 'ゲーム終了', {
+    logger.info('game_over', 'Game over', {
       context: {
         game: {
           finalScore: summary.finalScore,
@@ -108,7 +110,7 @@ export class AppController {
         captures: summary.captures,
         isHighScore: summary.finalScore > this.#highScore
       },
-      human_note: 'ゲームオーバー時の詳細情報'
+      human_note: 'Game over details'
     });
 
     if (summary.finalScore > this.#highScore) {
@@ -121,21 +123,21 @@ export class AppController {
     this.#updateBgmUI();
 
     // Submit score
-    const name = sanitizePlayerName(this.#shell.playerNameInput.value) || 'プレイヤー';
+    const name = sanitizePlayerName(this.#shell.playerNameInput.value) || t('player.default');
     submitScore(name, summary.finalScore)
       .then(() => {
-        logger.info('score_submit_success', 'スコア送信成功', {
+        logger.info('score_submit_success', 'Score submitted', {
           context: { player: name, score: summary.finalScore }
         });
-        this.#setStatus('スコアを送信しました。', 3000);
+        this.#setStatus(t('status.scoreSubmitted'), 3000);
         return this.#refreshLeaderboards();
       })
       .catch((error) => {
-        logger.error('score_submit_failed', 'スコア送信失敗', {
+        logger.error('score_submit_failed', 'Score submission failed', {
           context: { player: name, score: summary.finalScore, error: String(error) },
-          ai_todo: 'ネットワークエラーの原因を調査してください'
+          ai_todo: 'Investigate network error cause'
         });
-        this.#setStatus('スコア送信に失敗しました。', 3000);
+        this.#setStatus(t('status.scoreSubmitFailed'), 3000);
       });
 
     // Auto-popup feedback for the first time
@@ -187,9 +189,9 @@ export class AppController {
       const { active, paused } = this.#session.snapshot;
       if (!active) {
         // VibeLogger: ゲーム開始
-        logger.info('game_start', 'ゲーム開始', {
+        logger.info('game_start', 'Game started', {
           context: {
-            player: sanitizePlayerName(this.#shell.playerNameInput.value) || 'プレイヤー',
+            player: sanitizePlayerName(this.#shell.playerNameInput.value) || t('player.default'),
             highScore: this.#highScore
           }
         });
@@ -268,7 +270,7 @@ export class AppController {
     this.#shell.playerNameInput.addEventListener('change', () => {
       const name = this.#shell.playerNameInput.value.trim();
       this.#savePlayerName(name);
-      this.#setStatus(`${name || 'プレイヤー'} さん、準備OKです。`, 2000);
+      this.#setStatus(t('status.playerReady', { name: name || t('player.default') }), 2000);
     });
 
     // Feedback button handlers
@@ -286,7 +288,7 @@ export class AppController {
     document.addEventListener('keydown', this.#handleKeydown);
     document.addEventListener('visibilitychange', this.#handleVisibilityChange);
     window.addEventListener('appinstalled', () => {
-      this.#setStatus('アプリがインストールされました！ホーム画面をご確認ください。', 5000);
+      this.#setStatus(t('status.appInstalled'), 5000);
       this.#shell.installBtn.classList.add('hidden');
       this.#deferredInstallPrompt = null;
     });
@@ -364,9 +366,9 @@ export class AppController {
     step3.classList.toggle('hidden', this.#tutorialStep !== 3);
 
     if (this.#tutorialStep === 3) {
-      nextBtn.textContent = '始める';
+      nextBtn.textContent = t('button.begin');
     } else {
-      nextBtn.textContent = '次へ';
+      nextBtn.textContent = t('button.next');
     }
   }
 
@@ -378,7 +380,7 @@ export class AppController {
     } catch (e) {
       // ignore
     }
-    this.#setStatus('チュートリアル完了！ GO! でゲーム開始。', 4000);
+    this.#setStatus(t('status.tutorialComplete'), 4000);
   }
 
   #resetFeedbackForm(): void {
@@ -392,8 +394,8 @@ export class AppController {
         opt.checked = opt.value === value;
       });
     };
-    setRadio(this.#shell.feedback.difficultyOptions, '普通');
-    setRadio(this.#shell.feedback.funOptions, '普通');
+    setRadio(this.#shell.feedback.difficultyOptions, 'normal');
+    setRadio(this.#shell.feedback.funOptions, 'normal');
   }
 
   async #submitFeedback(withComment: boolean): Promise<void> {
@@ -406,24 +408,24 @@ export class AppController {
     const comment = withComment ? this.#shell.feedback.textarea.value.trim() : '';
 
     if (!difficulty || !fun) {
-      this.#setStatus('評価を選択してください。', 3000);
+      this.#setStatus(t('status.selectRating'), 3000);
       return;
     }
 
     try {
       await submitFeedback({ difficulty, fun, comment });
-      logger.info('feedback_submit_success', 'フィードバック送信成功', {
+      logger.info('feedback_submit_success', 'Feedback submitted', {
         context: { difficulty, fun, hasComment: comment.length > 0 }
       });
       this.#shell.feedback.root.classList.add('hidden');
-      this.#setStatus('フィードバックありがとうございます！', 4000);
+      this.#setStatus(t('status.feedbackThanks'), 4000);
     } catch (e) {
-      logger.error('feedback_submit_failed', 'フィードバック送信失敗', {
+      logger.error('feedback_submit_failed', 'Feedback submission failed', {
         context: { error: String(e) },
-        ai_todo: 'フィードバック送信APIのエラーを確認してください'
+        ai_todo: 'Check feedback submission API error'
       });
       console.error('Failed to submit feedback', e);
-      this.#setStatus('送信に失敗しました。', 4000);
+      this.#setStatus(t('status.submitFailed'), 4000);
     }
   }
 
@@ -511,7 +513,7 @@ export class AppController {
 
   #handleVisibilityChange = (): void => {
     if (document.hidden && this.#session.snapshot.active && !this.#session.snapshot.paused) {
-      this.#engine.pause('タブが非表示になったため一時停止しました。');
+      this.#engine.pause(t('status.tabHidden'));
     }
     this.#syncBgmWithState(this.#session.snapshot);
   };
@@ -585,10 +587,9 @@ export class AppController {
   }
 
   #renderStats(state: GameSessionState): void {
-    const format = (value: number) => value.toLocaleString('ja-JP');
-    this.#shell.stats.score.textContent = format(state.score);
-    this.#shell.stats.headerScore.textContent = format(state.score); // Sync header
-    this.#shell.stats.pieces.textContent = format(state.piecesPlaced);
+    this.#shell.stats.score.textContent = formatNumber(state.score);
+    this.#shell.stats.headerScore.textContent = formatNumber(state.score);
+    this.#shell.stats.pieces.textContent = formatNumber(state.piecesPlaced);
   }
 
   #renderOverlay(state: GameSessionState): void {
@@ -599,36 +600,34 @@ export class AppController {
     this.#shell.overlay.root.classList.remove('hidden');
     const summary = state.lastResult;
     const finalScore = summary?.finalScore ?? 0;
-    this.#shell.overlay.title.textContent = summary?.reason ?? 'スタンバイ中';
-    let detail = 'GO! を押してゲームを開始してください。';
+    this.#shell.overlay.title.textContent = summary?.reason ?? t('overlay.standby');
+    let detail = t('overlay.instruction');
     if (summary) {
       if (this.#lastResultExtras) {
-        const timestamp = new Date(summary.timestamp).toLocaleString('ja-JP');
-        detail = `${timestamp} / チェイン ${this.#lastResultExtras.chain} / 捕獲 B:${this.#lastResultExtras.captures.black} W:${this.#lastResultExtras.captures.white} `;
+        const timestamp = new Date(summary.timestamp).toLocaleString(getLocale() === 'ja' ? 'ja-JP' : 'en-US');
+        detail = `${timestamp} / ${t('overlay.chain')} ${this.#lastResultExtras.chain} / ${t('overlay.captureB')}${this.#lastResultExtras.captures.black} ${t('overlay.captureW')}${this.#lastResultExtras.captures.white}`;
       } else {
-        detail = new Date(summary.timestamp).toLocaleString('ja-JP');
+        detail = new Date(summary.timestamp).toLocaleString(getLocale() === 'ja' ? 'ja-JP' : 'en-US');
       }
     }
     this.#shell.overlay.detail.textContent = detail;
-    this.#shell.overlay.finalScore.textContent = finalScore.toLocaleString('ja-JP');
-    this.#shell.overlay.bestScore.textContent = this.#highScore.toLocaleString('ja-JP');
+    this.#shell.overlay.finalScore.textContent = formatNumber(finalScore);
+    this.#shell.overlay.bestScore.textContent = formatNumber(this.#highScore);
   }
 
   #updatePrimaryAction(state: GameSessionState): void {
-    const label = state.active ? 'リスタート' : 'スタート';
-    this.#shell.startBtnDesktop.textContent = label;
+    this.#shell.startBtnDesktop.textContent = state.active ? t('button.restart') : t('button.start');
   }
 
   #updateBgmUI(): void {
     const enabled = this.#bgm.preference;
     // Update both the toggle button text/state
-    const label = enabled ? 'BGM オン' : 'BGM オフ';
-    this.#shell.bgmToggleBtn.textContent = label;
+    this.#shell.bgmToggleBtn.textContent = enabled ? t('menu.bgmOn') : t('menu.bgmOff');
     this.#shell.bgmToggleBtn.setAttribute('aria-pressed', String(enabled));
   }
 
   async #initializeLeaderboards(): Promise<void> {
-    this.#shell.leaderboard.dateLabel.textContent = this.#formatDate(new Date());
+    this.#shell.leaderboard.dateLabel.textContent = formatDate(new Date());
     await this.#refreshLeaderboards();
   }
 
@@ -680,23 +679,18 @@ export class AppController {
 
       const name = document.createElement('span');
       name.className = 'name';
-      name.textContent = entry.name || '名無し';
+      name.textContent = entry.name || t('player.anonymous');
 
       const score = document.createElement('span');
       score.className = 'score';
-      score.textContent = Number(entry.score).toLocaleString('ja-JP');
+      score.textContent = formatNumber(Number(entry.score));
 
       item.append(rank, name, score);
       target.appendChild(item);
     });
   }
 
-  #formatDate(date: Date): string {
-    const year = date.getFullYear();
-    const month = date.getMonth() + 1;
-    const day = date.getDate();
-    return `${year}年${month}月${day} 日`;
-  }
+  // Date formatting delegated to i18n/index.ts formatDate()
 
   #setStatus(message: string, duration = 3500): void {
     this.#shell.statusMessage.textContent = message;
@@ -722,7 +716,7 @@ export class AppController {
 
     // Auto-pause if active
     if (active && !paused) {
-      this.#engine.pause('メニューを開いています');
+      this.#engine.pause(t('status.menuOpen'));
     }
   }
 

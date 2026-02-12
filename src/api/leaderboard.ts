@@ -1,3 +1,4 @@
+import { t } from '../i18n';
 
 export interface LeaderboardEntry {
     name: string;
@@ -67,7 +68,7 @@ async function fetchLeaderboardEntries(params: LeaderboardParams): Promise<Leade
         const rawEntries = Array.isArray(payload.entries) ? payload.entries : [];
 
         return rawEntries.map((entry: any) => {
-            const name = entry.player || entry.name || entry.playerName || '名無し';
+            const name = entry.player || entry.name || entry.playerName || t('player.anonymous');
             return {
                 name: name,
                 score: Number(entry.score) || 0,
