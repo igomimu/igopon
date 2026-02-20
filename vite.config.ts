@@ -20,9 +20,11 @@ export default defineConfig({
         clientsClaim: true
       },
       manifest: {
-        name: 'いごぽん',
-        short_name: 'いごぽん',
-        description: '次世代の囲碁落ち物パズル',
+        name: 'igopon',
+        short_name: 'igopon',
+        description: 'Drop stones. Surround them. Watch them vanish!',
+        lang: 'en',
+        categories: ['games', 'puzzle'],
         theme_color: '#ffffff',
         background_color: '#ffffff',
         display: 'standalone',

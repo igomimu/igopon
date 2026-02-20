@@ -76,6 +76,8 @@ export interface MenuElements {
   bgmToggleBtn: HTMLButtonElement;
   feedbackBtn: HTMLButtonElement;
   closeBtn: HTMLButtonElement;
+  langJaBtn: HTMLButtonElement;
+  langEnBtn: HTMLButtonElement;
 }
 
 
@@ -284,6 +286,10 @@ function buildTemplate(): string {
         <button id="menuRestartBtn" type="button" class="menu-btn danger">${t('menu.restart')}</button>
         <button id="menuBgmToggleBtn" type="button" class="menu-btn toggle" aria-pressed="true">${t('menu.bgmOn')}</button>
         <button id="menuFeedbackBtn" type="button" class="menu-btn secondary">${t('button.feedback')}</button>
+        <div class="lang-switcher" role="group" aria-label="Language">
+          <button id="langJaBtn" type="button" class="menu-btn lang-btn">日本語</button>
+          <button id="langEnBtn" type="button" class="menu-btn lang-btn">English</button>
+        </div>
         <button id="menuCloseBtn" type="button" class="menu-btn close">${t('button.close')}</button>
       </div>
     </div>
@@ -424,7 +430,9 @@ export function mountAppShell(target: HTMLElement): AppShellRefs {
     restartBtn: requireElement(target, '#menuRestartBtn'),
     bgmToggleBtn: requireElement(target, '#menuBgmToggleBtn'),
     feedbackBtn: requireElement(target, '#menuFeedbackBtn'),
-    closeBtn: requireElement(target, '#menuCloseBtn')
+    closeBtn: requireElement(target, '#menuCloseBtn'),
+    langJaBtn: requireElement(target, '#langJaBtn'),
+    langEnBtn: requireElement(target, '#langEnBtn')
   };
 
   return {

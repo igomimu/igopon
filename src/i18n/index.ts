@@ -2,16 +2,25 @@ import { messages, type MessageKey } from './messages';
 
 export type Locale = 'ja' | 'en';
 
+const STORAGE_KEY = 'igopon_language';
+
 let currentLocale: Locale = detectLocale();
 
 function detectLocale(): Locale {
-  // URL parameter override (for itch.io embedding etc.)
+  // Priority 1: URL parameter override (for itch.io embedding etc.)
   if (typeof location !== 'undefined') {
     const params = new URLSearchParams(location.search);
     const lang = params.get('lang');
     if (lang === 'en' || lang === 'ja') return lang;
   }
-  // Browser language detection
+  // Priority 2: localStorage persisted preference
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored === 'en' || stored === 'ja') return stored;
+  } catch {
+    // ignore
+  }
+  // Priority 3: Browser language detection
   if (typeof navigator !== 'undefined') {
     const lang = navigator.language;
     if (lang.startsWith('ja')) return 'ja';
@@ -26,6 +35,11 @@ export function getLocale(): Locale {
 export function setLocale(locale: Locale): void {
   currentLocale = locale;
   document.documentElement.lang = locale;
+  try {
+    localStorage.setItem(STORAGE_KEY, locale);
+  } catch {
+    // ignore
+  }
 }
 
 export function getNumberLocale(): string {

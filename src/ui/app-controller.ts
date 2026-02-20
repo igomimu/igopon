@@ -323,6 +323,15 @@ export class AppController {
       this.#submitFeedback(true);
     });
 
+    // Language switcher handlers (only when game is not active)
+    const switchLang = (locale: 'ja' | 'en') => {
+      if (this.#session.snapshot.active) return;
+      setLocale(locale);
+      location.reload();
+    };
+    this.#shell.menu.langJaBtn.addEventListener('click', () => switchLang('ja'));
+    this.#shell.menu.langEnBtn.addEventListener('click', () => switchLang('en'));
+
     // Tutorial Handlers
     this.#shell.tutorial.nextBtn.addEventListener('click', () => {
       this.#advanceTutorial();
