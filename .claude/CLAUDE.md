@@ -1,14 +1,22 @@
 # 囲Trap（いごぽん）— 囲碁 × 落ち物パズル
 
+## マーケティング方針
+- ゲームの目的は「囲碁を覚えさせる」ことではない
+- 純粋に面白いパズルゲームを世界に届けること
+- 囲碁というものがこの世にあると知ってもらうこと
+- 囲碁を前面に出さない。教育・学習を匂わせない
+- 遊ぶ人に負担を感じさせる表現は使わない
+
 ## 基本情報
 - **英名**: 囲Trap（読み: i-Trap）
 - **和名**: いごぽん
 - **技術**: Vite/TypeScript/Canvas/PWA
 - **GitHub**: igomimu/igopon
 - **公開中**: https://igomimu.github.io/igopon/
+- **itch.io**: https://mimuigo.itch.io/trapi-trap （アカウント: mimuigo）
 - **バンドル**: 81KB JS + 18KB CSS（gzip後）
 - **バージョン**: 1.0.0
-- **状態**: 完成、itch.io出店準備中
+- **状態**: itch.io公開済み（2026-02-21）、Phase 2へ
 
 ## 機能
 - 囲碁ルール × 落ち物パズル（20×10盤面）
@@ -55,16 +63,18 @@
 - [x] 英語の説明文（短文+長文）を最終化
 - [x] ゲームプレイGIF作成（Playwright録画→ffmpegでGIF変換、30秒/1.6MB）
 
-### Phase 1: itch.io 出店（目標: 数日）
-- [x] itch.io用ビルド作成（`VITE_BASE_PATH=/` でビルド、`itrap-itch-v1.0.0.zip` 13MB）
-- [x] 英語説明文・タグ・ページ設定テンプレート作成済み
+### Phase 1: itch.io 公開（目標: 数日）
+- [x] itch.io用ビルド作成（`VITE_BASE_PATH=./` でビルド、相対パス対応済み）
+- [x] 英語説明文・タグ・ページ設定テンプレート作成済み（`scripts/itch-page-settings.md`）
 - [x] CORS確認（GAS WebアプリはデフォルトでCORS許可、追加設定不要）
-- [ ] itch.io アカウント作成（igomimu）
-- [ ] 新規プロジェクト作成（HTML5ゲーム）
-- [ ] ZIP アップロード + ページ設定（テンプレートあり）
-- [ ] 埋め込みプレイヤーの動作確認（iframe `?lang=en`）
-- [ ] GA4がitch.io iframe内で動作するか確認
-- [ ] 公開 → SNS告知（X @igomimu）
+- [x] itch.io アカウント作成（mimuigo）
+- [x] 新規プロジェクト作成（HTML5ゲーム、URL: `trapi-trap`）
+- [x] butler push でZIPアップロード完了（v2、ビルド #1532609）
+- [x] ページ設定（Embed 420×700、Fullscreen ON、Description英語、Screenshots 5枚+GIF、カバー画像）
+- [x] 埋め込みプレイヤーの動作確認（iframe `?lang=en`）
+- [x] GA4がitch.io iframe内で動作確認済み（G-ZJ25KF5PR1、gtag/dataLayer正常）
+- [x] 公開完了（2026-02-21）: https://mimuigo.itch.io/trapi-trap
+- [x] SNS告知（X @igomimu、日本語・英語投稿完了）
 
 ### Phase 2: フィードバック収集と改善（1〜2週間）
 - [ ] itch.io のアクセス数・プレイ数を監視
