@@ -20,9 +20,9 @@ export default defineConfig({
         clientsClaim: true
       },
       manifest: {
-        name: 'igopon',
-        short_name: 'igopon',
-        description: 'Drop stones. Surround them. Watch them vanish!',
+        name: '囲Trap',
+        short_name: '囲Trap',
+        description: 'Go meets falling blocks! Surround and capture stones.',
         lang: 'en',
         categories: ['games', 'puzzle'],
         theme_color: '#ffffff',

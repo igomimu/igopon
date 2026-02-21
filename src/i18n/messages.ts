@@ -153,8 +153,8 @@ const ja = {
 
 const en: Record<keyof typeof ja, string> = {
   // App title & meta
-  'app.title': 'igopon',
-  'app.description': 'igopon - Next-Gen Go Puzzle',
+  'app.title': '囲Trap',
+  'app.description': '囲Trap - Next-Gen Go Puzzle',
   'app.ogDescription': 'Go meets falling blocks! Surround and capture stones in this unique puzzle game.',
 
   // Header
