@@ -13,6 +13,10 @@ export function buildPrivacyPolicyHtml(): string {
 
       <p><strong>${t('privacy.section3Title')}</strong><br>
       ${t('privacy.section3Body')}</p>
+
+      <hr style="margin: 16px 0; border: none; border-top: 1px solid #ccc;">
+      <p><strong>${t('credits.title')}</strong><br>
+      ${t('credits.body').replace(/\n/g, '<br>')}</p>
     </div>
     <div class="privacy-actions" style="margin-top: 20px;">
       <button id="privacyCloseBtn" type="button">${t('button.close')}</button>

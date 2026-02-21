@@ -108,6 +108,10 @@ const ja = {
   'privacy.section3Title': '3. お問い合わせ',
   'privacy.section3Body': '不具合の報告やご意見は、公式X(旧Twitter)までご連絡ください。',
 
+  // Credits
+  'credits.title': 'クレジット',
+  'credits.body': 'BGM・効果音: オリジナル制作\nアイコン: AI生成（Gemini）\n開発: 三村智保 (@igomimu)',
+
   // Status messages (app-controller)
   'status.welcome': 'いごぽん へようこそ。GO! で対局開始。',
   'status.playerReady': '{name} さん、準備OKです。',
@@ -258,6 +262,10 @@ const en: Record<keyof typeof ja, string> = {
   'privacy.section2Body': 'Collected data is used for improving game features, enhancing user experience, and access analytics.',
   'privacy.section3Title': '3. Contact',
   'privacy.section3Body': 'For bug reports or feedback, please contact us on X (formerly Twitter).',
+
+  // Credits
+  'credits.title': 'Credits',
+  'credits.body': 'BGM & Sound Effects: Original compositions\nIcon: AI-generated (Gemini)\nDeveloped by: Tomoyasu Mimura (@igomimu)',
 
   // Status messages (app-controller)
   'status.welcome': 'Welcome to igopon. Press GO! to start.',
