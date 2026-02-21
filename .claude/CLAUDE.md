@@ -43,7 +43,7 @@
 
 ### Phase 0: 出展前の整備（1〜2日）
 - [x] i18n記載を修正（既に「日英2言語」と正しく記載済み）
-- [x] BGM/効果音のライセンス表記を追加（全て自作 → クレジットセクション追加）
+- [x] BGM/効果音のライセンス表記を追加（全て自作 → プライバシーポリシー画面にクレジットセクション追加）
 - [x] ゲーム名決定: **囲Trap**（i-Trap）
 - [x] アイコン決定: `public/icon_candidates/20260221_152722.jpg`
   - コンセプト: 碁盤上で青白く光る曲がり白3子を黒7子が囲んで捕獲する瞬間
@@ -51,22 +51,18 @@
   - [x] サイズ展開（512/192/favicon/maskable）
   - [x] PWA manifest・コードへの反映
 - [x] バージョンを 1.0.0 に上げる（初の公式リリース）
-- [ ] スクリーンショット追加撮影（PC版、英語UI、複数サイズ）
-- [ ] 英語の説明文（短文+長文）を最終化
-- [ ] ゲームプレイGIF作成
+- [x] スクリーンショット撮影（Playwrightで自動撮影、5枚: title/gameplay/midgame/menu/desktop）
+- [x] 英語の説明文（短文+長文）を最終化
+- [x] ゲームプレイGIF作成（Playwright録画→ffmpegでGIF変換、30秒/1.6MB）
 
 ### Phase 1: itch.io 出店（目標: 数日）
+- [x] itch.io用ビルド作成（`VITE_BASE_PATH=/` でビルド、`itrap-itch-v1.0.0.zip` 13MB）
+- [x] 英語説明文・タグ・ページ設定テンプレート作成済み
+- [x] CORS確認（GAS WebアプリはデフォルトでCORS許可、追加設定不要）
 - [ ] itch.io アカウント作成（igomimu）
 - [ ] 新規プロジェクト作成（HTML5ゲーム）
-- [ ] dist フォルダをZip化してアップロード
-- [ ] ページ設定:
-  - タイトル・説明文（英語）
-  - スクリーンショット（3〜5枚）
-  - タグ: puzzle, go, igo, strategy, html5, pwa, browser
-  - ジャンル: Puzzle
-  - 価格: Free（まずは無料で認知獲得）
+- [ ] ZIP アップロード + ページ設定（テンプレートあり）
 - [ ] 埋め込みプレイヤーの動作確認（iframe `?lang=en`）
-- [ ] リーダーボードAPIのCORS設定にitch.ioドメイン追加
 - [ ] GA4がitch.io iframe内で動作するか確認
 - [ ] 公開 → SNS告知（X @igomimu）
 
