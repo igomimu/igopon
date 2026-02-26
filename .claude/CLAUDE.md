@@ -132,6 +132,14 @@
 
 ---
 
+## UI/Design Standards
+→ 詳細は `~/.claude/CLAUDE.md` の「UI/Design Standards」セクションを参照
+- **Anti-AI Design**: グラデ・グロー禁止、過剰な装飾なし、機能的なUI
+- **注意**: Canvas/PWAゲームのためshadcn/uiは不使用。メニュー・モーダル等のHTML UIにはTailwind適用
+- **primary色**: amber-500（ゲームのワクワク感、碁盤の色調）
+- **フォント**: Inter + Noto Sans JP
+- **参考**: itch.io上位ゲームのクリーンなUI
+
 ## 画像生成ツール
 
 - **Nano Banana Pro**（Gemini 3 Pro Image）をClaude Codeスキルとして設定済み
