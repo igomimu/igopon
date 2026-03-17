@@ -1,0 +1,95 @@
+{
+  "generatedAt": "2025-11-20T05:14:17.331Z",
+  "sources": [
+    {
+      "name": "日本棋院 囲碁大会・イベント",
+      "feedUrl": "https://www.nihonkiin.or.jp/event/atom.xml",
+      "homepage": "https://www.nihonkiin.or.jp/event/"
+    }
+  ],
+  "tournaments": [
+    {
+      "title": "【中部】「囲碁フェスタ2025 in中部総本部」のモデルコースについて",
+      "url": "https://www.nihonkiin.or.jp/event/area/chubu/2025_in_2.html",
+      "source": "日本棋院 囲碁大会・イベント",
+      "sourceHomepage": "https://www.nihonkiin.or.jp/event/",
+      "eventDateText": "11月23日（日）",
+      "publishedText": "2025年11月12日",
+      "publishedIso": "2025-11-12",
+      "eventIsoDate": "2025-11-23",
+      "sortDate": 1763856000000,
+      "summary": "11月23日（日）及び24日（月・祝）に行う「囲碁フェスタ2025 in中部総本部」につきまして、23日（日）のモデルコースを作成しました。 一日中楽しめるイベントとなっておりますので、皆様お誘い合わせの上、ぜひお気軽にご来場ください。 なお、各企画の詳細は囲碁フェスタ2025 ...",
+      "categories": [
+        "中部総本部",
+        "囲碁大会",
+        "解説会・イベント"
+      ]
+    },
+    {
+      "title": "【オンライン・12月期】「手抜きの法則」 講師：大森泰志九段",
+      "url": "https://www.nihonkiin.or.jp/event/area/online/12_39.html",
+      "source": "日本棋院 囲碁大会・イベント",
+      "sourceHomepage": "https://www.nihonkiin.or.jp/event/",
+      "eventDateText": "2025年12月13日",
+      "publishedText": "2025年11月09日",
+      "publishedIso": "2025-11-09",
+      "eventIsoDate": "2025-12-13",
+      "sortDate": 1765584000000,
+      "summary": "皆さん、こんにちは。大森泰志です。12月は「手抜きの法則」を解説いたします。 一般的に\"手抜き\"や\"手を抜く\"とは『いい加減にする』『適当に行う』などあまり良いイメージのない言葉ですが、碁では良い手になる事はよくあります。 アマチュアの方が出来そうで出来ないのが手抜きです。 不要...",
+      "categories": [
+        "オンライン",
+        "囲碁大会",
+        "解説会・イベント",
+        "講座"
+      ]
+    },
+    {
+      "title": "【東京】第50期囲碁名人就位式・祝賀会　参加者募集",
+      "url": "https://www.nihonkiin.or.jp/event/area/other/50_3.html",
+      "source": "日本棋院 囲碁大会・イベント",
+      "sourceHomepage": "https://www.nihonkiin.or.jp/event/",
+      "eventDateText": "2025年12月15日（月）",
+      "publishedText": "2025年11月18日",
+      "publishedIso": "2025-11-18",
+      "eventIsoDate": "2025-12-15",
+      "sortDate": 1765756800000,
+      "summary": "第50期囲碁名人を防衛した一力遼名人の就位式を下記の通り開催いたします。 名人就位の式典と就位を祝う祝賀会の参加者を募ります。 第50期囲碁名人就位式・祝賀会 日時 2025年12月15日（月）18時開会 （17時30分開場）（20時閉会予定） 場所 ホテル椿山荘東京 ホテル棟1...",
+      "categories": [
+        "その他の地域",
+        "解説会・イベント"
+      ]
+    },
+    {
+      "title": "【東京】第5回2026東京都シニア・コミュニティ交流大会 TOKYO縁ジョイ！",
+      "url": "https://www.nihonkiin.or.jp/event/area/other/52026_tokyo.html",
+      "source": "日本棋院 囲碁大会・イベント",
+      "sourceHomepage": "https://www.nihonkiin.or.jp/event/",
+      "eventDateText": "2026年1月17日（土）",
+      "publishedText": "2025年11月12日",
+      "publishedIso": "2025-11-12",
+      "eventIsoDate": "2026-01-17",
+      "sortDate": 1768608000000,
+      "summary": "シニア世代の皆様に趣味として親しまれている種目による交流大会を開催し、人と人とのつながりを新たに生み出すとともに、身近なコミュニティへの参加のきっかけづくりを目指すことで、シニア世代の健康で心豊かな生活を応援していきます。 囲碁、将棋、健康マージャン、ダンススポーツ、カラオケ、e...",
+      "categories": [
+        "その他の地域",
+        "囲碁大会"
+      ]
+    },
+    {
+      "title": "【ハワイ】第50期 棋聖戦第1局プレミアムツアーのご案内",
+      "url": "https://www.nihonkiin.or.jp/event/area/other/50_1_1.html",
+      "source": "日本棋院 囲碁大会・イベント",
+      "sourceHomepage": "https://www.nihonkiin.or.jp/event/",
+      "eventDateText": "2026年1月20日（火）",
+      "publishedText": "2025年11月19日",
+      "publishedIso": "2025-11-19",
+      "eventIsoDate": "2026-01-20",
+      "sortDate": 1768867200000,
+      "summary": "一力遼棋聖 VS 芝野虎丸十段 1月22、23日に「プリンス ワイキキ」で行われる第50期棋聖戦挑戦手合七番勝負「一力遼棋聖vs.芝野虎丸十段」第1局に合わせてプレミアムツアーを企画しております。 ツアーでは一力棋聖、芝野十段と共に行動し、これまでより密に棋士とふれあうことができ...",
+      "categories": [
+        "その他の地域",
+        "解説会・イベント"
+      ]
+    }
+  ]
+}
