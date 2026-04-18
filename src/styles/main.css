@@ -762,8 +762,7 @@ button:not(:disabled):hover {
 
     /* Mobile Controls Styles (Scoped to mobile) */
     .mobile-controls {
-        display: none;
-        /* Hidden as we now use full gesture controls */
+        display: block;
         margin: 0 auto;
         padding: 0.5rem 1rem 0.6rem;
         padding-bottom: calc(0.6rem + env(safe-area-inset-bottom));
@@ -930,10 +929,6 @@ button:not(:disabled):hover {
     max-height: calc(100dvh - 84px);
     aspect-ratio: 1 / 2;
     /* Exact ratio: 300px / 600px */
-}
-
-.mobile-controls {
-    display: none !important;
 }
 
 .mobile-grid {
@@ -1393,7 +1388,7 @@ button.secondary:not(:disabled):hover {
     display: flex;
 }
 
-@media (min-width: 1000px) {
+@media (min-width: 901px) {
     #startBtnDesktop {
         display: block;
         /* Show on Desktop */
@@ -1409,7 +1404,3 @@ button.secondary:not(:disabled):hover {
     }
 }
 
-/* Force hide mobile controls globally - overrule any media query leaks */
-.mobile-controls {
-    display: none !important;
-}
